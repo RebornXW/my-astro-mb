@@ -1,0 +1,3685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>光影推箱</title>
+  <style>
+    :root {
+      --ink: #2C303A;
+      --ink-soft: #6C7280;
+      --ink-muted: #989EA8;
+      --glass: rgba(255, 253, 249, 0.82);
+      --glass-strong: rgba(255, 253, 249, 0.96);
+      --glass-border: rgba(255, 255, 255, 0.9);
+      --card-border: rgba(156, 146, 132, 0.24);
+      --gold: #E5A435;
+      --gold-soft: rgba(229, 164, 53, 0.16);
+      --jade: #47A17B;
+      --ice: #5BAEDB;
+      --danger: #D95B52;
+      --shadow-sm: 0 6px 20px rgba(44, 48, 58, 0.08);
+      --shadow-md: 0 18px 46px rgba(44, 48, 58, 0.14);
+    }
+
+    body.theme-night {
+      --ink: #F2EFE9;
+      --ink-soft: #A0AAC0;
+      --ink-muted: #6C7892;
+      --glass: rgba(24, 30, 44, 0.82);
+      --glass-strong: rgba(26, 33, 48, 0.96);
+      --glass-border: rgba(120, 144, 188, 0.28);
+      --card-border: rgba(120, 144, 188, 0.22);
+      --shadow-sm: 0 6px 20px rgba(0, 0, 0, 0.35);
+      --shadow-md: 0 22px 54px rgba(0, 0, 0, 0.52);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      overscroll-behavior: none;
+      background: linear-gradient(155deg, #E6EBF1 0%, #F4EFE6 52%, #EAE3D7 100%);
+      color: var(--ink);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      touch-action: none;
+      transition: background 0.35s ease, color 0.3s ease;
+    }
+
+    #viewportShell {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s ease;
+    }
+
+    body.mobile-preview #viewportShell {
+      background: #1B1E26;
+      padding: 16px;
+    }
+
+    #appStage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: inherit;
+      transition: width 0.28s ease, height 0.28s ease, border-radius 0.28s ease;
+    }
+
+    body.mobile-preview #appStage {
+      width: min(392px, calc(100vw - 32px));
+      height: min(820px, calc(100vh - 32px));
+      border-radius: 36px;
+      border: 6px solid #2C313E;
+      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55);
+    }
+
+    canvas#gameCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    /* 桌面端手机竖屏预览开关 */
+    .preview-toggle {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      z-index: 80;
+      border: 1px solid var(--glass-border);
+      background: var(--glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.14s ease, filter 0.14s ease;
+    }
+
+    body.is-mobile .preview-toggle {
+      display: none;
+    }
+
+    .ui-ico {
+      width: 17px;
+      height: 17px;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .ui-ico.sm {
+      width: 14px;
+      height: 14px;
+    }
+
+    .preview-toggle:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+    }
+
+    /* =====================================================================
+       封面界面
+       ===================================================================== */
+    .cover-screen {
+      position: absolute;
+      inset: 0;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: max(42px, env(safe-area-inset-top)) 20px max(40px, env(safe-area-inset-bottom));
+      pointer-events: none;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    body:not(.in-cover) .cover-screen {
+      opacity: 0;
+      transform: scale(1.02);
+      pointer-events: none;
+    }
+
+    .cover-top {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .cover-emblem {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: var(--glass-strong);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cover-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 6px;
+      padding-left: 6px;
+      color: var(--ink);
+    }
+
+    .cover-stats {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-soft);
+    }
+
+    .cover-stat-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .cover-stats b {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cover-bottom {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 248px;
+      pointer-events: auto;
+    }
+
+    .btn-primary {
+      width: 100%;
+      border: none;
+      background: var(--ink);
+      color: #FFFDF9;
+      font-size: 14.5px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      padding: 13px 24px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 10px 26px rgba(44, 48, 58, 0.22);
+      transition: transform 0.14s ease, filter 0.14s ease;
+    }
+
+    body.theme-night .btn-primary {
+      background: #F0B744;
+      color: #161B26;
+      box-shadow: 0 10px 26px rgba(240, 183, 68, 0.28);
+    }
+
+    .btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .btn-primary:active { transform: scale(0.96); }
+
+    .cover-sub-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .btn-ghost {
+      border: 1px solid var(--glass-border);
+      background: var(--glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.14s ease, background 0.14s ease;
+    }
+
+    .btn-ghost:hover { transform: translateY(-1px); }
+    .btn-ghost:active { transform: scale(0.96); }
+
+    /* =====================================================================
+       局内 HUD
+       ===================================================================== */
+    .hud-top {
+      position: absolute;
+      top: max(14px, env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-sm);
+      max-width: calc(100% - 20px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    body.in-cover .hud-top,
+    body.in-cover .hud-bottom {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .hud-icon-btn {
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.14s ease, opacity 0.14s ease, transform 0.12s ease;
+    }
+
+    .hud-icon-btn:hover { background: rgba(128, 134, 148, 0.14); }
+    .hud-icon-btn:active { transform: scale(0.9); }
+
+    .level-code-btn {
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      font-size: 13.5px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      padding: 2px 5px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+    }
+
+    .divider {
+      width: 1px;
+      height: 14px;
+      background: rgba(128, 134, 148, 0.24);
+      flex-shrink: 0;
+    }
+
+    .step-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      padding: 0 2px;
+      text-align: center;
+    }
+
+    .step-badge .opt-sub {
+      color: var(--ink-muted);
+      font-weight: 600;
+      font-size: 11px;
+    }
+
+    /* 浮动消息与提示浮窗 */
+    .hint-toast {
+      position: absolute;
+      top: max(68px, calc(env(safe-area-inset-top) + 54px));
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      z-index: 35;
+      background: var(--ink);
+      color: #FFFDF9;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 16px;
+      border-radius: 999px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      box-shadow: var(--shadow-sm);
+      white-space: nowrap;
+    }
+
+    body.theme-night .hint-toast {
+      background: #F0B744;
+      color: #161B26;
+    }
+
+    .hint-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .hint-popover {
+      position: absolute;
+      left: 16px;
+      bottom: max(76px, calc(env(safe-area-inset-bottom) + 68px));
+      width: min(280px, calc(100% - 32px));
+      z-index: 32;
+      background: var(--glass-strong);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--glass-border);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(8px) scale(0.96);
+      pointer-events: none;
+      transition: all 0.2s ease;
+    }
+
+    .hint-popover.open {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .hint-pop-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12.5px;
+      font-weight: 800;
+    }
+
+    .hint-pop-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hint-pop-text {
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+
+    .hint-pop-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .mini-pill-btn {
+      flex: 1;
+      border: 1px solid var(--card-border);
+      background: var(--gold-soft);
+      color: var(--ink);
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 7px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .mini-pill-btn.secondary {
+      background: transparent;
+    }
+
+    /* 底部精简控制栏 */
+    .hud-bottom {
+      position: absolute;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      left: 16px;
+      right: 16px;
+      z-index: 20;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .tool-group {
+      display: flex;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .round-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--glass-border);
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      color: var(--ink);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.14s ease, opacity 0.15s ease, box-shadow 0.2s ease;
+    }
+
+    .round-btn:active { transform: scale(0.91); }
+    .round-btn:disabled { opacity: 0.34; cursor: not-allowed; transform: none; }
+
+    @keyframes deadlockPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(217, 91, 82, 0.55), var(--shadow-sm); border-color: rgba(217, 91, 82, 0.75); }
+      50% { box-shadow: 0 0 0 8px rgba(217, 91, 82, 0), var(--shadow-sm); border-color: rgba(217, 91, 82, 0.95); }
+    }
+
+    .round-btn.deadlock-alert {
+      color: var(--danger);
+      animation: deadlockPulse 1.4s ease-in-out infinite;
+    }
+
+    .hint-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: var(--gold);
+      color: #261C0B;
+      font-size: 10px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    }
+
+    .dpad-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .dpad {
+      display: none;
+      grid-template-columns: repeat(3, 44px);
+      grid-template-rows: repeat(2, 44px);
+      gap: 6px;
+    }
+
+    .dpad.open {
+      display: grid;
+    }
+
+    .dpad-btn {
+      border-radius: 14px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      color: var(--ink);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.1s ease;
+    }
+
+    .dpad-btn:active { transform: scale(0.9); }
+    .dpad-up { grid-column: 2; grid-row: 1; }
+    .dpad-left { grid-column: 1; grid-row: 2; }
+    .dpad-down { grid-column: 2; grid-row: 2; }
+    .dpad-right { grid-column: 3; grid-row: 2; }
+
+    /* =====================================================================
+       弹窗体系
+       ===================================================================== */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(24, 28, 38, 0.34);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 360px;
+      max-height: 82%;
+      overflow-y: auto;
+      background: var(--glass-strong);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: var(--shadow-md);
+      transform: translateY(12px) scale(0.97);
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .overlay.open .modal-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .modal-head h3 {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+    }
+
+    .close-btn {
+      border: none;
+      background: transparent;
+      color: var(--ink-soft);
+      font-size: 16px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .close-btn:hover { background: rgba(128, 134, 148, 0.14); color: var(--ink); }
+
+    /* 过关星级结算 */
+    .clear-body {
+      max-width: 310px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 24px 22px;
+    }
+
+    .clear-code {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: var(--ink-soft);
+    }
+
+    .stars-stage {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+    }
+
+    @keyframes starPopIn {
+      0% { transform: scale(0.25) rotate(-18deg); opacity: 0; }
+      65% { transform: scale(1.22) rotate(5deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    @keyframes platBurst {
+      0% { transform: scale(0.15) rotate(-35deg); opacity: 0; filter: drop-shadow(0 0 0 rgba(154, 212, 255, 0)); }
+      58% { transform: scale(1.32) rotate(8deg); opacity: 1; filter: drop-shadow(0 0 18px rgba(154, 212, 255, 1)); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; filter: drop-shadow(0 0 10px rgba(154, 212, 255, 0.85)); }
+    }
+
+    .star-svg {
+      width: 38px;
+      height: 38px;
+      opacity: 0;
+      transform: scale(0.3);
+    }
+
+    .star-svg.empty-slot {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .star-svg.popped {
+      animation: starPopIn 0.42s cubic-bezier(0.22, 1.35, 0.36, 1) forwards;
+    }
+
+    .star-svg.platinum {
+      width: 42px;
+      height: 42px;
+    }
+
+    .star-svg.platinum.popped {
+      animation: platBurst 0.56s cubic-bezier(0.22, 1.4, 0.36, 1) forwards;
+    }
+
+    .clear-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .metric-box {
+      background: rgba(140, 144, 156, 0.08);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .metric-box span { font-size: 11px; color: var(--ink-soft); }
+    .metric-box b { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+    .clear-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .clear-actions .round-btn { flex-shrink: 0; }
+    .clear-actions .btn-primary { flex: 1; padding: 11px 16px; }
+
+    /* 选关列表 */
+    .chap-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .chap-block {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chap-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chap-ico {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .chap-title { font-size: 13px; font-weight: 800; }
+    .chap-tags { font-size: 10.5px; color: var(--ink-soft); }
+
+    .lvl-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .lvl-card {
+      border: 1.5px solid var(--card-border);
+      background: rgba(140, 144, 156, 0.05);
+      border-radius: 13px;
+      padding: 10px 6px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      position: relative;
+      transition: all 0.14s ease;
+    }
+
+    .lvl-card:hover { border-color: var(--ink-soft); }
+    .lvl-card.current { border-color: var(--gold); background: var(--gold-soft); }
+
+    .lvl-code { font-size: 13.5px; font-weight: 800; color: var(--ink); }
+    .lvl-stars { display: flex; gap: 2px; height: 12px; align-items: center; }
+
+    .del-custom-btn {
+      position: absolute;
+      top: 3px;
+      right: 4px;
+      width: 18px;
+      height: 18px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(217, 91, 82, 0.16);
+      color: var(--danger);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .import-details {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--card-border);
+      font-size: 12px;
+    }
+
+    .import-details summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      list-style: none;
+    }
+
+    .import-details summary::-webkit-details-marker { display: none; }
+
+    .import-box {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .import-box textarea {
+      width: 100%;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 11.5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: rgba(140, 144, 156, 0.06);
+      color: var(--ink);
+      outline: none;
+      resize: vertical;
+    }
+
+    /* 外观换肤 */
+    .skin-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      background: rgba(140, 144, 156, 0.14);
+      padding: 3px;
+      border-radius: 11px;
+      margin-bottom: 12px;
+    }
+
+    .skin-tab-btn {
+      border: none;
+      background: transparent;
+      color: var(--ink-soft);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 7px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .skin-tab-btn.active {
+      background: var(--glass-strong);
+      color: var(--ink);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .skin-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .skin-card {
+      border: 1.5px solid var(--card-border);
+      background: rgba(140, 144, 156, 0.05);
+      border-radius: 14px;
+      padding: 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      text-align: center;
+      transition: all 0.14s ease;
+    }
+
+    .skin-card.active { border-color: var(--gold); background: var(--gold-soft); }
+    .skin-card.locked { opacity: 0.65; }
+
+    .theme-swatch {
+      width: 100%;
+      height: 52px;
+      border-radius: 9px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .hero-preview-cvs {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      background: rgba(140, 144, 156, 0.1);
+    }
+
+    .skin-name { font-size: 12.5px; font-weight: 800; }
+
+    .skin-req {
+      font-size: 10.5px;
+      color: var(--ink-soft);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+
+    .tryall-row {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--ink-soft);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .tryall-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body class="in-cover">
+  <button class="preview-toggle" id="btnMobileToggle">
+    <svg class="ui-ico sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><line x1="10.5" y1="18.5" x2="13.5" y2="18.5"/></svg>
+    <span id="mobileToggleText">手机竖屏</span>
+  </button>
+
+  <div id="viewportShell">
+    <div id="appStage">
+      <canvas id="gameCanvas"></canvas>
+
+      <!-- 主界面封面 -->
+      <section class="cover-screen" id="coverScreen">
+        <div class="cover-top">
+          <div class="cover-emblem" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+              <rect x="4" y="4" width="24" height="24" rx="7" fill="#EAE4DA" stroke="#C9BFA9" stroke-width="1.5"/>
+              <rect x="9" y="9" width="14" height="14" rx="4" fill="#D49A62" stroke="#F4C252" stroke-width="2"/>
+              <circle cx="16" cy="16" r="3" fill="#FFF7D6"/>
+            </svg>
+          </div>
+          <h1 class="cover-title">光影推箱</h1>
+          <div class="cover-stats" id="coverStats">
+            <span class="cover-stat-item">
+              <svg class="ui-ico sm" viewBox="0 0 24 24" fill="#E5A435"><polygon points="12,2.5 15.1,8.8 22,9.8 17,14.6 18.2,21.5 12,18.2 5.8,21.5 7,14.6 2,9.8 8.9,8.8"/></svg>
+              <b id="statGold">0</b>/<span id="statGoldMax">36</span>
+            </span>
+            <span>·</span>
+            <span class="cover-stat-item">
+              <svg class="ui-ico sm" viewBox="0 0 24 24" fill="#7CC4FA"><polygon points="12,2 15,9 22,12 15,15 12,22 9,15 2,12 9,9"/></svg>
+              <b id="statPlat">0</b>
+            </span>
+          </div>
+        </div>
+
+        <div class="cover-bottom">
+          <button class="btn-primary" id="btnStartGame">开始</button>
+          <div class="cover-sub-row">
+            <button class="btn-ghost" id="btnCoverChapters">选关</button>
+            <button class="btn-ghost" id="btnCoverThemes">外观</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 局内顶部极简 HUD -->
+      <header class="hud-top">
+        <button class="hud-icon-btn" id="btnHome" title="返回首页" aria-label="返回首页">
+          <svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg>
+        </button>
+        <span class="divider"></span>
+        <button class="level-code-btn" id="btnOpenChapters" title="切换关卡">
+          <span id="hudLevelCode">1-1</span>
+          <svg class="ui-ico sm" style="opacity:0.62;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <span class="divider"></span>
+        <span class="step-badge" id="stepBadge">0 步</span>
+        <span class="divider"></span>
+        <button class="hud-icon-btn" id="btnThemes" title="外观" aria-label="外观">
+          <svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9.5" cy="9.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.8" cy="9" r="1.1" fill="currentColor" stroke="none"/><circle cx="15.5" cy="14" r="1.1" fill="currentColor" stroke="none"/><path d="M8.5 14.8a2 2 0 1 0 3 1.7"/></svg>
+        </button>
+        <button class="hud-icon-btn" id="btnSound" title="音效" aria-label="音效">
+          <svg class="ui-ico" id="icoSound" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2.5 9 2.5 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>
+        </button>
+      </header>
+
+      <!-- 浮动消息气泡 -->
+      <div class="hint-toast" id="hintToast"></div>
+
+      <!-- 提示浮窗 -->
+      <div class="hint-popover" id="hintPopover">
+        <div class="hint-pop-head">
+          <span class="hint-pop-title">
+            <svg class="ui-ico sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z"/></svg>
+            本关思路
+          </span>
+          <button class="close-btn" id="btnCloseHint" aria-label="关闭">✕</button>
+        </div>
+        <div class="hint-pop-text" id="hintPopText"></div>
+        <div class="hint-pop-actions">
+          <button class="mini-pill-btn" id="btnBfsStep">
+            <svg class="ui-ico sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="16.2 7.8 14.1 14.1 7.8 16.2 9.9 9.9 16.2 7.8"/></svg>
+            指引一步
+          </button>
+          <button class="mini-pill-btn secondary" id="btnAdRefill">
+            <svg class="ui-ico sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8.5" x2="12" y2="15.5"/><line x1="8.5" y1="12" x2="15.5" y2="12"/></svg>
+            +3 次数
+          </button>
+        </div>
+      </div>
+
+      <!-- 局内底部精简控制区 -->
+      <footer class="hud-bottom">
+        <div class="tool-group">
+          <button class="round-btn" id="btnUndo" title="悔棋 (Z / 长按连退)" aria-label="悔棋">
+            <svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-5a6 6 0 0 0-6-6H4"/></svg>
+          </button>
+          <button class="round-btn" id="btnReset" title="重来 (R · 可悔棋还原)" aria-label="重来">
+            <svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+          </button>
+          <button class="round-btn" id="btnHint" title="提示" aria-label="提示">
+            <svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z"/></svg>
+            <span class="hint-badge" id="hintBadge">3</span>
+          </button>
+        </div>
+
+        <div class="dpad-wrap">
+          <div class="dpad" id="dpadBox" aria-label="方向控制">
+            <button class="dpad-btn dpad-up" data-dir="up" aria-label="上">
+              <svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+            </button>
+            <button class="dpad-btn dpad-left" data-dir="left" aria-label="左">
+              <svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button class="dpad-btn dpad-down" data-dir="down" aria-label="下">
+              <svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="dpad-btn dpad-right" data-dir="right" aria-label="右">
+              <svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+          <button class="round-btn" id="btnToggleDpad" title="展开/收起方向键" aria-label="方向键开关">
+            <svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M3 12h18"/><polyline points="9 6 12 3 15 6"/><polyline points="9 18 12 21 15 18"/><polyline points="6 9 3 12 6 15"/><polyline points="18 9 21 12 18 15"/></svg>
+          </button>
+        </div>
+      </footer>
+
+      <!-- 过关星级结算弹窗 -->
+      <div class="overlay" id="clearOverlay" role="dialog" aria-modal="true">
+        <div class="modal-card clear-body">
+          <div class="clear-code" id="clearLevelCode">1-1</div>
+          <div class="stars-stage" id="clearStarsStage"></div>
+          <div class="clear-metrics">
+            <div class="metric-box">
+              <span>本次步数</span>
+              <b id="clearStepsVal">0</b>
+            </div>
+            <div class="metric-box">
+              <span>理论最优</span>
+              <b id="clearOptVal">0</b>
+            </div>
+          </div>
+          <div class="clear-actions">
+            <button class="round-btn" id="btnClearReplay" title="重刷本关" aria-label="重刷本关">
+              <svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+            </button>
+            <button class="round-btn" id="btnShareScore" title="分享战绩" aria-label="分享战绩">
+              <svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            </button>
+            <button class="btn-primary" id="btnNextLevel">下一关</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 选关弹窗 -->
+      <div class="overlay" id="chaptersOverlay" role="dialog" aria-modal="true">
+        <div class="modal-card">
+          <div class="modal-head">
+            <h3>选择关卡</h3>
+            <button class="close-btn" id="btnCloseChapters" aria-label="关闭">✕</button>
+          </div>
+          <div class="chap-list" id="chapList"></div>
+
+          <details class="import-details">
+            <summary>
+              <svg class="ui-ico sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              导入自定义关卡 JSON
+            </summary>
+            <div class="import-box">
+              <textarea id="importJsonInput" rows="4" placeholder='粘贴编辑器导出的 JSON（含 "map" 数组）...'></textarea>
+              <button class="btn-ghost" id="btnImportRun">载入并试玩</button>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <!-- 外观换肤弹窗 -->
+      <div class="overlay" id="themesOverlay" role="dialog" aria-modal="true">
+        <div class="modal-card">
+          <div class="modal-head">
+            <h3>外观</h3>
+            <button class="close-btn" id="btnCloseThemes" aria-label="关闭">✕</button>
+          </div>
+          <div class="skin-tabs">
+            <button class="skin-tab-btn active" id="skinTabEnv">
+              <svg class="ui-ico sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 16l5-5 4 4 3-3 6 5"/></svg>
+              场景主题
+            </button>
+            <button class="skin-tab-btn" id="skinTabHero">
+              <svg class="ui-ico sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>
+              角色皮肤
+            </button>
+          </div>
+          <div class="skin-grid" id="envSkinGrid"></div>
+          <div class="skin-grid" id="heroSkinGrid" style="display:none;"></div>
+          <label class="tryall-row">
+            <span class="tryall-label">
+              <svg class="ui-ico sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.4-2"/></svg>
+              试穿全部外观
+            </span>
+            <input type="checkbox" id="chkTryAll" />
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      /* =====================================================================
+         1. 主题、角色、UI 矢量图标与 12 关数据
+         ===================================================================== */
+      const THEMES = [
+        {
+          id: "morning", name: "晴雪晨光", reqText: "默认解锁", reqGold: 0, reqPlat: 0, isDark: false,
+          swatch: "linear-gradient(135deg, #E6EBF1 0%, #F4EFE6 55%, #E7D4B0 100%)",
+          pageBg: "linear-gradient(155deg, #E6EBF1 0%, #F4EFE6 52%, #EAE3D7 100%)",
+          islandShadow: "rgba(44, 52, 68, 0.18)", islandSide: "#CFC8BC", islandMid: "#D8D1C5", islandTop: "#E7E1D6",
+          floorA: 0xEAE6DE, floorB: 0xE5E0D6, floorLit: 0xFFF3D1, floorShadow: 0xD9DCE3, floorGrid: "rgba(155, 146, 132, 0.16)",
+          wallBase: "#EFECE6", wallAlt: "#EAE6DF", wallHi: "#FAF8F4", wallLow: "#D9D2C5", wallRight: "#E0DAD0",
+          seamColor: "rgba(156, 146, 132, 1)", shadowRgb: "42, 48, 62", beamOuterRgb: "255, 212, 104", beamCoreRgb: "255, 250, 224"
+        },
+        {
+          id: "celadon", name: "静谧青院", reqText: "9 金星", reqGold: 9, reqPlat: 0, isDark: false,
+          swatch: "linear-gradient(135deg, #D5E2E6 0%, #E9EFF0 55%, #8CA4AD 100%)",
+          pageBg: "linear-gradient(155deg, #DCE5E8 0%, #E9EFF0 55%, #DDE5E3 100%)",
+          islandShadow: "rgba(32, 48, 56, 0.20)", islandSide: "#B8C5C8", islandMid: "#C3D0D3", islandTop: "#D5E0E2",
+          floorA: 0xE7EEED, floorB: 0xE1E9E8, floorLit: 0xFFF5D8, floorShadow: 0xCFD9DC, floorGrid: "rgba(110, 130, 136, 0.16)",
+          wallBase: "#6E858E", wallAlt: "#687F88", wallHi: "#8DA4AD", wallLow: "#4E636B", wallRight: "#5C727A",
+          seamColor: "rgba(46, 62, 68, 1)", shadowRgb: "28, 42, 50", beamOuterRgb: "255, 214, 108", beamCoreRgb: "255, 252, 232"
+        },
+        {
+          id: "warmwood", name: "暖木午后", reqText: "18 金星", reqGold: 18, reqPlat: 0, isDark: false,
+          swatch: "linear-gradient(135deg, #F0E6D5 0%, #F6EFE3 55%, #B5875E 100%)",
+          pageBg: "linear-gradient(155deg, #EFE5D5 0%, #F6EFE3 52%, #E8DAC6 100%)",
+          islandShadow: "rgba(72, 52, 34, 0.18)", islandSide: "#C8B59C", islandMid: "#D3C2AA", islandTop: "#E6D8C3",
+          floorA: 0xF3EBDD, floorB: 0xEDE3D2, floorLit: 0xFFF2C8, floorShadow: 0xDFD3C0, floorGrid: "rgba(164, 136, 102, 0.16)",
+          wallBase: "#A17955", wallAlt: "#9A7350", wallHi: "#BE9671", wallLow: "#7A583B", wallRight: "#8A6545",
+          seamColor: "rgba(88, 58, 34, 1)", shadowRgb: "64, 44, 28", beamOuterRgb: "255, 206, 88", beamCoreRgb: "255, 248, 220"
+        },
+        {
+          id: "night", name: "暮色微光", reqText: "2 铂金星", reqGold: 0, reqPlat: 2, isDark: true,
+          swatch: "linear-gradient(135deg, #101520 0%, #1E283D 60%, #E5A435 100%)",
+          pageBg: "linear-gradient(155deg, #101520 0%, #171E2E 52%, #111622 100%)",
+          islandShadow: "rgba(0, 0, 0, 0.55)", islandSide: "#121722", islandMid: "#171E2C", islandTop: "#20293C",
+          floorA: 0x222B3D, floorB: 0x1E2637, floorLit: 0x4E4634, floorShadow: 0x151B28, floorGrid: "rgba(120, 144, 188, 0.10)",
+          wallBase: "#323E56", wallAlt: "#2E3A50", wallHi: "#485878", wallLow: "#1D2536", wallRight: "#263044",
+          seamColor: "rgba(16, 20, 32, 1)", shadowRgb: "6, 9, 16", beamOuterRgb: "255, 204, 86", beamCoreRgb: "255, 246, 204"
+        }
+      ];
+
+      const HERO_SKINS = [
+        { id: "traveler", name: "瓷白旅人", reqText: "默认解锁", reqGold: 0, reqPlat: 0 },
+        { id: "bamboo", name: "青竹斗笠", reqText: "6 金星", reqGold: 6, reqPlat: 0 },
+        { id: "snow", name: "雪球精灵", reqText: "18 金星", reqGold: 18, reqPlat: 0 },
+        { id: "star", name: "星夜使者", reqText: "1 铂金星", reqGold: 0, reqPlat: 1 }
+      ];
+
+      const UI_SVGS = {
+        snow: `<svg class="ui-ico sm" style="color:#3B9AD4;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="21"/><line x1="4.2" y1="7.5" x2="19.8" y2="16.5"/><line x1="19.8" y1="7.5" x2="4.2" y2="16.5"/></svg>`,
+        amber: `<svg class="ui-ico sm" style="color:#D68E22;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="12,3 20,12 12,21 4,12"/></svg>`,
+        custom: `<svg class="ui-ico sm" style="color:#6C7280;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 12 15 15 12 22 9 15 2 12 9 9"/></svg>`,
+        lock: `<svg class="ui-ico sm" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`,
+        soundOn: `<polygon points="11 5 6 9 2.5 9 2.5 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 6a8.5 8.5 0 0 1 0 12"/>`,
+        soundOff: `<polygon points="11 5 6 9 2.5 9 2.5 15 6 15 11 19 11 5"/><line x1="21" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="21" y2="15"/>`
+      };
+
+      const CHAPTER_META = {
+        1: { title: "第一章 · 光与雪", icon: UI_SVGS.snow, iconBg: "#E6F4FC", tags: "自身成荫 · 过河拆桥 · 一物两用" },
+        2: { title: "第二章 · 暖珀", icon: UI_SVGS.amber, iconBg: "#FFF3D4", tags: "暖珀凝实 · 单向射灯 · 双态对冲" }
+      };
+
+      const LEVELS = [
+        {
+          id: 1, code: "1-1", chapter: 1,
+          hint: "先把太阳灯向右推一格融化寒冰墙，再把木箱推进终点凹槽。",
+          map: [
+            "#######",
+            "#P.L..#",
+            "#..#..#",
+            "#.B.IX#",
+            "#######"
+          ]
+        },
+        {
+          id: 2, code: "1-2", chapter: 1,
+          hint: "走入太阳光束，用你自己的背影把水洼冻成雪箱，再一路护送入槽。",
+          map: [
+            "########",
+            "#P.....#",
+            "#S..C.X#",
+            "########"
+          ]
+        },
+        {
+          id: 3, code: "1-3", chapter: 1,
+          hint: "太阳在头顶，人走开影子就没了——先把木箱推到太阳正下方当遮阳伞。",
+          map: [
+            "#####S##",
+            "#.B....#",
+            "#P###.##",
+            "#..C.X.#",
+            "########"
+          ]
+        },
+        {
+          id: 4, code: "1-4", chapter: 1,
+          hint: "先推折光镜到第 5 列融冰送木箱，再把折光镜右推一格熄光护送雪箱。",
+          map: [
+            "#########",
+            "#S..\\..##",
+            "#P....#.#",
+            "#.B..I.X#",
+            "#..C...X#",
+            "#########"
+          ]
+        },
+        {
+          id: 5, code: "1-5", chapter: 1,
+          hint: "唯一木箱先去光束中站岗挡光送雪箱入槽，再撤下来自己进右上终点。",
+          map: [
+            "####S###",
+            "#......#",
+            "#.B..X.#",
+            "#.##.###",
+            "#P.C..X#",
+            "########"
+          ]
+        },
+        {
+          id: 6, code: "1-6", chapter: 1,
+          hint: "先把雪箱推进融水的冰墙格重叠，再推木箱入槽遮阳，使雪箱凌空结冰。",
+          map: [
+            "#########",
+            "#....S#.#",
+            "#P.B.X#.#",
+            "#..C.I.X#",
+            "#....##.#",
+            "#########"
+          ]
+        },
+        {
+          id: 7, code: "2-1", chapter: 2,
+          hint: "暖珀箱见光凝实、入影归虚：走入光束让它虚化，穿身绕到背后推出终点。",
+          map: [
+            "########",
+            "#..#####",
+            "#S.X.F.#",
+            "#P.#####",
+            "########"
+          ]
+        },
+        {
+          id: 8, code: "2-2", chapter: 2,
+          hint: "先把上方木箱推进光束遮住太阳，让门口的暖珀墙归虚，再送下方木箱过关。",
+          map: [
+            "#####S##",
+            "#..B...#",
+            "#P...#.#",
+            "#..B.VX#",
+            "########"
+          ]
+        },
+        {
+          id: 9, code: "2-3", chapter: 2,
+          hint: "先推暖珀箱入终点，再右推单向射灯：背面挡日冻住雪箱，正面继续照亮暖珀。",
+          map: [
+            "#########",
+            "#.......#",
+            "#...S.F.#",
+            "#P.>..X.#",
+            "#.###.###",
+            "#...C.X.#",
+            "#########"
+          ]
+        },
+        {
+          id: 10, code: "2-4", chapter: 2,
+          hint: "将单向射灯 v 向右推至第 5 列对准寒冰墙，融冰后推木箱直入终点。",
+          map: [
+            "########",
+            "#P.v...#",
+            "#..##..#",
+            "#.B..IX#",
+            "#..##..#",
+            "########"
+          ]
+        },
+        {
+          id: 11, code: "2-5", chapter: 2,
+          hint: "把单向射灯 > 向上推入第 1 行：借折光镜融冰送木箱，同时让下方雪箱凝结入槽。",
+          map: [
+            "#########",
+            "#.....\\.#",
+            "#P>C....#",
+            "#.B...IX#",
+            "#..X..#.#",
+            "#########"
+          ]
+        },
+        {
+          id: 12, code: "2-6", chapter: 2,
+          hint: "木箱入位挡日冻雪，送雪箱入槽，最后交替移动提灯与暖珀箱护送至最右终点。",
+          map: [
+            "##########",
+            "#...S....#",
+            "#P.BX.L..#",
+            "#..#.....#",
+            "#...C.F.X#",
+            "#...X....#",
+            "##########"
+          ]
+        }
+      ];
+
+      /* =====================================================================
+         2. 空灵 Web Audio 合成音效器
+         ===================================================================== */
+      class ZenAudio {
+        constructor() { this.ctx = null; this.muted = false; }
+        ensure() {
+          if (this.muted) return null;
+          try {
+            if (!this.ctx) {
+              const Ctx = window.AudioContext || window.webkitAudioContext;
+              if (Ctx) this.ctx = new Ctx();
+            }
+            if (this.ctx && this.ctx.state === "suspended") this.ctx.resume().catch(() => {});
+            return this.ctx;
+          } catch (e) { return null; }
+        }
+        tone(f1, f2, dur, type = "sine", vol = 0.08, delay = 0) {
+          const ctx = this.ensure();
+          if (!ctx) return;
+          try {
+            const t = ctx.currentTime + delay;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(f1, t);
+            osc.frequency.exponentialRampToValueAtTime(Math.max(40, f2), t + dur);
+            gain.gain.setValueAtTime(0.001, t);
+            gain.gain.linearRampToValueAtTime(vol, t + 0.014);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start(t); osc.stop(t + dur + 0.02);
+          } catch (e) {}
+        }
+        step() {
+          const j = 0.95 + Math.random() * 0.1;
+          this.tone(340 * j, 210 * j, 0.055, "sine", 0.045);
+        }
+        push() {
+          const j = 0.95 + Math.random() * 0.1;
+          this.tone(175 * j, 92 * j, 0.095, "triangle", 0.11);
+        }
+        melt() { this.tone(980, 1480, 0.16, "sine", 0.055); this.tone(1320, 1760, 0.14, "sine", 0.035, 0.04); }
+        freeze() { this.tone(1240, 720, 0.15, "triangle", 0.05); }
+        suppressPop() { this.tone(740, 1180, 0.11, "sine", 0.065); }
+        blocked() { this.tone(120, 88, 0.065, "sine", 0.05); }
+        undo() { this.tone(440, 320, 0.075, "sine", 0.06); }
+        lockNote(count) {
+          const chords = [[523.25, 659.25], [659.25, 783.99], [783.99, 1046.5, 1318.5]];
+          const notes = chords[Math.min(chords.length - 1, Math.max(0, count - 1))];
+          notes.forEach((f, i) => this.tone(f, f * 1.005, 0.28, "sine", 0.07, i * 0.055));
+        }
+        starPop(idx, isPlat = false) {
+          if (isPlat) {
+            this.tone(1046.5, 1318.5, 0.42, "sine", 0.08);
+            this.tone(1567.98, 1567.98, 0.48, "triangle", 0.045, 0.06);
+            return;
+          }
+          const scale = [587.33, 739.99, 880.0];
+          const f = scale[Math.min(scale.length - 1, idx)];
+          this.tone(f, f * 1.015, 0.26, "sine", 0.075);
+        }
+        win() {
+          [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => {
+            this.tone(f, f, 0.55, "sine", 0.065, i * 0.085);
+          });
+        }
+      }
+      const audio = new ZenAudio();
+
+      /* =====================================================================
+         3. MODULE 1: GameEngine（纯逻辑 + 占格压制 + 暖珀统一挡光 + BFS）
+         ===================================================================== */
+      const GameEngine = (function () {
+        const SPOT_DIRS = { "^": [-1, 0], "v": [1, 0], "<": [0, -1], ">": [0, 1] };
+        const TARGET_BOXES = new Set(["B", "C", "F"]);
+        const DYNAMIC_KINDS = new Set(["B", "C", "F", "L", "\\", "/", "^", "v", "<", ">"]);
+        const DIRS4 = [
+          { dr: -1, dc: 0, dir: "up", sym: "↑" },
+          { dr: 1, dc: 0, dir: "down", sym: "↓" },
+          { dr: 0, dc: -1, dir: "left", sym: "←" },
+          { dr: 0, dc: 1, dir: "right", sym: "→" }
+        ];
+        const optimalCache = new Map();
+
+        function parseMap(gridRows) {
+          const rows = gridRows.length;
+          const cols = gridRows[0].length;
+          const walls = [], suns = [], iceWalls = [], treeWalls = [], goals = [], entities = [];
+          let player = null, eid = 1;
+          for (let r = 0; r < rows; r++) {
+            const wRow = [];
+            for (let c = 0; c < cols; c++) {
+              const ch = gridRows[r][c] || ".";
+              wRow.push(ch === "#");
+              if (ch === "S") suns.push({ r, c });
+              else if (ch === "I") iceWalls.push({ r, c });
+              else if (ch === "V") treeWalls.push({ r, c });
+              else if (ch === "X") goals.push({ r, c });
+              else if (ch === "P") player = { r, c, dir: "right" };
+              else if (DYNAMIC_KINDS.has(ch)) entities.push({ id: eid++, kind: ch, r, c });
+            }
+            walls.push(wRow);
+          }
+          return { staticMap: { rows, cols, walls, suns, iceWalls, treeWalls, goals }, dynState: { player, entities } };
+        }
+
+        function cloneDyn(dyn) {
+          return {
+            player: dyn.player ? { r: dyn.player.r, c: dyn.player.c, dir: dyn.player.dir } : null,
+            entities: dyn.entities.map(e => ({ id: e.id, kind: e.kind, r: e.r, c: e.c }))
+          };
+        }
+
+        function isEntitySuppressed(dyn, ent) {
+          if (dyn.player && dyn.player.r === ent.r && dyn.player.c === ent.c) return true;
+          return dyn.entities.some(o => {
+            if (o.id === ent.id || o.r !== ent.r || o.c !== ent.c) return false;
+            const alwaysSolid = o.kind === "B" || o.kind === "L" || o.kind === "\\" || o.kind === "/" || Boolean(SPOT_DIRS[o.kind]);
+            return alwaysSolid || (o.kind === ent.kind && o.id < ent.id);
+          });
+        }
+
+        function isEntitySolid(dyn, lit, ent) {
+          if (ent.kind === "B" || ent.kind === "L" || ent.kind === "\\" || ent.kind === "/" || SPOT_DIRS[ent.kind]) return true;
+          if (isEntitySuppressed(dyn, ent)) return false;
+          if (ent.kind === "C") return !lit[ent.r][ent.c];
+          if (ent.kind === "F") return lit[ent.r][ent.c];
+          return false;
+        }
+
+        function isTerrainSuppressed(dyn, lit, r, c) {
+          if (dyn.player && dyn.player.r === r && dyn.player.c === c) return true;
+          return dyn.entities.some(e => e.r === r && e.c === c && ((e.kind !== "C" && e.kind !== "F") || isEntitySolid(dyn, lit, e)));
+        }
+
+        function solidEntityAt(dyn, lit, r, c) {
+          return dyn.entities.find(e => e.r === r && e.c === c && isEntitySolid(dyn, lit, e)) || null;
+        }
+
+        function computeLighting(staticMap, dyn, includeVisuals = false) {
+          const { rows, cols, walls, suns, treeWalls } = staticMap;
+          const lit = Array.from({ length: rows }, () => Array(cols).fill(false));
+          const beams = includeVisuals ? [] : null;
+          const hitMirrors = includeVisuals ? new Set() : null;
+          const blockers = includeVisuals ? [] : null;
+
+          function trace(sr, sc, dr, dc, depth) {
+            if (depth > 14) return;
+            let r = sr + dr, c = sc + dc, er = sr, ec = sc, moved = false;
+            while (r >= 0 && r < rows && c >= 0 && c < cols) {
+              if (walls[r][c] || suns.some(s => s.r === r && s.c === c)) break;
+              lit[r][c] = true;
+              er = r; ec = c; moved = true;
+
+              if (dyn.player && dyn.player.r === r && dyn.player.c === c) {
+                if (includeVisuals) blockers.push({ r, c, dr, dc, kind: "P" });
+                break;
+              }
+
+              let blocked = false, blockKind = null, mirror = null;
+              for (let i = 0; i < dyn.entities.length; i++) {
+                const e = dyn.entities[i];
+                if (e.r !== r || e.c !== c) continue;
+                if (e.kind === "B" || e.kind === "L" || SPOT_DIRS[e.kind]) {
+                  blocked = true; blockKind = e.kind; break;
+                }
+                if (e.kind === "F" && !isEntitySuppressed(dyn, e)) {
+                  blocked = true; blockKind = "F"; break;
+                }
+                if (e.kind === "\\" || e.kind === "/") mirror = e;
+              }
+              if (blocked) {
+                if (includeVisuals) blockers.push({ r, c, dr, dc, kind: blockKind });
+                break;
+              }
+              if (mirror) {
+                if (includeVisuals) {
+                  hitMirrors.add(mirror.id);
+                  beams.push({ r1: sr, c1: sc, r2: r, c2: c });
+                }
+                const ndr = mirror.kind === "\\" ? dc : -dc;
+                const ndc = mirror.kind === "\\" ? dr : -dr;
+                trace(r, c, ndr, ndc, depth + 1);
+                return;
+              }
+              if (treeWalls.some(w => w.r === r && w.c === c)) {
+                if (includeVisuals) blockers.push({ r, c, dr, dc, kind: "V" });
+                break;
+              }
+              r += dr; c += dc;
+            }
+            if (includeVisuals && moved) beams.push({ r1: sr, c1: sc, r2: er, c2: ec });
+          }
+
+          for (let i = 0; i < suns.length; i++) {
+            const s = suns[i];
+            lit[s.r][s.c] = true;
+            for (let d = 0; d < 4; d++) trace(s.r, s.c, DIRS4[d].dr, DIRS4[d].dc, 0);
+          }
+          for (let i = 0; i < dyn.entities.length; i++) {
+            const e = dyn.entities[i];
+            if (e.kind === "L") {
+              lit[e.r][e.c] = true;
+              for (let d = 0; d < 4; d++) trace(e.r, e.c, DIRS4[d].dr, DIRS4[d].dc, 0);
+            } else if (SPOT_DIRS[e.kind]) {
+              lit[e.r][e.c] = true;
+              const [sdr, sdc] = SPOT_DIRS[e.kind];
+              trace(e.r, e.c, sdr, sdc, 0);
+            }
+          }
+          return { lit, beams, hitMirrors, blockers };
+        }
+
+        function isCellBlocked(staticMap, dyn, lit, r, c) {
+          if (r < 0 || r >= staticMap.rows || c < 0 || c >= staticMap.cols) return true;
+          if (staticMap.walls[r][c]) return true;
+          if (staticMap.suns.some(s => s.r === r && s.c === c)) return true;
+          if (staticMap.iceWalls.some(w => w.r === r && w.c === c) && !lit[r][c] && !isTerrainSuppressed(dyn, lit, r, c)) return true;
+          if (staticMap.treeWalls.some(w => w.r === r && w.c === c) && lit[r][c] && !isTerrainSuppressed(dyn, lit, r, c)) return true;
+          return false;
+        }
+
+        function stepState(staticMap, dyn, lit, dr, dc, dir) {
+          if (!dyn.player) return null;
+          const nr = dyn.player.r + dr, nc = dyn.player.c + dc;
+          if (isCellBlocked(staticMap, dyn, lit, nr, nc)) return null;
+          const ent = solidEntityAt(dyn, lit, nr, nc);
+          if (ent) {
+            const br = nr + dr, bc = nc + dc;
+            if (isCellBlocked(staticMap, dyn, lit, br, bc) || solidEntityAt(dyn, lit, br, bc)) return null;
+            if ((ent.kind === "C" || ent.kind === "F") && dyn.entities.some(o => o.r === br && o.c === bc && o.kind === ent.kind)) return null;
+          }
+          const nextDyn = cloneDyn(dyn);
+          nextDyn.player.r = nr; nextDyn.player.c = nc; nextDyn.player.dir = dir;
+          if (ent) {
+            const target = nextDyn.entities.find(x => x.id === ent.id);
+            target.r = nr + dr; target.c = nc + dc;
+          }
+          const nextLight = computeLighting(staticMap, nextDyn, false);
+          return { dyn: nextDyn, lit: nextLight.lit, pushed: Boolean(ent) };
+        }
+
+        function isWon(staticMap, dyn, lit) {
+          if (!staticMap.goals.length) return false;
+          return staticMap.goals.every(g => {
+            const e = solidEntityAt(dyn, lit, g.r, g.c);
+            return Boolean(e && TARGET_BOXES.has(e.kind));
+          });
+        }
+
+        function encodeState(dyn) {
+          const parts = dyn.entities.map(e => `${e.kind}${e.r},${e.c}`);
+          parts.sort();
+          return `${dyn.player.r},${dyn.player.c}|${parts.join(";")}`;
+        }
+
+        function solveFromState(staticMap, initDyn, maxStates = 45000, maxMs = 400) {
+          const t0 = performance.now();
+          const initLit = computeLighting(staticMap, initDyn, false).lit;
+          if (isWon(staticMap, initDyn, initLit)) return { solved: true, path: [] };
+          const visited = new Set([encodeState(initDyn)]);
+          const queue = [{ dyn: initDyn, lit: initLit, parent: -1, mvIdx: -1 }];
+          let head = 0;
+          while (head < queue.length && visited.size < maxStates) {
+            if ((head & 63) === 0 && performance.now() - t0 > maxMs) return { solved: false, timedOut: true };
+            const cur = queue[head];
+            for (let d = 0; d < 4; d++) {
+              const mv = DIRS4[d];
+              const res = stepState(staticMap, cur.dyn, cur.lit, mv.dr, mv.dc, mv.dir);
+              if (!res) continue;
+              const k = encodeState(res.dyn);
+              if (visited.has(k)) continue;
+              visited.add(k);
+              const idx = queue.length;
+              queue.push({ dyn: res.dyn, lit: res.lit, parent: head, mvIdx: d });
+              if (isWon(staticMap, res.dyn, res.lit)) {
+                const path = [];
+                let p = idx;
+                while (p > 0) { path.push(DIRS4[queue[p].mvIdx]); p = queue[p].parent; }
+                path.reverse();
+                return { solved: true, path };
+              }
+            }
+            head++;
+          }
+          return { solved: false, timedOut: visited.size >= maxStates };
+        }
+
+        function getOptimalSteps(levelObj) {
+          if (typeof levelObj.optimalSteps === "number" && levelObj.optimalSteps > 0) return levelObj.optimalSteps;
+          const key = levelObj.map.join("|");
+          if (optimalCache.has(key)) return optimalCache.get(key);
+          const { staticMap, dynState } = parseMap(levelObj.map);
+          const res = solveFromState(staticMap, dynState, 60000, 500);
+          const steps = res.solved ? res.path.length : null;
+          optimalCache.set(key, steps);
+          return steps;
+        }
+
+        function checkDeadlock(staticMap, dyn, maxMs = 6) {
+          const res = solveFromState(staticMap, dyn, 7000, maxMs);
+          return !res.solved && !res.timedOut;
+        }
+
+        function findNextBestMove(staticMap, dyn) {
+          const res = solveFromState(staticMap, dyn, 35000, 260);
+          return (res.solved && res.path.length > 0) ? res.path[0] : null;
+        }
+
+        function evaluateStars(steps, opt) {
+          if (!opt) return { gold: 3, platinum: false };
+          const platinum = steps <= opt;
+          let gold = 1;
+          if (steps <= Math.ceil(opt * 1.25) + 1) gold = 3;
+          else if (steps <= Math.ceil(opt * 1.65) + 3) gold = 2;
+          return { gold, platinum };
+        }
+
+        return {
+          SPOT_DIRS, TARGET_BOXES, DIRS4,
+          parseMap, cloneDyn, isEntitySuppressed, isEntitySolid, isTerrainSuppressed,
+          solidEntityAt, computeLighting, stepState, isWon,
+          solveFromState, getOptimalSteps, checkDeadlock, findNextBestMove, evaluateStars
+        };
+      })();
+
+      /* =====================================================================
+         4. MODULE 2: TouchInputController（微信小游戏同构触控控制器）
+         ===================================================================== */
+      const TouchInputController = (function () {
+        function create(opts) {
+          const SWIPE = opts.swipeThreshold || 28;
+          const state = {
+            active: false, pointerId: null,
+            downX: 0, downY: 0, anchorX: 0, anchorY: 0, curX: 0, curY: 0,
+            didSwipe: false
+          };
+
+          function onStart(x, y, id = 0) {
+            if (opts.canAccept && !opts.canAccept()) return;
+            state.active = true; state.pointerId = id;
+            state.downX = x; state.downY = y;
+            state.anchorX = x; state.anchorY = y;
+            state.curX = x; state.curY = y;
+            state.didSwipe = false;
+          }
+
+          function onMove(x, y, id = 0) {
+            if (!state.active || (id !== null && state.pointerId !== id)) return;
+            state.curX = x; state.curY = y;
+            const dx = x - state.anchorX, dy = y - state.anchorY;
+            if (Math.abs(dx) < SWIPE && Math.abs(dy) < SWIPE) return;
+            state.didSwipe = true;
+            if (Math.abs(dx) > Math.abs(dy)) {
+              const dc = dx > 0 ? 1 : -1;
+              opts.onDirection && opts.onDirection(0, dc, dc > 0 ? "right" : "left");
+            } else {
+              const dr = dy > 0 ? 1 : -1;
+              opts.onDirection && opts.onDirection(dr, 0, dr > 0 ? "down" : "up");
+            }
+            state.anchorX = x; state.anchorY = y;
+          }
+
+          function onEnd(x, y, id = 0) {
+            if (!state.active || (id !== null && state.pointerId !== id)) return;
+            const totalDist = Math.hypot(x - state.downX, y - state.downY);
+            const wasTap = !state.didSwipe && totalDist < 14;
+            state.active = false; state.pointerId = null;
+            if (wasTap && opts.onTap) opts.onTap(x, y);
+          }
+
+          function cancel() { state.active = false; state.pointerId = null; }
+          return { state, onStart, onMove, onEnd, cancel };
+        }
+        return { create };
+      })();
+
+      /* =====================================================================
+         5. MODULE 3: Assets2D（2D 建筑光影 + 方案 1 重叠视觉 + 因果拖尾）
+         ===================================================================== */
+      const Assets2D = (function () {
+        const CFG = Object.assign({ wallSeam: 0.36, shadowLen: 0.17, beamGlow: 0.30, boxScale: 0.72 }, THEMES[0]);
+
+        function applyTheme(themeId) {
+          const th = THEMES.find(t => t.id === themeId) || THEMES[0];
+          Object.assign(CFG, th);
+          document.body.style.background = th.pageBg;
+          document.body.classList.toggle("theme-night", Boolean(th.isDark));
+        }
+
+        function roundRect(ctx, x, y, w, h, r) {
+          const rr = Math.min(r, w / 2, h / 2);
+          ctx.beginPath();
+          ctx.moveTo(x + rr, y);
+          ctx.arcTo(x + w, y, x + w, y + h, rr);
+          ctx.arcTo(x + w, y + h, x, y + h, rr);
+          ctx.arcTo(x, y + h, x, y, rr);
+          ctx.arcTo(x, y, x + w, y, rr);
+          ctx.closePath();
+        }
+
+        function lerpHex(hexA, hexB, t) {
+          const r1 = (hexA >> 16) & 255, g1 = (hexA >> 8) & 255, b1 = hexA & 255;
+          const r2 = (hexB >> 16) & 255, g2 = (hexB >> 8) & 255, b2 = hexB & 255;
+          return `rgb(${Math.round(r1 + (r2 - r1) * t)},${Math.round(g1 + (g2 - g1) * t)},${Math.round(b1 + (b2 - b1) * t)})`;
+        }
+
+        function castShadowRect(ctx, x, y, w, h, r, len, alpha = 0.15) {
+          if (len <= 0.5) return;
+          ctx.save();
+          ctx.fillStyle = `rgba(${CFG.shadowRgb}, ${alpha})`;
+          for (let i = 1; i <= 4; i++) {
+            const f = i / 4;
+            ctx.globalAlpha = (1 - f * 0.55) * 0.42;
+            roundRect(ctx, x + len * f, y + len * f, w, h, r);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        function castShadowCircle(ctx, cx, cy, rad, len, alpha = 0.16) {
+          if (len <= 0.5) return;
+          ctx.save();
+          ctx.fillStyle = `rgba(${CFG.shadowRgb}, ${alpha})`;
+          for (let i = 1; i <= 4; i++) {
+            const f = i / 4;
+            ctx.globalAlpha = (1 - f * 0.55) * 0.45;
+            ctx.beginPath();
+            ctx.arc(cx + len * f, cy + len * f, rad, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        function drawIslandBase(ctx, bx, by, bw, bh, ts) {
+          const pad = Math.round(ts * 0.12), thick = Math.round(ts * 0.22), r = Math.round(ts * 0.16);
+          ctx.save();
+          ctx.shadowColor = CFG.islandShadow;
+          ctx.shadowBlur = 28; ctx.shadowOffsetX = 10; ctx.shadowOffsetY = 18;
+          roundRect(ctx, bx - pad, by - pad + thick, bw + pad * 2, bh + pad * 2, r);
+          ctx.fillStyle = CFG.islandSide; ctx.fill();
+          ctx.restore();
+
+          roundRect(ctx, bx - pad, by - pad + thick * 0.55, bw + pad * 2, bh + pad * 2, r);
+          ctx.fillStyle = CFG.islandMid; ctx.fill();
+
+          roundRect(ctx, bx - pad, by - pad, bw + pad * 2, bh + pad * 2, r);
+          ctx.fillStyle = CFG.islandTop; ctx.fill();
+          ctx.strokeStyle = CFG.isDark ? "rgba(140, 165, 210, 0.2)" : "rgba(255, 255, 255, 0.72)";
+          ctx.lineWidth = 1.4; ctx.stroke();
+        }
+
+        function drawLockGoldSeam(ctx, ox, oy, size, r, elapsed) {
+          const pulse = 0.5 + 0.5 * Math.sin((elapsed || 0) * 2.6);
+          ctx.save();
+          ctx.shadowColor = "rgba(240, 178, 54, 0.82)";
+          ctx.shadowBlur = 9;
+          roundRect(ctx, ox - 0.8, oy - 0.8, size + 1.6, size + 1.6, r + 0.5);
+          ctx.strokeStyle = `rgba(244, 186, 68, ${0.78 + pulse * 0.18})`;
+          ctx.lineWidth = 2.3; ctx.stroke();
+          ctx.shadowBlur = 0;
+          roundRect(ctx, ox + 1.2, oy + 1.2, size - 2.4, size - 2.4, Math.max(2, r - 1));
+          ctx.strokeStyle = "rgba(255, 248, 214, 0.65)"; ctx.lineWidth = 1; ctx.stroke();
+          ctx.restore();
+        }
+
+        function drawWall(ctx, x, y, ts, r, c, walls, rows, cols) {
+          ctx.fillStyle = (r + c) % 2 === 0 ? CFG.wallBase : CFG.wallAlt;
+          ctx.fillRect(x - 0.4, y - 0.4, ts + 0.8, ts + 0.8);
+          const topExp = r === 0 || !walls[r - 1][c];
+          const leftExp = c === 0 || !walls[r][c - 1];
+          const botExp = r === rows - 1 || !walls[r + 1][c];
+          const rightExp = c === cols - 1 || !walls[r][c + 1];
+
+          ctx.save();
+          ctx.strokeStyle = CFG.seamColor;
+          ctx.globalAlpha = CFG.wallSeam * 0.45;
+          ctx.lineWidth = 1;
+          if (!topExp) { ctx.beginPath(); ctx.moveTo(x + 2, y + 0.5); ctx.lineTo(x + ts - 2, y + 0.5); ctx.stroke(); }
+          if (!leftExp) { ctx.beginPath(); ctx.moveTo(x + 0.5, y + 2); ctx.lineTo(x + 0.5, y + ts - 2); ctx.stroke(); }
+          ctx.restore();
+
+          const trim = Math.max(2, ts * 0.055);
+          if (topExp) { ctx.fillStyle = CFG.wallHi; ctx.fillRect(x, y, ts, trim); }
+          if (leftExp) { ctx.fillStyle = CFG.wallHi; ctx.globalAlpha = 0.72; ctx.fillRect(x, y, trim, ts); ctx.globalAlpha = 1; }
+          if (botExp) { ctx.fillStyle = CFG.wallLow; ctx.fillRect(x, y + ts - trim * 1.3, ts, trim * 1.3); }
+          if (rightExp) { ctx.fillStyle = CFG.wallRight; ctx.fillRect(x + ts - trim, y, trim, ts); }
+        }
+
+        function drawGoal(ctx, x, y, ts, lock, elapsed) {
+          const cx = x + ts / 2, cy = y + ts / 2, slotSize = ts * CFG.boxScale;
+          const ox = cx - slotSize / 2, oy = cy - slotSize / 2, r = ts * 0.13;
+          const breathe = 0.5 + 0.5 * Math.sin(elapsed * 2.1);
+
+          ctx.save();
+          roundRect(ctx, ox + 0.8, oy + 0.8, slotSize, slotSize, r);
+          ctx.strokeStyle = CFG.isDark ? "rgba(180, 200, 240, 0.14)" : "rgba(255, 253, 249, 0.82)";
+          ctx.lineWidth = 1.4; ctx.stroke();
+
+          const basinG = ctx.createLinearGradient(ox, oy, ox + slotSize, oy + slotSize);
+          if (CFG.isDark) {
+            basinG.addColorStop(0, "rgba(8, 12, 20, 0.72)"); basinG.addColorStop(1, "rgba(26, 34, 52, 0.45)");
+          } else {
+            basinG.addColorStop(0, "rgba(136, 130, 120, 0.44)");
+            basinG.addColorStop(0.55, "rgba(176, 170, 160, 0.28)");
+            basinG.addColorStop(1, "rgba(228, 223, 214, 0.40)");
+          }
+          roundRect(ctx, ox, oy, slotSize, slotSize, r);
+          ctx.fillStyle = basinG; ctx.fill();
+
+          ctx.save();
+          roundRect(ctx, ox, oy, slotSize, slotSize, r);
+          ctx.clip();
+          const shDepth = Math.max(5, slotSize * 0.24);
+          const topSh = ctx.createLinearGradient(ox, oy, ox, oy + shDepth);
+          topSh.addColorStop(0, "rgba(42, 48, 62, 0.34)"); topSh.addColorStop(1, "rgba(42, 48, 62, 0)");
+          ctx.fillStyle = topSh; ctx.fillRect(ox, oy, slotSize, shDepth);
+          const leftSh = ctx.createLinearGradient(ox, oy, ox + shDepth, oy);
+          leftSh.addColorStop(0, "rgba(42, 48, 62, 0.28)"); leftSh.addColorStop(1, "rgba(42, 48, 62, 0)");
+          ctx.fillStyle = leftSh; ctx.fillRect(ox, oy, shDepth, slotSize);
+          ctx.restore();
+
+          if (lock < 0.9) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, slotSize * (0.21 + breathe * 0.015), 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(182, 142, 68, ${(1 - lock) * (0.42 + breathe * 0.22)})`;
+            ctx.lineWidth = 1.5; ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(cx, cy, Math.max(2, slotSize * 0.05), 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(182, 142, 68, ${(1 - lock) * (0.56 + breathe * 0.24)})`;
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        function drawWaterPuddle(ctx, x, y, ts, isBox, elapsed, seed, ratio = 1) {
+          if (ratio <= 0.03) return;
+          const cx = x + ts / 2, cy = y + ts / 2;
+          const maxR = ts * (isBox ? 0.35 : 0.43) * (0.35 + 0.65 * ratio);
+          ctx.save();
+          ctx.globalAlpha = ratio;
+          const g = ctx.createRadialGradient(cx - maxR * 0.2, cy - maxR * 0.2, 2, cx, cy, maxR);
+          g.addColorStop(0, "rgba(186, 234, 255, 0.85)");
+          g.addColorStop(0.65, "rgba(122, 200, 236, 0.65)");
+          g.addColorStop(1, "rgba(92, 174, 214, 0.38)");
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(cx, cy, maxR, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.6)"; ctx.lineWidth = 1.1; ctx.stroke();
+
+          const rip = (elapsed * 0.5 + seed * 0.37) % 1;
+          ctx.strokeStyle = `rgba(255, 255, 255, ${(1 - rip) * 0.72})`;
+          ctx.lineWidth = 1.3;
+          ctx.beginPath(); ctx.arc(cx, cy, maxR * (0.18 + rip * 0.72), 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
+        }
+
+        function drawIceWall(ctx, x, y, ts, solidRatio = 1) {
+          if (solidRatio <= 0.03) return;
+          const size = ts * 0.84 * (0.35 + 0.65 * solidRatio);
+          const ox = x + (ts - size) / 2, oy = y + (ts - size) / 2;
+          const cx = ox + size / 2, cy = oy + size / 2;
+          castShadowRect(ctx, ox, oy, size, size, 2, ts * CFG.shadowLen * 0.85 * solidRatio, 0.16);
+          ctx.save();
+          ctx.globalAlpha = 0.94 * solidRatio;
+          const tri = (x1, y1, x2, y2, fill) => {
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.closePath();
+            ctx.fillStyle = fill; ctx.fill();
+          };
+          const x0 = ox, y0 = oy, x1 = ox + size, y1 = oy + size;
+          tri(x0, y0, x1, y0, "#D4F3FF"); tri(x0, y0, x0, y1, "#A6E2FC");
+          tri(x1, y0, x1, y1, "#6CC3EE"); tri(x0, y1, x1, y1, "#4CA6D9");
+
+          const crown = size * 0.52, crX = cx - crown / 2, crY = cy - crown / 2;
+          const cg = ctx.createLinearGradient(crX, crY, crX + crown, crY + crown);
+          cg.addColorStop(0, "rgba(246, 253, 255, 0.78)"); cg.addColorStop(1, "rgba(116, 200, 240, 0.78)");
+          ctx.fillStyle = cg; ctx.fillRect(crX, crY, crown, crown);
+
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.72)"; ctx.lineWidth = 1.1;
+          ctx.beginPath();
+          ctx.moveTo(x0, y0); ctx.lineTo(crX, crY); ctx.moveTo(x1, y0); ctx.lineTo(crX + crown, crY);
+          ctx.moveTo(x0, y1); ctx.lineTo(crX, crY + crown); ctx.moveTo(x1, y1); ctx.lineTo(crX + crown, crY + crown);
+          ctx.stroke();
+          ctx.strokeRect(crX + 0.5, crY + 0.5, crown - 1, crown - 1);
+          ctx.strokeRect(x0 + 0.5, y0 + 0.5, size - 1, size - 1);
+          ctx.restore();
+        }
+
+        function drawAmberWall(ctx, x, y, ts, solidRatio = 1) {
+          const baseSize = ts * 0.84, baseOx = x + (ts - baseSize) / 2, baseOy = y + (ts - baseSize) / 2;
+          if (solidRatio < 0.97) {
+            ctx.save();
+            ctx.globalAlpha = 1 - solidRatio;
+            ctx.fillStyle = "rgba(218, 166, 66, 0.08)";
+            ctx.fillRect(baseOx + 2, baseOy + 2, baseSize - 4, baseSize - 4);
+            ctx.strokeStyle = "rgba(202, 148, 52, 0.45)";
+            ctx.lineWidth = 1.3; ctx.setLineDash([4, 4]);
+            ctx.strokeRect(baseOx + 2, baseOy + 2, baseSize - 4, baseSize - 4);
+            ctx.setLineDash([]);
+            ctx.restore();
+          }
+          if (solidRatio <= 0.03) return;
+          const size = baseSize * (0.35 + 0.65 * solidRatio);
+          const ox = x + (ts - size) / 2, oy = y + (ts - size) / 2;
+          const cx = ox + size / 2, cy = oy + size / 2;
+          castShadowRect(ctx, ox, oy, size, size, 2, ts * CFG.shadowLen * 0.85 * solidRatio, 0.16);
+          ctx.save();
+          ctx.globalAlpha = 0.95 * solidRatio;
+          const tri = (x1, y1, x2, y2, fill) => {
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.closePath();
+            ctx.fillStyle = fill; ctx.fill();
+          };
+          const x0 = ox, y0 = oy, x1 = ox + size, y1 = oy + size;
+          tri(x0, y0, x1, y0, "#FFF0B5"); tri(x0, y0, x0, y1, "#F7C95E");
+          tri(x1, y0, x1, y1, "#DB982A"); tri(x0, y1, x1, y1, "#B87418");
+
+          const crown = size * 0.52, crX = cx - crown / 2, crY = cy - crown / 2;
+          const cg = ctx.createLinearGradient(crX, crY, crX + crown, crY + crown);
+          cg.addColorStop(0, "rgba(255, 252, 236, 0.86)"); cg.addColorStop(1, "rgba(218, 152, 42, 0.84)");
+          ctx.fillStyle = cg; ctx.fillRect(crX, crY, crown, crown);
+
+          ctx.strokeStyle = "rgba(255, 250, 224, 0.78)"; ctx.lineWidth = 1.1;
+          ctx.beginPath();
+          ctx.moveTo(x0, y0); ctx.lineTo(crX, crY); ctx.moveTo(x1, y0); ctx.lineTo(crX + crown, crY);
+          ctx.moveTo(x0, y1); ctx.lineTo(crX, crY + crown); ctx.moveTo(x1, y1); ctx.lineTo(crX + crown, crY + crown);
+          ctx.stroke();
+          ctx.strokeRect(crX + 0.5, crY + 0.5, crown - 1, crown - 1);
+          ctx.strokeRect(x0 + 0.5, y0 + 0.5, size - 1, size - 1);
+          ctx.restore();
+        }
+
+        function drawWoodBox(ctx, x, y, ts, onGoal, elapsed, scaleMult = 1) {
+          const size = ts * CFG.boxScale * scaleMult, ox = x + (ts - size) / 2, oy = y + (ts - size) / 2, r = ts * 0.13 * scaleMult;
+          if (!onGoal) castShadowRect(ctx, ox, oy, size, size, r, ts * CFG.shadowLen * 0.7, 0.17);
+          ctx.save();
+          const g = ctx.createLinearGradient(ox, oy, ox + size, oy + size);
+          g.addColorStop(0, "#E3B686"); g.addColorStop(0.55, "#CF9A64"); g.addColorStop(1, "#B67E4A");
+          roundRect(ctx, ox, oy, size, size, r);
+          ctx.fillStyle = g; ctx.fill();
+
+          ctx.save();
+          roundRect(ctx, ox, oy, size, size, r);
+          ctx.clip();
+          const hiG = ctx.createLinearGradient(ox, oy, ox, oy + size * 0.36);
+          hiG.addColorStop(0, "rgba(255, 250, 242, 0.34)"); hiG.addColorStop(1, "rgba(255, 250, 242, 0)");
+          ctx.fillStyle = hiG; ctx.fillRect(ox, oy, size, size * 0.36);
+          ctx.strokeStyle = onGoal ? "rgba(255, 232, 152, 0.58)" : "rgba(115, 68, 28, 0.15)";
+          ctx.lineWidth = onGoal ? 1.35 : 1;
+          ctx.beginPath();
+          ctx.moveTo(ox, oy + size * 0.34); ctx.lineTo(ox + size, oy + size * 0.34);
+          ctx.moveTo(ox, oy + size * 0.67); ctx.lineTo(ox + size, oy + size * 0.67);
+          ctx.stroke();
+          ctx.restore();
+
+          roundRect(ctx, ox, oy, size, size, r);
+          ctx.strokeStyle = "rgba(255, 244, 230, 0.45)"; ctx.lineWidth = 1.2; ctx.stroke();
+          ctx.restore();
+
+          if (onGoal) drawLockGoldSeam(ctx, ox, oy, size, r, elapsed);
+        }
+
+        function drawIceBox(ctx, x, y, ts, onGoal, elapsed, solidRatio = 1, scaleMult = 1) {
+          if (solidRatio <= 0.03) return;
+          const cx = x + ts / 2, cy = y + ts / 2, size = ts * CFG.boxScale * (0.3 + 0.7 * solidRatio) * scaleMult;
+          const ox = cx - size / 2, oy = cy - size / 2, r = Math.max(3, ts * 0.13 * solidRatio);
+          if (!onGoal) castShadowRect(ctx, ox, oy, size, size, r, ts * CFG.shadowLen * 0.7 * solidRatio, 0.16);
+          ctx.save();
+          ctx.globalAlpha = solidRatio;
+          const g = ctx.createLinearGradient(ox, oy, ox + size, oy + size);
+          g.addColorStop(0, "#C4EEFF"); g.addColorStop(0.52, "#6AC4F2"); g.addColorStop(1, "#3B9AD4");
+          roundRect(ctx, ox, oy, size, size, r);
+          ctx.fillStyle = g; ctx.fill();
+
+          ctx.save();
+          roundRect(ctx, ox, oy, size, size, r);
+          ctx.clip();
+          const frostG = ctx.createRadialGradient(cx - size * 0.06, cy - size * 0.06, 1, cx, cy, size * 0.46);
+          frostG.addColorStop(0, onGoal ? "rgba(255, 248, 212, 0.76)" : "rgba(255, 255, 255, 0.78)");
+          frostG.addColorStop(0.5, onGoal ? "rgba(255, 224, 128, 0.24)" : "rgba(218, 245, 255, 0.30)");
+          frostG.addColorStop(1, "rgba(120, 205, 248, 0)");
+          ctx.fillStyle = frostG; ctx.fillRect(ox, oy, size, size);
+          ctx.restore();
+
+          const flakeR = size * 0.24, branchR = flakeR * 0.56, tick = flakeR * 0.27;
+          ctx.save();
+          if (onGoal) { ctx.shadowColor = "rgba(230, 152, 24, 0.85)"; ctx.shadowBlur = 6; }
+          ctx.strokeStyle = onGoal ? "#FFE58A" : "rgba(255, 255, 255, 0.94)";
+          ctx.lineWidth = Math.max(onGoal ? 1.8 : 1.4, ts * (onGoal ? 0.032 : 0.025));
+          ctx.lineCap = "round";
+          for (let i = 0; i < 6; i++) {
+            const a = (Math.PI * i) / 3 - Math.PI / 2, cos = Math.cos(a), sin = Math.sin(a);
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + cos * flakeR, cy + sin * flakeR);
+            const bx = cx + cos * branchR, by = cy + sin * branchR;
+            ctx.moveTo(bx + Math.cos(a - 0.8) * tick, by + Math.sin(a - 0.8) * tick);
+            ctx.lineTo(bx, by);
+            ctx.lineTo(bx + Math.cos(a + 0.8) * tick, by + Math.sin(a + 0.8) * tick);
+            ctx.stroke();
+          }
+          ctx.restore();
+
+          roundRect(ctx, ox, oy, size, size, r);
+          ctx.strokeStyle = "rgba(240, 252, 255, 0.85)"; ctx.lineWidth = 1.35; ctx.stroke();
+          ctx.restore();
+
+          if (onGoal && solidRatio > 0.6) drawLockGoldSeam(ctx, ox, oy, size, r, elapsed);
+        }
+
+        function drawAmberBox(ctx, x, y, ts, solidRatio, onGoal, elapsed, scaleMult = 1) {
+          const cx = x + ts / 2, cy = y + ts / 2;
+          const baseSize = ts * CFG.boxScale, baseOx = cx - baseSize / 2, baseOy = cy - baseSize / 2, baseR = ts * 0.13;
+          if (solidRatio < 0.97) {
+            ctx.save();
+            ctx.globalAlpha = 1 - solidRatio;
+            roundRect(ctx, baseOx, baseOy, baseSize, baseSize, baseR);
+            ctx.fillStyle = "rgba(218, 166, 66, 0.08)"; ctx.fill();
+            ctx.strokeStyle = "rgba(202, 148, 52, 0.45)";
+            ctx.lineWidth = 1.3; ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
+            ctx.beginPath(); ctx.arc(cx, cy, ts * 0.06, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(224, 168, 58, 0.52)"; ctx.fill();
+            ctx.restore();
+          }
+          if (solidRatio <= 0.03) return;
+          const size = baseSize * (0.3 + 0.7 * solidRatio) * scaleMult;
+          const ox = cx - size / 2, oy = cy - size / 2, r = Math.max(3, baseR * solidRatio);
+          if (!onGoal) castShadowRect(ctx, ox, oy, size, size, r, ts * CFG.shadowLen * 0.7 * solidRatio, 0.16);
+          ctx.save();
+          ctx.globalAlpha = solidRatio;
+          const g = ctx.createLinearGradient(ox, oy, ox + size, oy + size);
+          g.addColorStop(0, "#FFE99E"); g.addColorStop(0.52, "#F0B542"); g.addColorStop(1, "#CB851E");
+          roundRect(ctx, ox, oy, size, size, r);
+          ctx.fillStyle = g; ctx.fill();
+
+          ctx.save();
+          roundRect(ctx, ox, oy, size, size, r);
+          ctx.clip();
+          const orbG = ctx.createRadialGradient(cx - size * 0.06, cy - size * 0.06, 1, cx, cy, size * (onGoal ? 0.5 : 0.44));
+          orbG.addColorStop(0, onGoal ? "rgba(255, 255, 250, 0.98)" : "rgba(255, 254, 245, 0.92)");
+          orbG.addColorStop(0.45, onGoal ? "rgba(255, 246, 198, 0.62)" : "rgba(255, 244, 196, 0.42)");
+          orbG.addColorStop(1, "rgba(255, 220, 120, 0)");
+          ctx.fillStyle = orbG; ctx.fillRect(ox, oy, size, size);
+          ctx.restore();
+
+          roundRect(ctx, ox, oy, size, size, r);
+          ctx.strokeStyle = "rgba(255, 250, 224, 0.72)"; ctx.lineWidth = 1.25; ctx.stroke();
+          ctx.restore();
+
+          if (onGoal && solidRatio > 0.6) drawLockGoldSeam(ctx, ox, oy, size, r, elapsed);
+        }
+
+        function drawSunTower(ctx, x, y, ts, elapsed) {
+          const cx = x + ts / 2, cy = y + ts / 2, pulse = 1 + Math.sin(elapsed * 2.5) * 0.04;
+          ctx.fillStyle = CFG.wallBase; ctx.fillRect(x, y, ts, ts);
+          ctx.strokeStyle = CFG.wallLow; ctx.lineWidth = 1.4; ctx.strokeRect(x + 1, y + 1, ts - 2, ts - 2);
+
+          const glow = ctx.createRadialGradient(cx, cy, 2, cx, cy, ts * 0.65 * pulse);
+          glow.addColorStop(0, "rgba(255, 232, 146, 0.88)");
+          glow.addColorStop(0.55, "rgba(236, 178, 62, 0.25)");
+          glow.addColorStop(1, "rgba(236, 178, 62, 0)");
+          ctx.fillStyle = glow;
+          ctx.beginPath(); ctx.arc(cx, cy, ts * 0.65 * pulse, 0, Math.PI * 2); ctx.fill();
+
+          ctx.save();
+          ctx.translate(cx, cy); ctx.rotate(elapsed * 0.7);
+          ctx.strokeStyle = "#DF9F32"; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(0, 0, ts * 0.31, 0, Math.PI * 2); ctx.stroke();
+          ctx.fillStyle = "#E8A838";
+          for (let i = 0; i < 8; i++) {
+            const a = (Math.PI * 2 * i) / 8;
+            ctx.beginPath(); ctx.arc(Math.cos(a) * ts * 0.37, Math.sin(a) * ts * 0.37, 2, 0, Math.PI * 2); ctx.fill();
+          }
+          ctx.restore();
+
+          const orbGrad = ctx.createRadialGradient(cx - 2, cy - 2, 1, cx, cy, ts * 0.21);
+          orbGrad.addColorStop(0, "#FFFFFF"); orbGrad.addColorStop(0.65, "#FFF2BA"); orbGrad.addColorStop(1, "#E8A838");
+          ctx.fillStyle = orbGrad;
+          ctx.beginPath(); ctx.arc(cx, cy, ts * 0.21 * pulse, 0, Math.PI * 2); ctx.fill();
+        }
+
+        function drawLantern(ctx, x, y, ts, elapsed) {
+          const cx = x + ts / 2, cy = y + ts / 2, baseR = ts * 0.37, pulse = 1 + Math.sin(elapsed * 3) * 0.05;
+          castShadowCircle(ctx, cx, cy, baseR, ts * CFG.shadowLen * 0.7, 0.16);
+          const halo = ctx.createRadialGradient(cx, cy, 2, cx, cy, ts * 0.62 * pulse);
+          halo.addColorStop(0, "rgba(255, 232, 140, 0.72)"); halo.addColorStop(1, "rgba(255, 210, 96, 0)");
+          ctx.fillStyle = halo;
+          ctx.beginPath(); ctx.arc(cx, cy, ts * 0.62 * pulse, 0, Math.PI * 2); ctx.fill();
+
+          const stoneG = ctx.createLinearGradient(cx - baseR, cy - baseR, cx + baseR, cy + baseR);
+          stoneG.addColorStop(0, "#FCFBF8"); stoneG.addColorStop(0.6, "#EAE4DA"); stoneG.addColorStop(1, "#D5CEC0");
+          ctx.beginPath(); ctx.arc(cx, cy, baseR, 0, Math.PI * 2);
+          ctx.fillStyle = stoneG; ctx.fill();
+          ctx.strokeStyle = "rgba(176, 168, 154, 0.7)"; ctx.lineWidth = 1.2; ctx.stroke();
+
+          ctx.beginPath(); ctx.arc(cx, cy, baseR * 0.76, 0, Math.PI * 2);
+          ctx.strokeStyle = "#DDA23C"; ctx.lineWidth = 1.8; ctx.stroke();
+
+          const coreGrad = ctx.createRadialGradient(cx - 2, cy - 2, 1, cx, cy, baseR * 0.5);
+          coreGrad.addColorStop(0, "#FFFFFF"); coreGrad.addColorStop(0.65, "#FFF2B8"); coreGrad.addColorStop(1, "#E8A838");
+          ctx.fillStyle = coreGrad;
+          ctx.beginPath(); ctx.arc(cx, cy, baseR * 0.5 * pulse, 0, Math.PI * 2); ctx.fill();
+        }
+
+        function drawSpotlight(ctx, x, y, ts, kind, elapsed) {
+          const cx = x + ts / 2, cy = y + ts / 2, baseR = ts * 0.37;
+          const ang = { ">": 0, "v": Math.PI / 2, "<": Math.PI, "^": -Math.PI / 2 }[kind] || 0;
+          const pulse = 1 + Math.sin((elapsed || 0) * 2.6) * 0.04;
+          castShadowCircle(ctx, cx, cy, baseR, ts * CFG.shadowLen * 0.7, 0.17);
+
+          ctx.save();
+          ctx.translate(cx, cy); ctx.rotate(ang);
+          const cone = ctx.createRadialGradient(baseR * 0.35, 0, 2, baseR * 0.75, 0, ts * 0.48 * pulse);
+          cone.addColorStop(0, "rgba(255, 232, 138, 0.78)");
+          cone.addColorStop(0.6, "rgba(255, 214, 102, 0.22)");
+          cone.addColorStop(1, "rgba(255, 214, 102, 0)");
+          ctx.fillStyle = cone;
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, ts * 0.48 * pulse, -0.52, 0.52); ctx.closePath(); ctx.fill();
+
+          const shellG = ctx.createLinearGradient(-baseR, -baseR, baseR * 0.4, baseR);
+          shellG.addColorStop(0, "#FCFBF8"); shellG.addColorStop(0.55, "#EAE4DA"); shellG.addColorStop(1, "#CFC7B8");
+          ctx.beginPath(); ctx.arc(0, 0, baseR, 0, Math.PI * 2);
+          ctx.fillStyle = shellG; ctx.fill();
+          ctx.strokeStyle = "rgba(176, 168, 154, 0.72)"; ctx.lineWidth = 1.2; ctx.stroke();
+
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, baseR * 0.94, -0.56, 0.56); ctx.closePath();
+          const cavityG = ctx.createLinearGradient(0, -baseR * 0.45, baseR, baseR * 0.45);
+          cavityG.addColorStop(0, "#FFF7D4"); cavityG.addColorStop(0.55, "#F2C052"); cavityG.addColorStop(1, "#DC9A2D");
+          ctx.fillStyle = cavityG; ctx.fill();
+
+          ctx.beginPath(); ctx.arc(0, 0, baseR * 0.75, 0.82, Math.PI * 2 - 0.82);
+          ctx.strokeStyle = "rgba(214, 162, 68, 0.78)"; ctx.lineWidth = 1.8; ctx.lineCap = "round"; ctx.stroke();
+
+          const orbX = baseR * 0.24, orbR = baseR * 0.36 * pulse;
+          const orbG = ctx.createRadialGradient(orbX - 1.5, -1.5, 1, orbX, 0, orbR);
+          orbG.addColorStop(0, "#FFFFFF"); orbG.addColorStop(0.62, "#FFF2B5"); orbG.addColorStop(1, "#E5A032");
+          ctx.beginPath(); ctx.arc(orbX, 0, orbR, 0, Math.PI * 2); ctx.fillStyle = orbG; ctx.fill();
+          ctx.restore();
+        }
+
+        function drawMirror(ctx, x, y, ts, kind, isHit) {
+          const cx = x + ts / 2, cy = y + ts / 2, baseR = ts * 0.37;
+          castShadowCircle(ctx, cx, cy, baseR, ts * CFG.shadowLen * 0.7, 0.16);
+          const stoneG = ctx.createLinearGradient(cx - baseR, cy - baseR, cx + baseR, cy + baseR);
+          stoneG.addColorStop(0, "#FCFBF8"); stoneG.addColorStop(0.6, "#EAE4DA"); stoneG.addColorStop(1, "#D5CEC0");
+          ctx.beginPath(); ctx.arc(cx, cy, baseR, 0, Math.PI * 2);
+          ctx.fillStyle = stoneG; ctx.fill();
+          ctx.strokeStyle = isHit ? "#E8A838" : "rgba(176, 168, 154, 0.7)";
+          ctx.lineWidth = isHit ? 2 : 1.2; ctx.stroke();
+
+          const len = baseR * 0.68;
+          const x1 = kind === "\\" ? cx - len : cx + len, y1 = cy - len;
+          const x2 = kind === "\\" ? cx + len : cx - len, y2 = cy + len;
+          ctx.save();
+          ctx.lineCap = "round";
+          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+          ctx.strokeStyle = "#DDA23C"; ctx.lineWidth = Math.max(6.5, ts * 0.13); ctx.stroke();
+          if (isHit) { ctx.shadowColor = "rgba(185, 242, 255, 0.95)"; ctx.shadowBlur = 10; }
+          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+          ctx.strokeStyle = isHit ? "#FFFFFF" : "#A6E2FC"; ctx.lineWidth = Math.max(3.2, ts * 0.065); ctx.stroke();
+          ctx.restore();
+        }
+
+        function drawBeams(ctx, bx, by, ts, beams) {
+          if (!beams || !beams.length) return;
+          ctx.save();
+          if (CFG.isDark) ctx.globalCompositeOperation = "lighter";
+          ctx.lineCap = "round";
+          ctx.strokeStyle = `rgba(${CFG.beamOuterRgb}, ${CFG.isDark ? 0.38 : CFG.beamGlow})`;
+          ctx.lineWidth = ts * (CFG.isDark ? 0.36 : 0.3);
+          beams.forEach(b => {
+            ctx.beginPath();
+            ctx.moveTo(bx + (b.c1 + 0.5) * ts, by + (b.r1 + 0.5) * ts);
+            ctx.lineTo(bx + (b.c2 + 0.5) * ts, by + (b.r2 + 0.5) * ts);
+            ctx.stroke();
+          });
+          ctx.strokeStyle = `rgba(${CFG.beamCoreRgb}, ${CFG.isDark ? 0.85 : 0.72})`;
+          ctx.lineWidth = ts * 0.075;
+          beams.forEach(b => {
+            ctx.beginPath();
+            ctx.moveTo(bx + (b.c1 + 0.5) * ts, by + (b.r1 + 0.5) * ts);
+            ctx.lineTo(bx + (b.c2 + 0.5) * ts, by + (b.r2 + 0.5) * ts);
+            ctx.stroke();
+          });
+          ctx.restore();
+        }
+
+        function drawOcclusionShadows(ctx, bx, by, ts, blockers) {
+          if (!blockers || !blockers.length) return;
+          ctx.save();
+          blockers.forEach(b => {
+            const cx = bx + (b.c + 0.5) * ts, cy = by + (b.r + 0.5) * ts;
+            const len = ts * 0.82;
+            const width = ts * (b.kind === "V" ? 0.74 : b.kind === "P" ? 0.52 : 0.64);
+            const g = ctx.createLinearGradient(cx, cy, cx + b.dc * len, cy + b.dr * len);
+            g.addColorStop(0, `rgba(${CFG.shadowRgb}, ${CFG.isDark ? 0.38 : 0.22})`);
+            g.addColorStop(1, `rgba(${CFG.shadowRgb}, 0)`);
+            ctx.fillStyle = g;
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(Math.atan2(b.dr, b.dc));
+            ctx.fillRect(0, -width / 2, len, width);
+            ctx.restore();
+          });
+          ctx.restore();
+        }
+
+        function drawLitRims(ctx, bx, by, ts, blockers) {
+          if (!blockers || !blockers.length) return;
+          ctx.save();
+          ctx.strokeStyle = "rgba(255, 240, 178, 0.88)";
+          ctx.lineWidth = Math.max(2, ts * 0.042);
+          ctx.lineCap = "round";
+          ctx.shadowColor = "rgba(255, 212, 102, 0.75)";
+          ctx.shadowBlur = 7;
+          blockers.forEach(b => {
+            const cx = bx + (b.c + 0.5) * ts, cy = by + (b.r + 0.5) * ts;
+            const ang = Math.atan2(-b.dr, -b.dc);
+            if (b.kind === "P" || b.kind === "L" || GameEngine.SPOT_DIRS[b.kind]) {
+              const rad = ts * (b.kind === "P" ? 0.29 : 0.38);
+              ctx.beginPath(); ctx.arc(cx, cy, rad, ang - 0.85, ang + 0.85); ctx.stroke();
+            } else {
+              const half = ts * (b.kind === "V" ? 0.41 : CFG.boxScale * 0.5);
+              const ex = cx - b.dc * half, ey = cy - b.dr * half;
+              const span = half * 0.74;
+              ctx.beginPath();
+              if (b.dc !== 0) { ctx.moveTo(ex, ey - span); ctx.lineTo(ex, ey + span); }
+              else { ctx.moveTo(ex - span, ey); ctx.lineTo(ex + span, ey); }
+              ctx.stroke();
+            }
+          });
+          ctx.restore();
+        }
+
+        function drawHero(ctx, x, y, ts, dir, hop, heroId = "traveler", bumpDx = 0, bumpDy = 0, elapsed = 0, pushSquash = 0, pushDr = 0, pushDc = 0) {
+          const cx = x + ts / 2 + bumpDx, cy = y + ts / 2 + bumpDy;
+          const breathe = 1 + Math.sin(elapsed * 2.25) * 0.022;
+          const hopScale = 1 + Math.sin(hop * Math.PI) * 0.13;
+          const hopLift = Math.sin(hop * Math.PI) * ts * 0.095;
+          const sq = Math.sin(pushSquash * Math.PI) * 0.13;
+          const sx = (pushDc !== 0 ? 1 - sq : 1 + sq * 0.65) * hopScale * breathe;
+          const sy = (pushDr !== 0 ? 1 - sq : 1 + sq * 0.65) * hopScale * breathe;
+          castShadowCircle(ctx, cx, cy, ts * 0.28, ts * CFG.shadowLen * 0.65 + hopLift * 0.5, 0.18);
+
+          ctx.save();
+          ctx.translate(cx, cy - hopLift);
+          ctx.scale(sx, sy);
+
+          if (heroId === "bamboo") {
+            ctx.beginPath(); ctx.arc(0, 0, ts * 0.3, 0, Math.PI * 2);
+            ctx.fillStyle = "#5B8E74"; ctx.fill();
+            const hatG = ctx.createRadialGradient(-2, -2, 1, 0, 0, ts * 0.34);
+            hatG.addColorStop(0, "#EFE0B4"); hatG.addColorStop(0.7, "#D4B36A"); hatG.addColorStop(1, "#A8843E");
+            ctx.beginPath(); ctx.arc(0, 0, ts * 0.33, 0, Math.PI * 2);
+            ctx.fillStyle = hatG; ctx.fill();
+            ctx.strokeStyle = "#8C6B2E"; ctx.lineWidth = 1.2; ctx.stroke();
+            ctx.beginPath(); ctx.arc(0, 0, ts * 0.08, 0, Math.PI * 2);
+            ctx.fillStyle = "#FFF7DF"; ctx.fill();
+          } else if (heroId === "snow") {
+            ctx.beginPath(); ctx.arc(0, 0, ts * 0.27, 0, Math.PI * 2);
+            ctx.fillStyle = "#FFFFFF"; ctx.fill();
+            ctx.strokeStyle = "#C8DDF0"; ctx.lineWidth = 1.4; ctx.stroke();
+            const earOff = ts * 0.26;
+            ctx.fillStyle = "#E8A23C";
+            if (dir === "up" || dir === "down") {
+              ctx.beginPath(); ctx.arc(-earOff, 0, ts * 0.08, 0, Math.PI * 2); ctx.fill();
+              ctx.beginPath(); ctx.arc(earOff, 0, ts * 0.08, 0, Math.PI * 2); ctx.fill();
+            } else {
+              ctx.beginPath(); ctx.arc(0, -earOff, ts * 0.08, 0, Math.PI * 2); ctx.fill();
+              ctx.beginPath(); ctx.arc(0, earOff, ts * 0.08, 0, Math.PI * 2); ctx.fill();
+            }
+          } else if (heroId === "star") {
+            ctx.beginPath(); ctx.arc(0, 0, ts * 0.28, 0, Math.PI * 2);
+            ctx.fillStyle = "#2E3A58"; ctx.fill();
+            ctx.strokeStyle = "#F0C050"; ctx.lineWidth = 1.6; ctx.stroke();
+            ctx.beginPath(); ctx.arc(0, 0, ts * 0.19, 0, Math.PI * 2);
+            ctx.fillStyle = "#1E273D"; ctx.fill();
+          } else {
+            ctx.beginPath(); ctx.arc(0, 0, ts * 0.28, 0, Math.PI * 2);
+            ctx.fillStyle = "#FCFBF8"; ctx.fill();
+            ctx.strokeStyle = "#DED7CA"; ctx.lineWidth = 1.4; ctx.stroke();
+            ctx.beginPath(); ctx.arc(0, 0, ts * 0.21, 0, Math.PI * 2);
+            ctx.fillStyle = "#D96552"; ctx.fill();
+            const headGrad = ctx.createRadialGradient(-2, -2, 1, 0, 0, ts * 0.17);
+            headGrad.addColorStop(0, "#FFFFFF"); headGrad.addColorStop(1, "#EDE7DC");
+            ctx.fillStyle = headGrad;
+            ctx.beginPath(); ctx.arc(0, 0, ts * 0.17, 0, Math.PI * 2); ctx.fill();
+          }
+
+          if (heroId !== "bamboo") {
+            const gaze = { up: [0, -ts * 0.08], down: [0, ts * 0.08], left: [-ts * 0.08, 0], right: [ts * 0.08, 0] }[dir] || [ts * 0.08, 0];
+            const perp = (dir === "up" || dir === "down") ? [[-ts * 0.055, 0], [ts * 0.055, 0]] : [[0, -ts * 0.055], [0, ts * 0.055]];
+            ctx.fillStyle = heroId === "star" ? "#FFE48A" : "#262932";
+            perp.forEach(([px, py]) => {
+              ctx.beginPath(); ctx.arc(gaze[0] + px, gaze[1] + py, Math.max(1.8, ts * 0.032), 0, Math.PI * 2); ctx.fill();
+            });
+          }
+          ctx.restore();
+        }
+
+        function drawHoverHalo(ctx, x, y, ts, isCircle, rgb, alpha) {
+          ctx.save();
+          ctx.strokeStyle = `rgba(${rgb}, ${alpha * 0.65})`;
+          ctx.lineWidth = 2;
+          if (isCircle) {
+            ctx.beginPath(); ctx.arc(x + ts / 2, y + ts / 2, ts * 0.43, 0, Math.PI * 2); ctx.stroke();
+          } else {
+            const s = ts * CFG.boxScale + 8;
+            roundRect(ctx, x + (ts - s) / 2, y + (ts - s) / 2, s, s, ts * 0.16);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        function drawSuppressFrame(ctx, x, y, ts, kind, elapsed) {
+          const p = 4, l = ts * 0.14;
+          const pulse = 0.65 + 0.35 * Math.sin(elapsed * 3.8);
+          ctx.save();
+          ctx.strokeStyle = kind === "C" ? `rgba(75, 168, 216, ${pulse})` : `rgba(217, 150, 38, ${pulse})`;
+          ctx.lineWidth = 1.8;
+          ctx.lineCap = "round";
+          [
+            [x + p, y + p, 1, 1], [x + ts - p, y + p, -1, 1],
+            [x + p, y + ts - p, 1, -1], [x + ts - p, y + ts - p, -1, -1]
+          ].forEach(([cx0, cy0, dx, dy]) => {
+            ctx.beginPath();
+            ctx.moveTo(cx0 + dx * l, cy0); ctx.lineTo(cx0, cy0); ctx.lineTo(cx0, cy0 + dy * l);
+            ctx.stroke();
+          });
+          ctx.restore();
+        }
+
+        function drawGuideArrow(ctx, x, y, ts, dr, dc, elapsed) {
+          const shift = Math.sin(elapsed * 4.8) * ts * 0.08;
+          const alpha = 0.56 + 0.36 * (0.5 + 0.5 * Math.sin(elapsed * 4.8));
+          const ang = Math.atan2(dr, dc), arm = ts * 0.13;
+          ctx.save();
+          ctx.translate(x + ts * 0.5 + dc * (ts * 0.46 + shift), y + ts * 0.5 + dr * (ts * 0.46 + shift));
+          ctx.rotate(ang);
+          ctx.strokeStyle = `rgba(229, 164, 53, ${alpha})`;
+          ctx.lineWidth = Math.max(2.4, ts * 0.045);
+          ctx.lineCap = "round"; ctx.lineJoin = "round";
+          ctx.shadowColor = "rgba(229, 164, 53, 0.45)"; ctx.shadowBlur = 6;
+          [-arm * 0.65, arm * 0.45].forEach((dx, idx) => {
+            ctx.globalAlpha = idx === 0 ? alpha * 0.55 : alpha;
+            ctx.beginPath();
+            ctx.moveTo(dx - arm * 0.65, -arm * 0.78);
+            ctx.lineTo(dx + arm * 0.35, 0);
+            ctx.lineTo(dx - arm * 0.65, arm * 0.78);
+            ctx.stroke();
+          });
+          ctx.restore();
+        }
+
+        function drawGoalRipple(ctx, x, y, ts, prog, isVictory = false) {
+          const base = ts * CFG.boxScale, grow = ts * (isVictory ? 0.42 : 0.24) * prog;
+          const size = base + grow * 2, ox = x + (ts - size) / 2, oy = y + (ts - size) / 2;
+          const r = ts * 0.13 + grow * 0.35;
+          ctx.save();
+          ctx.globalAlpha = (1 - prog) * (isVictory ? 0.85 : 0.72);
+          ctx.strokeStyle = isVictory ? "#FFE58A" : "#F2BC49";
+          ctx.lineWidth = (isVictory ? 3 : 2.2) * (1 - prog * 0.5);
+          ctx.shadowColor = "rgba(244, 186, 68, 0.7)"; ctx.shadowBlur = 10 * (1 - prog);
+          roundRect(ctx, ox, oy, size, size, r);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        function drawWalkTarget(ctx, x, y, ts, elapsed) {
+          const cx = x + ts / 2, cy = y + ts / 2, p = (elapsed * 1.4) % 1;
+          ctx.save();
+          ctx.beginPath(); ctx.arc(cx, cy, ts * (0.14 + p * 0.22), 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(229, 164, 53, ${(1 - p) * 0.7})`;
+          ctx.lineWidth = 1.8; ctx.stroke();
+          ctx.restore();
+        }
+
+        function drawTouchFeedback(ctx, fb) {
+          if (!fb || !fb.active) return;
+          const totalDrag = Math.hypot(fb.curX - fb.downX, fb.curY - fb.downY);
+          if (!fb.didSwipe && totalDrag < 10) return;
+          const dx = fb.curX - fb.anchorX, dy = fb.curY - fb.anchorY;
+          const dist = Math.hypot(dx, dy), maxR = 26;
+          const clampedX = fb.anchorX + (dist > maxR ? (dx / dist) * maxR : dx);
+          const clampedY = fb.anchorY + (dist > maxR ? (dy / dist) * maxR : dy);
+          ctx.save();
+          ctx.beginPath(); ctx.arc(fb.anchorX, fb.anchorY, 24, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(229, 164, 53, 0.42)"; ctx.lineWidth = 2; ctx.stroke();
+          ctx.fillStyle = "rgba(255, 243, 212, 0.22)"; ctx.fill();
+          ctx.beginPath(); ctx.arc(clampedX, clampedY, 8, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(229, 164, 53, 0.78)"; ctx.fill();
+          ctx.restore();
+        }
+
+        function drawSquareMat(ctx, x, y, ts, kind, ratio = 0.85, solidBorder = false) {
+          const size = ts * ratio, ox = x + (ts - size) / 2, oy = y + (ts - size) / 2, r = ts * 0.15;
+          ctx.save();
+          roundRect(ctx, ox, oy, size, size, r);
+          if (kind === "C") {
+            ctx.fillStyle = "rgba(110, 194, 236, 0.34)"; ctx.fill();
+            ctx.strokeStyle = solidBorder ? "#4BA8D8" : "rgba(104, 186, 228, 0.65)";
+            ctx.lineWidth = solidBorder ? 1.8 : 1.3; ctx.stroke();
+          } else {
+            ctx.fillStyle = "rgba(232, 174, 58, 0.26)"; ctx.fill();
+            ctx.strokeStyle = solidBorder ? "#D99626" : "rgba(212, 154, 48, 0.65)";
+            ctx.lineWidth = solidBorder ? 1.8 : 1.3; ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        function drawCFJadeCore(ctx, x, y, ts, innerKind) {
+          const cx = x + ts / 2, cy = y + ts / 2, inner = ts * 0.36, r = ts * 0.08;
+          ctx.save();
+          const g = ctx.createLinearGradient(cx - inner / 2, cy - inner / 2, cx + inner / 2, cy + inner / 2);
+          if (innerKind === "F") { g.addColorStop(0, "#FFF0B3"); g.addColorStop(1, "#DC9522"); }
+          else { g.addColorStop(0, "#D8F5FF"); g.addColorStop(1, "#4BA8DA"); }
+          roundRect(ctx, cx - inner / 2, cy - inner / 2, inner, inner, r);
+          ctx.fillStyle = g; ctx.fill();
+          ctx.strokeStyle = innerKind === "F" ? "rgba(255, 252, 236, 0.92)" : "rgba(244, 252, 255, 0.94)";
+          ctx.lineWidth = 1.3; ctx.stroke();
+          ctx.restore();
+        }
+
+        function drawSealedCrown(ctx, x, y, ts, innerKind, solidRatio = 1) {
+          if (solidRatio <= 0.25) return;
+          const size = ts * 0.84 * (0.35 + 0.65 * solidRatio), crown = size * 0.52;
+          const cx = x + ts / 2, cy = y + ts / 2, pad = 2;
+          if (crown <= pad * 2 + 2) return;
+          ctx.save();
+          ctx.globalAlpha = Math.min(1, solidRatio);
+          ctx.fillStyle = innerKind === "F" ? "rgba(244, 186, 68, 0.80)" : "rgba(104, 194, 238, 0.84)";
+          ctx.fillRect(cx - crown / 2 + pad, cy - crown / 2 + pad, crown - pad * 2, crown - pad * 2);
+          ctx.restore();
+        }
+
+        return {
+          CFG, applyTheme, lerpHex, castShadowRect,
+          drawIslandBase, drawWall, drawGoal, drawWaterPuddle, drawIceWall, drawAmberWall,
+          drawWoodBox, drawIceBox, drawAmberBox, drawSunTower, drawLantern, drawSpotlight, drawMirror,
+          drawBeams, drawOcclusionShadows, drawLitRims, drawHero,
+          drawHoverHalo, drawSuppressFrame, drawGuideArrow, drawGoalRipple, drawWalkTarget, drawTouchFeedback,
+          drawSquareMat, drawCFJadeCore, drawSealedCrown
+        };
+      })();
+
+      /* =====================================================================
+         6. 本地存档（含自定义关卡持久化）
+         ===================================================================== */
+      const STORAGE_KEY = "light_sokoban_v3_progress";
+      const progress = {
+        records: {},
+        hintsLeft: 3,
+        lastIdx: 0,
+        themeId: "morning",
+        heroId: "traveler",
+        tryAll: false,
+        customLevels: []
+      };
+
+      function loadProgress() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const p = JSON.parse(raw);
+            if (p && typeof p === "object") {
+              Object.assign(progress, p);
+              if (Array.isArray(progress.customLevels)) {
+                progress.customLevels.forEach(cl => {
+                  if (cl && Array.isArray(cl.map) && !LEVELS.some(x => x.id === cl.id)) LEVELS.push(cl);
+                });
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      function saveProgress() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(progress)); } catch (e) {}
+      }
+
+      function getStarTotals() {
+        let gold = 0, plat = 0;
+        Object.values(progress.records).forEach(r => {
+          gold += r.gold || 0;
+          if (r.platinum) plat++;
+        });
+        return { gold, plat };
+      }
+
+      /* =====================================================================
+         7. 游戏主状态与核心循环
+         ===================================================================== */
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const appStage = document.getElementById("appStage");
+
+      const COVER_DEMO_MOVES = [
+        [0, 1, "right"], [0, 1, "right"], [0, 1, "right"],
+        [0, -1, "left"], [0, -1, "left"], [1, 0, "down"], [1, 0, "down"],
+        [0, 1, "right"], [0, 1, "right"], [0, 1, "right"], [0, 1, "right"]
+      ];
+
+      const game = {
+        inCover: true,
+        levelIdx: 0,
+        staticMap: null,
+        dyn: null,
+        light: null,
+        history: [],
+        steps: 0,
+        won: false,
+        deadlock: false,
+        deadlockTimer: null,
+        boardIntro: 1,
+        pVis: { vr: 0, vc: 0, hop: 0, bumpDr: 0, bumpDc: 0, bumpT: 0, pushSquash: 0, pushDr: 0, pushDc: 0 },
+        eVis: new Map(),
+        icePhase: [],
+        amberPhase: [],
+        floorLitAnim: [],
+        goalLockAnim: [],
+        goalLockBounce: [],
+        particles: [],
+        ripples: [],
+        clearStarTimers: [],
+        hintArrow: null,
+        walkQueue: [],
+        walkTarget: null,
+        walkTimer: 0,
+        demoIdx: 0,
+        demoTimer: 0,
+        viewW: 800,
+        viewH: 600,
+        ts: 64,
+        bx: 0,
+        by: 0
+      };
+
+      let toastTimer = null;
+      function showToast(msg, dur = 2000) {
+        clearTimeout(toastTimer);
+        const el = document.getElementById("hintToast");
+        el.textContent = msg;
+        el.classList.add("show");
+        toastTimer = setTimeout(() => el.classList.remove("show"), dur);
+      }
+
+      function clearStarRevealTimers() {
+        game.clearStarTimers.forEach(t => clearTimeout(t));
+        game.clearStarTimers = [];
+      }
+
+      function cancelAutoWalk() {
+        game.walkQueue = [];
+        game.walkTarget = null;
+        game.walkTimer = 0;
+      }
+
+      function spawnPhaseParticles(r, c, color) {
+        for (let i = 0; i < 6; i++) {
+          const a = (Math.PI * 2 * i) / 6 + Math.random() * 0.5;
+          const spd = 0.0014 + Math.random() * 0.0018;
+          game.particles.push({
+            r: r + 0.5, c: c + 0.5,
+            vr: Math.sin(a) * spd, vc: Math.cos(a) * spd,
+            color, size: 2.6 + Math.random() * 2, life: 420, maxLife: 420
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        const rect = appStage.getBoundingClientRect();
+        const w = Math.max(260, rect.width), h = Math.max(320, rect.height);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        game.viewW = w; game.viewH = h;
+        canvas.width = Math.floor(w * dpr); canvas.height = Math.floor(h * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        if (!game.staticMap) return;
+        const dpadOpen = document.getElementById("dpadBox").classList.contains("open");
+        const padX = Math.max(22, w * 0.06);
+        const padTop = game.inCover ? 148 : 74;
+        const padBot = game.inCover ? 156 : (dpadOpen ? 172 : 90);
+        const availW = Math.max(180, w - padX * 2);
+        const availH = Math.max(160, h - padTop - padBot);
+        const ts = Math.max(30, Math.min(78, Math.floor(Math.min(availW / game.staticMap.cols, availH / game.staticMap.rows))));
+        game.ts = ts;
+        game.bx = Math.round((w - game.staticMap.cols * ts) / 2);
+        game.by = Math.round(padTop + (availH - game.staticMap.rows * ts) / 2);
+      }
+
+      function resetCoverDemo() {
+        const parsed = GameEngine.parseMap(LEVELS[0].map);
+        game.staticMap = parsed.staticMap;
+        game.dyn = parsed.dynState;
+        game.light = GameEngine.computeLighting(game.staticMap, game.dyn, true);
+        game.pVis = { vr: game.dyn.player.r, vc: game.dyn.player.c, hop: 0, bumpDr: 0, bumpDc: 0, bumpT: 0, pushSquash: 0, pushDr: 0, pushDc: 0 };
+        game.eVis.clear();
+        game.dyn.entities.forEach(e => game.eVis.set(e.id, {
+          vr: e.r, vc: e.c, hover: 0,
+          phase: GameEngine.isEntitySolid(game.dyn, game.light.lit, e) ? 1 : 0
+        }));
+        game.icePhase = game.staticMap.iceWalls.map(w => (!game.light.lit[w.r][w.c] ? 1 : 0));
+        game.amberPhase = game.staticMap.treeWalls.map(w => (game.light.lit[w.r][w.c] ? 1 : 0));
+        game.floorLitAnim = Array.from({ length: game.staticMap.rows }, (_, r) =>
+          Array.from({ length: game.staticMap.cols }, (_, c) => (game.light.lit[r][c] ? 1 : 0))
+        );
+        game.goalLockAnim = game.staticMap.goals.map(() => 0);
+        game.goalLockBounce = game.staticMap.goals.map(() => 0);
+        game.boardIntro = 1;
+        game.demoIdx = 0;
+        game.demoTimer = 0;
+        game.particles = [];
+        game.ripples = [];
+        cancelAutoWalk();
+        resizeCanvas();
+      }
+
+      function enterCover() {
+        game.inCover = true;
+        cancelAutoWalk();
+        clearTimeout(game.deadlockTimer);
+        clearStarRevealTimers();
+        document.body.classList.add("in-cover");
+        document.getElementById("clearOverlay").classList.remove("open");
+        document.getElementById("hintPopover").classList.remove("open");
+        updateCoverStats();
+        resetCoverDemo();
+      }
+
+      function exitCover(targetIdx) {
+        game.inCover = false;
+        document.body.classList.remove("in-cover");
+        loadLevel(typeof targetIdx === "number" ? targetIdx : progress.lastIdx);
+      }
+
+      function updateCoverStats() {
+        const { gold, plat } = getStarTotals();
+        const mainCount = LEVELS.filter(l => l.chapter !== 3).length;
+        document.getElementById("statGold").textContent = gold;
+        document.getElementById("statGoldMax").textContent = mainCount * 3;
+        document.getElementById("statPlat").textContent = plat;
+        const hasProgress = Object.keys(progress.records).length > 0;
+        const safeIdx = Math.max(0, Math.min(LEVELS.length - 1, progress.lastIdx));
+        document.getElementById("btnStartGame").textContent = hasProgress ? `继续 ${LEVELS[safeIdx].code}` : "开始";
+      }
+
+      function loadLevel(idx) {
+        const safeIdx = Math.max(0, Math.min(LEVELS.length - 1, idx));
+        game.levelIdx = safeIdx;
+        progress.lastIdx = safeIdx;
+        saveProgress();
+
+        clearTimeout(game.deadlockTimer);
+        clearStarRevealTimers();
+        cancelAutoWalk();
+
+        const lvl = LEVELS[safeIdx];
+        const parsed = GameEngine.parseMap(lvl.map);
+        game.staticMap = parsed.staticMap;
+        game.dyn = parsed.dynState;
+        game.light = GameEngine.computeLighting(game.staticMap, game.dyn, true);
+        game.history = [];
+        game.steps = 0;
+        game.won = false;
+        game.deadlock = false;
+        game.boardIntro = 0;
+        game.hintArrow = null;
+        game.particles = [];
+        game.ripples = [];
+
+        game.pVis = { vr: game.dyn.player.r, vc: game.dyn.player.c, hop: 0, bumpDr: 0, bumpDc: 0, bumpT: 0, pushSquash: 0, pushDr: 0, pushDc: 0 };
+        game.eVis.clear();
+        game.dyn.entities.forEach(e => game.eVis.set(e.id, {
+          vr: e.r, vc: e.c, hover: 0,
+          phase: GameEngine.isEntitySolid(game.dyn, game.light.lit, e) ? 1 : 0
+        }));
+        game.icePhase = game.staticMap.iceWalls.map(w =>
+          (!game.light.lit[w.r][w.c] && !GameEngine.isTerrainSuppressed(game.dyn, game.light.lit, w.r, w.c)) ? 1 : 0
+        );
+        game.amberPhase = game.staticMap.treeWalls.map(w =>
+          (game.light.lit[w.r][w.c] && !GameEngine.isTerrainSuppressed(game.dyn, game.light.lit, w.r, w.c)) ? 1 : 0
+        );
+        game.floorLitAnim = Array.from({ length: game.staticMap.rows }, (_, r) =>
+          Array.from({ length: game.staticMap.cols }, (_, c) => (game.light.lit[r][c] ? 1 : 0))
+        );
+        game.goalLockAnim = game.staticMap.goals.map(() => 0);
+        game.goalLockBounce = game.staticMap.goals.map(() => 0);
+
+        document.getElementById("clearOverlay").classList.remove("open");
+        document.getElementById("chaptersOverlay").classList.remove("open");
+        document.getElementById("themesOverlay").classList.remove("open");
+        document.getElementById("hintPopover").classList.remove("open");
+
+        resizeCanvas();
+        updateHUD();
+      }
+
+      function restartLevelWithUndo() {
+        if (game.inCover) return;
+        if (game.steps === 0 || game.won) {
+          audio.undo();
+          loadLevel(game.levelIdx);
+          return;
+        }
+        clearTimeout(game.deadlockTimer);
+        cancelAutoWalk();
+        audio.ensure();
+        audio.undo();
+
+        game.history.push({ dyn: GameEngine.cloneDyn(game.dyn), steps: game.steps });
+        const parsed = GameEngine.parseMap(LEVELS[game.levelIdx].map);
+        game.dyn = parsed.dynState;
+        game.light = GameEngine.computeLighting(game.staticMap, game.dyn, true);
+        game.steps = 0;
+        game.won = false;
+        game.deadlock = false;
+        game.hintArrow = null;
+        game.boardIntro = 0.25;
+        game.pVis = { vr: game.dyn.player.r, vc: game.dyn.player.c, hop: 0, bumpDr: 0, bumpDc: 0, bumpT: 0, pushSquash: 0, pushDr: 0, pushDc: 0 };
+        game.eVis.clear();
+        game.dyn.entities.forEach(e => game.eVis.set(e.id, {
+          vr: e.r, vc: e.c, hover: 0,
+          phase: GameEngine.isEntitySolid(game.dyn, game.light.lit, e) ? 1 : 0
+        }));
+        game.goalLockBounce = game.staticMap.goals.map(() => 0);
+        updateHUD();
+        showToast("已重置 · 点悔棋可还原", 1800);
+      }
+
+      function countLockedGoals() {
+        let cnt = 0;
+        game.staticMap.goals.forEach(g => {
+          const e = GameEngine.solidEntityAt(game.dyn, game.light.lit, g.r, g.c);
+          if (e && GameEngine.TARGET_BOXES.has(e.kind)) cnt++;
+        });
+        return cnt;
+      }
+
+      function hasAnySuppression(staticMap, dyn, lit) {
+        for (let i = 0; i < staticMap.iceWalls.length; i++) {
+          const w = staticMap.iceWalls[i];
+          if (!lit[w.r][w.c] && GameEngine.isTerrainSuppressed(dyn, lit, w.r, w.c)) return true;
+        }
+        for (let i = 0; i < staticMap.treeWalls.length; i++) {
+          const w = staticMap.treeWalls[i];
+          if (lit[w.r][w.c] && GameEngine.isTerrainSuppressed(dyn, lit, w.r, w.c)) return true;
+        }
+        for (let i = 0; i < dyn.entities.length; i++) {
+          const e = dyn.entities[i];
+          if (e.kind === "C" && !lit[e.r][e.c] && GameEngine.isEntitySuppressed(dyn, e)) return true;
+          if (e.kind === "F" && lit[e.r][e.c] && GameEngine.isEntitySuppressed(dyn, e)) return true;
+        }
+        return false;
+      }
+
+      function scheduleDeadlockCheck() {
+        clearTimeout(game.deadlockTimer);
+        game.deadlock = false;
+        const snapStatic = game.staticMap;
+        const snapDyn = GameEngine.cloneDyn(game.dyn);
+        const snapStep = game.steps;
+        game.deadlockTimer = setTimeout(() => {
+          if (game.inCover || game.won || game.steps !== snapStep) return;
+          game.deadlock = GameEngine.checkDeadlock(snapStatic, snapDyn, 6);
+          updateHUD();
+        }, 85);
+      }
+
+      function move(dr, dc, dir, fromAutoWalk = false) {
+        if (game.inCover || game.won) return false;
+        if (!fromAutoWalk) cancelAutoWalk();
+        audio.ensure();
+        game.dyn.player.dir = dir;
+        game.hintArrow = null;
+
+        if (fromAutoWalk) {
+          const nr = game.dyn.player.r + dr, nc = game.dyn.player.c + dc;
+          if (GameEngine.solidEntityAt(game.dyn, game.light.lit, nr, nc)) {
+            cancelAutoWalk();
+            return false;
+          }
+        }
+
+        const prevLockedFlags = game.staticMap.goals.map(g => {
+          const e = GameEngine.solidEntityAt(game.dyn, game.light.lit, g.r, g.c);
+          return Boolean(e && GameEngine.TARGET_BOXES.has(e.kind));
+        });
+        const prevLocked = prevLockedFlags.filter(Boolean).length;
+        const hadSup = hasAnySuppression(game.staticMap, game.dyn, game.light.lit);
+        const prevIceSolid = game.staticMap.iceWalls.map(w => !game.light.lit[w.r][w.c] && !GameEngine.isTerrainSuppressed(game.dyn, game.light.lit, w.r, w.c));
+        const prevAmberSolid = game.staticMap.treeWalls.map(w => game.light.lit[w.r][w.c] && !GameEngine.isTerrainSuppressed(game.dyn, game.light.lit, w.r, w.c));
+        const prevBoxPhase = new Map();
+        game.dyn.entities.forEach(e => {
+          if (e.kind === "C" || e.kind === "F") prevBoxPhase.set(e.id, GameEngine.isEntitySolid(game.dyn, game.light.lit, e));
+        });
+
+        const res = GameEngine.stepState(game.staticMap, game.dyn, game.light.lit, dr, dc, dir);
+        if (!res) {
+          audio.blocked();
+          game.pVis.bumpDr = dr; game.pVis.bumpDc = dc; game.pVis.bumpT = 1;
+          return false;
+        }
+
+        game.history.push({ dyn: GameEngine.cloneDyn(game.dyn), steps: game.steps });
+        game.dyn = res.dyn;
+        game.light = GameEngine.computeLighting(game.staticMap, game.dyn, true);
+        if (res.pushed) {
+          game.pVis.pushSquash = 1; game.pVis.pushDr = dr; game.pVis.pushDc = dc;
+          audio.push();
+        } else {
+          game.pVis.hop = 1;
+          audio.step();
+        }
+        game.steps++;
+
+        let melted = false, frozen = false;
+        game.staticMap.iceWalls.forEach((w, i) => {
+          const nowS = !game.light.lit[w.r][w.c] && !GameEngine.isTerrainSuppressed(game.dyn, game.light.lit, w.r, w.c);
+          if (prevIceSolid[i] !== nowS) {
+            spawnPhaseParticles(w.r, w.c, nowS ? "#D8F4FF" : "#78CCF2");
+            if (prevIceSolid[i] && !nowS) melted = true; else frozen = true;
+          }
+        });
+        game.staticMap.treeWalls.forEach((w, i) => {
+          const nowS = game.light.lit[w.r][w.c] && !GameEngine.isTerrainSuppressed(game.dyn, game.light.lit, w.r, w.c);
+          if (prevAmberSolid[i] !== nowS) {
+            spawnPhaseParticles(w.r, w.c, nowS ? "#FFE28A" : "#E5A435");
+            if (nowS) frozen = true; else melted = true;
+          }
+        });
+        game.dyn.entities.forEach(e => {
+          if (e.kind !== "C" && e.kind !== "F") return;
+          const nowS = GameEngine.isEntitySolid(game.dyn, game.light.lit, e);
+          if (prevBoxPhase.has(e.id) && prevBoxPhase.get(e.id) !== nowS) {
+            spawnPhaseParticles(e.r, e.c, e.kind === "C" ? "#8ED8F8" : "#F5C45A");
+            if (nowS) frozen = true; else melted = true;
+          }
+        });
+
+        const nowSup = hasAnySuppression(game.staticMap, game.dyn, game.light.lit);
+        if (hadSup && !nowSup) audio.suppressPop();
+        else if (melted) audio.melt();
+        else if (frozen) audio.freeze();
+
+        game.staticMap.goals.forEach((g, idx) => {
+          const e = GameEngine.solidEntityAt(game.dyn, game.light.lit, g.r, g.c);
+          const nowLocked = Boolean(e && GameEngine.TARGET_BOXES.has(e.kind));
+          if (nowLocked && !prevLockedFlags[idx]) {
+            game.goalLockBounce[idx] = 1;
+            game.ripples.push({ r: g.r, c: g.c, life: 420, maxLife: 420, isVictory: false });
+          }
+        });
+
+        if (GameEngine.isWon(game.staticMap, game.dyn, game.light.lit)) {
+          game.won = true;
+          game.deadlock = false;
+          cancelAutoWalk();
+          clearTimeout(game.deadlockTimer);
+          updateHUD();
+          onLevelCleared();
+          return true;
+        }
+
+        const nowLocked = countLockedGoals();
+        if (nowLocked > prevLocked) audio.lockNote(nowLocked);
+
+        if (res.pushed) scheduleDeadlockCheck();
+        else { clearTimeout(game.deadlockTimer); game.deadlock = false; }
+        updateHUD();
+        return true;
+      }
+
+      function undo() {
+        if (game.inCover || !game.history.length || game.won) return false;
+        cancelAutoWalk();
+        clearTimeout(game.deadlockTimer);
+        audio.ensure();
+        const prev = game.history.pop();
+        game.dyn = prev.dyn;
+        game.steps = prev.steps;
+        game.light = GameEngine.computeLighting(game.staticMap, game.dyn, true);
+        game.deadlock = false;
+        game.hintArrow = null;
+        audio.undo();
+        updateHUD();
+        scheduleDeadlockCheck();
+        return true;
+      }
+
+      function makeStarSVG(kind) {
+        if (kind === "platinum") {
+          return `<svg class="star-svg platinum" data-star="plat" viewBox="0 0 40 40">
+            <defs>
+              <linearGradient id="platG" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#FFFFFF"/>
+                <stop offset="48%" stop-color="#B8E4FF"/>
+                <stop offset="100%" stop-color="#8FA8F8"/>
+              </linearGradient>
+            </defs>
+            <polygon points="20,2 25.2,14.8 38,20 25.2,25.2 20,38 14.8,25.2 2,20 14.8,14.8" fill="url(#platG)" stroke="#FFFFFF" stroke-width="1.5"/>
+            <polygon points="20,9 22.6,17.4 31,20 22.6,22.6 20,31 17.4,22.6 9,20 17.4,17.4" fill="#FFFFFF" opacity="0.72"/>
+          </svg>`;
+        }
+        const filled = kind === "gold";
+        return `<svg class="star-svg ${filled ? "" : "empty-slot"}" data-star="${filled ? "gold" : "empty"}" viewBox="0 0 40 40">
+          <defs>
+            <linearGradient id="goldG" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#FFF2A8"/>
+              <stop offset="52%" stop-color="#F2B842"/>
+              <stop offset="100%" stop-color="#C9821A"/>
+            </linearGradient>
+          </defs>
+          <polygon points="20,3 25.1,13.6 36.8,15.2 28.4,23.4 30.4,35 20,29.5 9.6,35 11.6,23.4 3.2,15.2 14.9,13.6"
+            fill="${filled ? "url(#goldG)" : "rgba(156,146,132,0.2)"}"
+            stroke="${filled ? "#FFF7D4" : "rgba(156,146,132,0.35)"}" stroke-width="1.4" stroke-linejoin="round"/>
+        </svg>`;
+      }
+
+      function onLevelCleared() {
+        clearStarRevealTimers();
+        const lvl = LEVELS[game.levelIdx];
+        const opt = GameEngine.getOptimalSteps(lvl);
+        const evalRes = GameEngine.evaluateStars(game.steps, opt);
+        const old = progress.records[lvl.id];
+        progress.records[lvl.id] = {
+          bestSteps: old ? Math.min(old.bestSteps, game.steps) : game.steps,
+          gold: old ? Math.max(old.gold || 0, evalRes.gold) : evalRes.gold,
+          platinum: Boolean((old && old.platinum) || evalRes.platinum)
+        };
+        saveProgress();
+        updateCoverStats();
+
+        game.staticMap.goals.forEach(g => {
+          game.ripples.push({ r: g.r, c: g.c, life: 680, maxLife: 680, isVictory: true });
+          spawnPhaseParticles(g.r, g.c, "#FFE48A");
+        });
+        audio.win();
+
+        const openTimer = setTimeout(() => {
+          document.getElementById("clearLevelCode").textContent = lvl.code;
+          document.getElementById("clearStepsVal").textContent = game.steps;
+          document.getElementById("clearOptVal").textContent = opt ? opt : "-";
+
+          let starsHtml = "";
+          for (let i = 1; i <= 3; i++) starsHtml += makeStarSVG(i <= evalRes.gold ? "gold" : "empty");
+          if (evalRes.platinum) starsHtml += makeStarSVG("platinum");
+          const stageEl = document.getElementById("clearStarsStage");
+          stageEl.innerHTML = starsHtml;
+
+          const isLast = game.levelIdx === LEVELS.length - 1;
+          document.getElementById("btnNextLevel").textContent = isLast ? "重玩 1-1" : "下一关";
+          document.getElementById("clearOverlay").classList.add("open");
+
+          const goldEls = stageEl.querySelectorAll('[data-star="gold"]');
+          goldEls.forEach((el, idx) => {
+            const t = setTimeout(() => {
+              el.classList.add("popped");
+              audio.starPop(idx, false);
+            }, 130 + idx * 145);
+            game.clearStarTimers.push(t);
+          });
+          const platEl = stageEl.querySelector('[data-star="plat"]');
+          if (platEl) {
+            const t = setTimeout(() => {
+              platEl.classList.add("popped");
+              audio.starPop(3, true);
+            }, 130 + goldEls.length * 145 + 240);
+            game.clearStarTimers.push(t);
+          }
+        }, 380);
+        game.clearStarTimers.push(openTimer);
+      }
+
+      /* =====================================================================
+         8. 微信同构触控实例 + 动态光路纯步行自动寻路
+         ===================================================================== */
+      function findDynamicWalkPath(staticMap, initDyn, targetR, targetC) {
+        if (!initDyn || !initDyn.player) return null;
+        const sr = initDyn.player.r, sc = initDyn.player.c;
+        if (sr === targetR && sc === targetC) return [];
+        const initLit = GameEngine.computeLighting(staticMap, initDyn, false).lit;
+        const visited = new Set([`${sr},${sc}`]);
+        const queue = [{ dyn: initDyn, lit: initLit, parent: -1, mv: null }];
+        let head = 0;
+
+        while (head < queue.length) {
+          const cur = queue[head];
+          for (let d = 0; d < GameEngine.DIRS4.length; d++) {
+            const mv = GameEngine.DIRS4[d];
+            const nr = cur.dyn.player.r + mv.dr, nc = cur.dyn.player.c + mv.dc;
+            const key = `${nr},${nc}`;
+            if (visited.has(key)) continue;
+            if (GameEngine.solidEntityAt(cur.dyn, cur.lit, nr, nc)) continue;
+            const res = GameEngine.stepState(staticMap, cur.dyn, cur.lit, mv.dr, mv.dc, mv.dir);
+            if (!res || res.pushed) continue;
+            visited.add(key);
+            const idx = queue.length;
+            queue.push({ dyn: res.dyn, lit: res.lit, parent: head, mv });
+            if (nr === targetR && nc === targetC) {
+              const path = [];
+              let p = idx;
+              while (p > 0) { path.push(queue[p].mv); p = queue[p].parent; }
+              path.reverse();
+              return path;
+            }
+          }
+          head++;
+        }
+        return null;
+      }
+
+      const touchCtrl = TouchInputController.create({
+        canAccept: () => !game.inCover && !game.won,
+        onDirection: (dr, dc, dir) => { move(dr, dc, dir); },
+        onTap: (x, y) => {
+          if (!game.staticMap || !game.dyn.player) return;
+          const c = Math.floor((x - game.bx) / game.ts);
+          const r = Math.floor((y - game.by) / game.ts);
+          if (r < 0 || r >= game.staticMap.rows || c < 0 || c >= game.staticMap.cols) return;
+
+          const dr = r - game.dyn.player.r, dc = c - game.dyn.player.c;
+          if (Math.abs(dr) + Math.abs(dc) === 1 && GameEngine.solidEntityAt(game.dyn, game.light.lit, r, c)) {
+            const dir = dr === -1 ? "up" : dr === 1 ? "down" : dc === -1 ? "left" : "right";
+            move(dr, dc, dir);
+            return;
+          }
+
+          const path = findDynamicWalkPath(game.staticMap, game.dyn, r, c);
+          if (path && path.length > 0) {
+            audio.ensure();
+            game.walkQueue = path;
+            game.walkTarget = { r, c };
+            game.walkTimer = 112;
+          }
+        }
+      });
+
+      /* =====================================================================
+         9. 主渲染循环（60fps）
+         ===================================================================== */
+      let elapsed = 0, lastTs = performance.now();
+
+      function animate(now) {
+        requestAnimationFrame(animate);
+        const dt = Math.min(50, now - lastTs);
+        lastTs = now;
+        elapsed += dt * 0.001;
+        const lerp = Math.min(1, dt * 0.017);
+
+        if (game.inCover && game.staticMap) {
+          game.demoTimer += dt;
+          const interval = game.demoIdx === COVER_DEMO_MOVES.length ? 1500 : 420;
+          if (game.demoTimer >= interval) {
+            game.demoTimer = 0;
+            if (game.demoIdx >= COVER_DEMO_MOVES.length) {
+              resetCoverDemo();
+            } else {
+              const [dr, dc, dir] = COVER_DEMO_MOVES[game.demoIdx++];
+              const res = GameEngine.stepState(game.staticMap, game.dyn, game.light.lit, dr, dc, dir);
+              if (res) {
+                game.dyn = res.dyn;
+                game.light = GameEngine.computeLighting(game.staticMap, game.dyn, true);
+                game.pVis.hop = res.pushed ? 0 : 1;
+              }
+            }
+          }
+        } else if (game.walkQueue.length > 0 && !game.won) {
+          game.walkTimer += dt;
+          if (game.walkTimer >= 112) {
+            game.walkTimer = 0;
+            const nextMv = game.walkQueue.shift();
+            const ok = move(nextMv.dr, nextMv.dc, nextMv.dir, true);
+            if (!ok || game.walkQueue.length === 0) game.walkTarget = null;
+          }
+        }
+
+        ctx.clearRect(0, 0, game.viewW, game.viewH);
+        if (!game.staticMap || !game.dyn || !game.light) return;
+
+        const { rows, cols, walls, suns, iceWalls, treeWalls, goals } = game.staticMap;
+        const { lit, beams, hitMirrors, blockers } = game.light;
+        const ts = game.ts, bx = game.bx, by = game.by;
+
+        if (game.boardIntro < 1) game.boardIntro = Math.min(1, game.boardIntro + dt * 0.0056);
+        const introEase = 1 - Math.pow(1 - game.boardIntro, 3);
+
+        ctx.save();
+        if (game.boardIntro < 1) {
+          const cx = bx + (cols * ts) / 2, cy = by + (rows * ts) / 2;
+          const sc = 0.96 + 0.04 * introEase;
+          ctx.globalAlpha = introEase;
+          ctx.translate(cx, cy); ctx.scale(sc, sc); ctx.translate(-cx, -cy);
+        }
+
+        Assets2D.drawIslandBase(ctx, bx, by, cols * ts, rows * ts, ts);
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const x = bx + c * ts, y = by + r * ts;
+            const targetLit = lit[r][c] ? 1 : 0;
+            game.floorLitAnim[r][c] += (targetLit - game.floorLitAnim[r][c]) * lerp;
+            const f = game.floorLitAnim[r][c];
+            const baseHex = (r + c) % 2 === 0 ? Assets2D.CFG.floorA : Assets2D.CFG.floorB;
+            ctx.fillStyle = walls[r][c]
+              ? Assets2D.CFG.wallBase
+              : (f > 0.5 ? Assets2D.lerpHex(baseHex, Assets2D.CFG.floorLit, (f - 0.5) * 1.15) : Assets2D.lerpHex(Assets2D.CFG.floorShadow, baseHex, f * 2));
+            ctx.fillRect(x, y, ts, ts);
+            if (!walls[r][c]) {
+              ctx.strokeStyle = Assets2D.CFG.floorGrid;
+              ctx.lineWidth = 1;
+              ctx.strokeRect(x + 0.5, y + 0.5, ts - 1, ts - 1);
+            }
+          }
+        }
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (walls[r][c] || suns.some(s => s.r === r && s.c === c)) {
+              Assets2D.castShadowRect(ctx, bx + c * ts, by + r * ts, ts, ts, 2, ts * Assets2D.CFG.shadowLen, Assets2D.CFG.isDark ? 0.3 : 0.15);
+            }
+          }
+        }
+
+        goals.forEach((g, idx) => {
+          const e = GameEngine.solidEntityAt(game.dyn, lit, g.r, g.c);
+          const locked = Boolean(e && GameEngine.TARGET_BOXES.has(e.kind));
+          game.goalLockAnim[idx] += ((locked ? 1 : 0) - game.goalLockAnim[idx]) * Math.min(1, dt * 0.012);
+          game.goalLockBounce[idx] = Math.max(0, (game.goalLockBounce[idx] || 0) - dt * 0.0055);
+          Assets2D.drawGoal(ctx, bx + g.c * ts, by + g.r * ts, ts, game.goalLockAnim[idx], elapsed);
+        });
+
+        if (game.walkTarget) Assets2D.drawWalkTarget(ctx, bx + game.walkTarget.c * ts, by + game.walkTarget.r * ts, ts, elapsed);
+
+        iceWalls.forEach((w, idx) => {
+          const sup = GameEngine.isTerrainSuppressed(game.dyn, lit, w.r, w.c);
+          const solid = !lit[w.r][w.c] && !sup;
+          game.icePhase[idx] += ((solid ? 1 : 0) - game.icePhase[idx]) * Math.min(1, dt * 0.015);
+          if (game.icePhase[idx] < 0.97) {
+            Assets2D.drawWaterPuddle(ctx, bx + w.c * ts, by + w.r * ts, ts, false, elapsed, idx, 1 - game.icePhase[idx]);
+          }
+          if (!lit[w.r][w.c] && sup) Assets2D.drawSuppressFrame(ctx, bx + w.c * ts, by + w.r * ts, ts, "C", elapsed);
+        });
+
+        treeWalls.forEach((w, idx) => {
+          const sup = GameEngine.isTerrainSuppressed(game.dyn, lit, w.r, w.c);
+          const solid = lit[w.r][w.c] && !sup;
+          game.amberPhase[idx] += ((solid ? 1 : 0) - game.amberPhase[idx]) * Math.min(1, dt * 0.015);
+          if (game.amberPhase[idx] < 0.97) Assets2D.drawAmberWall(ctx, bx + w.c * ts, by + w.r * ts, ts, game.amberPhase[idx]);
+          if (lit[w.r][w.c] && sup) Assets2D.drawSuppressFrame(ctx, bx + w.c * ts, by + w.r * ts, ts, "F", elapsed);
+        });
+
+        game.dyn.entities.forEach(e => {
+          let vis = game.eVis.get(e.id);
+          if (!vis) {
+            vis = { vr: e.r, vc: e.c, hover: 0, phase: GameEngine.isEntitySolid(game.dyn, lit, e) ? 1 : 0 };
+            game.eVis.set(e.id, vis);
+          }
+          vis.vr += (e.r - vis.vr) * lerp;
+          vis.vc += (e.c - vis.vc) * lerp;
+          const solid = GameEngine.isEntitySolid(game.dyn, lit, e);
+          vis.phase += ((solid ? 1 : 0) - vis.phase) * Math.min(1, dt * 0.015);
+          const isAdj = !game.inCover && solid && (Math.abs(game.dyn.player.r - e.r) + Math.abs(game.dyn.player.c - e.c) === 1);
+          vis.hover += ((isAdj ? 1 : 0) - vis.hover) * Math.min(1, dt * 0.012);
+
+          if (!solid && vis.phase < 0.97) {
+            const x = bx + vis.vc * ts, y = by + vis.vr * ts;
+            if (e.kind === "C") Assets2D.drawWaterPuddle(ctx, x, y, ts, true, elapsed, e.id, 1 - vis.phase);
+            else if (e.kind === "F") Assets2D.drawAmberBox(ctx, x, y, ts, vis.phase, false, elapsed);
+          }
+        });
+
+        Assets2D.drawBeams(ctx, bx, by, ts, beams);
+        Assets2D.drawOcclusionShadows(ctx, bx, by, ts, blockers);
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (walls[r][c]) Assets2D.drawWall(ctx, bx + c * ts, by + r * ts, ts, r, c, walls, rows, cols);
+          }
+        }
+        suns.forEach(s => Assets2D.drawSunTower(ctx, bx + s.c * ts, by + s.r * ts, ts, elapsed));
+
+        iceWalls.forEach((w, idx) => {
+          const ph = game.icePhase[idx] || 0;
+          if (ph > 0.03) Assets2D.drawIceWall(ctx, bx + w.c * ts, by + w.r * ts, ts, ph);
+          if (ph > 0.25 && game.dyn.entities.some(e => e.r === w.r && e.c === w.c && e.kind === "F")) {
+            Assets2D.drawSealedCrown(ctx, bx + w.c * ts, by + w.r * ts, ts, "F", ph);
+          }
+        });
+        treeWalls.forEach((w, idx) => {
+          const ph = game.amberPhase[idx] || 0;
+          if (ph > 0.03) Assets2D.drawAmberWall(ctx, bx + w.c * ts, by + w.r * ts, ts, ph);
+          if (ph > 0.25 && game.dyn.entities.some(e => e.r === w.r && e.c === w.c && e.kind === "C")) {
+            Assets2D.drawSealedCrown(ctx, bx + w.c * ts, by + w.r * ts, ts, "C", ph);
+          }
+        });
+
+        game.dyn.entities.forEach(e => {
+          const vis = game.eVis.get(e.id);
+          const solid = GameEngine.isEntitySolid(game.dyn, lit, e);
+          if (!solid && vis.phase <= 0.03) return;
+          const x = bx + vis.vc * ts, y = by + vis.vr * ts;
+          const goalIdx = goals.findIndex(g => g.r === e.r && g.c === e.c);
+          const onGoal = goalIdx >= 0;
+          const bounceVal = onGoal ? (game.goalLockBounce[goalIdx] || 0) : 0;
+          const lockScale = 1 - Math.sin(bounceVal * Math.PI) * 0.075;
+
+          const underBox = solid
+            ? game.dyn.entities.find(o => o.id !== e.id && o.r === e.r && o.c === e.c && (o.kind === "C" || o.kind === "F"))
+            : null;
+          const isCFPair = Boolean(underBox && ((e.kind === "C" && underBox.kind === "F") || (e.kind === "F" && underBox.kind === "C")));
+
+          if (underBox && !isCFPair) {
+            const isUnderSup = (underBox.kind === "C" && !lit[e.r][e.c]) || (underBox.kind === "F" && lit[e.r][e.c]);
+            Assets2D.drawSquareMat(ctx, x, y, ts, underBox.kind, 0.85, isUnderSup);
+          }
+
+          if (solid && vis.hover > 0.02) {
+            const isCircle = e.kind === "L" || e.kind === "\\" || e.kind === "/" || Boolean(GameEngine.SPOT_DIRS[e.kind]);
+            const haloRgb = (e.kind === "C" || e.kind === "\\" || e.kind === "/") ? "128, 212, 250" : "244, 188, 68";
+            Assets2D.drawHoverHalo(ctx, x, y, ts, isCircle, haloRgb, vis.hover);
+          }
+
+          const woodScale = (underBox && !isCFPair) ? lockScale * 0.88 : lockScale;
+          if (e.kind === "B") Assets2D.drawWoodBox(ctx, x, y, ts, onGoal, elapsed, woodScale);
+          else if (e.kind === "C") Assets2D.drawIceBox(ctx, x, y, ts, onGoal && solid, elapsed, vis.phase, lockScale);
+          else if (e.kind === "F" && vis.phase > 0.03) Assets2D.drawAmberBox(ctx, x, y, ts, vis.phase, onGoal && solid, elapsed, lockScale);
+          else if (e.kind === "L") Assets2D.drawLantern(ctx, x, y, ts, elapsed);
+          else if (GameEngine.SPOT_DIRS[e.kind]) Assets2D.drawSpotlight(ctx, x, y, ts, e.kind, elapsed);
+          else if (e.kind === "\\" || e.kind === "/") Assets2D.drawMirror(ctx, x, y, ts, e.kind, hitMirrors.has(e.id));
+
+          if (isCFPair) Assets2D.drawCFJadeCore(ctx, x, y, ts, underBox.kind);
+        });
+
+        for (let i = game.ripples.length - 1; i >= 0; i--) {
+          const rp = game.ripples[i];
+          rp.life -= dt;
+          if (rp.life <= 0) { game.ripples.splice(i, 1); continue; }
+          Assets2D.drawGoalRipple(ctx, bx + rp.c * ts, by + rp.r * ts, ts, 1 - rp.life / rp.maxLife, rp.isVictory);
+        }
+
+        game.pVis.vr += (game.dyn.player.r - game.pVis.vr) * lerp;
+        game.pVis.vc += (game.dyn.player.c - game.pVis.vc) * lerp;
+        game.pVis.hop = Math.max(0, game.pVis.hop - dt * 0.0068);
+        game.pVis.pushSquash = Math.max(0, game.pVis.pushSquash - dt * 0.0072);
+        game.pVis.bumpT = Math.max(0, game.pVis.bumpT - dt * 0.006);
+        const bumpMag = Math.sin(game.pVis.bumpT * Math.PI) * ts * 0.11;
+        Assets2D.drawHero(
+          ctx, bx + game.pVis.vc * ts, by + game.pVis.vr * ts, ts,
+          game.dyn.player.dir, game.pVis.hop, progress.heroId,
+          game.pVis.bumpDc * bumpMag, game.pVis.bumpDr * bumpMag,
+          elapsed, game.pVis.pushSquash, game.pVis.pushDr, game.pVis.pushDc
+        );
+
+        Assets2D.drawLitRims(ctx, bx, by, ts, blockers);
+
+        for (let i = game.particles.length - 1; i >= 0; i--) {
+          const p = game.particles[i];
+          p.life -= dt;
+          if (p.life <= 0) { game.particles.splice(i, 1); continue; }
+          p.r += p.vr * dt; p.c += p.vc * dt;
+          const alpha = p.life / p.maxLife;
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(bx + p.c * ts, by + p.r * ts, p.size * (0.5 + 0.5 * alpha), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        if (game.hintArrow && now < game.hintArrow.expireAt) {
+          Assets2D.drawGuideArrow(ctx, bx + game.dyn.player.c * ts, by + game.dyn.player.r * ts, ts, game.hintArrow.dr, game.hintArrow.dc, elapsed);
+        }
+
+        ctx.restore();
+
+        if (!game.inCover && !game.won && touchCtrl.state.active) {
+          Assets2D.drawTouchFeedback(ctx, touchCtrl.state);
+        }
+      }
+
+      /* =====================================================================
+         10. HUD、选关弹窗、外观弹窗与自定义导入
+         ===================================================================== */
+      function updateHUD() {
+        const lvl = LEVELS[game.levelIdx];
+        document.getElementById("hudLevelCode").textContent = lvl.code;
+        const stepEl = document.getElementById("stepBadge");
+        if (progress.records[lvl.id]) {
+          const opt = GameEngine.getOptimalSteps(lvl);
+          stepEl.innerHTML = opt ? `${game.steps} <span class="opt-sub">/ 最优 ${opt}</span>` : `${game.steps} 步`;
+        } else {
+          stepEl.textContent = `${game.steps} 步`;
+        }
+        document.getElementById("hintBadge").textContent = progress.hintsLeft;
+        const undoBtn = document.getElementById("btnUndo");
+        undoBtn.disabled = game.history.length === 0 || game.won;
+        undoBtn.classList.toggle("deadlock-alert", game.deadlock && !undoBtn.disabled);
+      }
+
+      function renderChaptersModal() {
+        const root = document.getElementById("chapList");
+        root.innerHTML = "";
+        const chapNums = [...new Set(LEVELS.map(l => l.chapter))].sort((a, b) => a - b);
+
+        chapNums.forEach(cNum => {
+          const meta = CHAPTER_META[cNum] || { title: "自定义关卡", icon: UI_SVGS.custom, iconBg: "#EFECE6", tags: "编辑器导入 · 本地持久化" };
+          const lvls = LEVELS.filter(l => l.chapter === cNum);
+          const block = document.createElement("div");
+          block.className = "chap-block";
+          block.innerHTML = `
+            <div class="chap-head">
+              <div class="chap-ico" style="background:${meta.iconBg};">${meta.icon}</div>
+              <div>
+                <div class="chap-title">${meta.title}</div>
+                <div class="chap-tags">${meta.tags}</div>
+              </div>
+            </div>
+            <div class="lvl-grid"></div>
+          `;
+          const grid = block.querySelector(".lvl-grid");
+          lvls.forEach(l => {
+            const idx = LEVELS.indexOf(l);
+            const rec = progress.records[l.id];
+            const card = document.createElement("div");
+            card.className = "lvl-card" + (!game.inCover && idx === game.levelIdx ? " current" : "");
+            let stars = "";
+            if (rec) {
+              for (let s = 1; s <= 3; s++) {
+                stars += `<svg width="11" height="11" viewBox="0 0 24 24" fill="${s <= rec.gold ? "#E5A435" : "rgba(156,146,132,0.25)"}"><polygon points="12,2 15.1,8.5 22,9.5 17,14.4 18.2,21.4 12,18 5.8,21.4 7,14.4 2,9.5 8.9,8.5"/></svg>`;
+              }
+              if (rec.platinum) {
+                stars += `<svg width="11" height="11" viewBox="0 0 24 24" fill="#7CC4FA"><polygon points="12,2 15,9 22,12 15,15 12,22 9,15 2,12 9,9"/></svg>`;
+              }
+            }
+            card.innerHTML = `<span class="lvl-code">${l.code}</span><div class="lvl-stars">${stars}</div>`;
+            if (cNum === 3) {
+              const delBtn = document.createElement("button");
+              delBtn.className = "del-custom-btn";
+              delBtn.textContent = "×";
+              delBtn.title = "删除自定义关卡";
+              delBtn.addEventListener("click", ev => {
+                ev.stopPropagation();
+                const li = LEVELS.findIndex(x => x.id === l.id);
+                if (li >= 0) LEVELS.splice(li, 1);
+                progress.customLevels = (progress.customLevels || []).filter(x => x.id !== l.id);
+                delete progress.records[l.id];
+                saveProgress();
+                updateCoverStats();
+                renderChaptersModal();
+              });
+              card.appendChild(delBtn);
+            }
+            card.addEventListener("click", () => exitCover(idx));
+            grid.appendChild(card);
+          });
+          root.appendChild(block);
+        });
+      }
+
+      function importLevelFromJson(raw) {
+        try {
+          const parsed = JSON.parse(raw.trim());
+          const rows = parsed.map || parsed.grid;
+          if (!Array.isArray(rows) || rows.length < 4) throw new Error("缺少有效 map 数组");
+          const check = GameEngine.parseMap(rows);
+          if (!check.dynState.player || !check.staticMap.goals.length) throw new Error("地图需包含主角 P 与终点 X");
+          const customCount = LEVELS.filter(l => l.chapter === 3).length + 1;
+          const customLvl = {
+            id: Date.now(),
+            code: parsed.code || `C-${customCount}`,
+            chapter: 3,
+            hint: parsed.hint || "观察光路与占格压制关系。",
+            optimalSteps: typeof parsed.optimalSteps === "number" ? parsed.optimalSteps : undefined,
+            map: rows
+          };
+          LEVELS.push(customLvl);
+          progress.customLevels = progress.customLevels || [];
+          progress.customLevels.push(customLvl);
+          saveProgress();
+          exitCover(LEVELS.length - 1);
+          showToast(`已载入并保存 ${customLvl.code}`);
+        } catch (err) {
+          showToast("导入失败：" + err.message, 2600);
+        }
+      }
+
+      function renderThemesModal() {
+        const { gold, plat } = getStarTotals();
+        const envGrid = document.getElementById("envSkinGrid");
+        envGrid.innerHTML = "";
+        THEMES.forEach(th => {
+          const unlocked = progress.tryAll || (gold >= th.reqGold && plat >= th.reqPlat);
+          const card = document.createElement("div");
+          card.className = "skin-card" + (progress.themeId === th.id ? " active" : "") + (!unlocked ? " locked" : "");
+          card.innerHTML = `
+            <div class="theme-swatch" style="background:${th.swatch};"></div>
+            <div class="skin-name">${th.name}</div>
+            <div class="skin-req">${unlocked ? (progress.themeId === th.id ? "使用中" : "点击启用") : UI_SVGS.lock + " " + th.reqText}</div>
+          `;
+          card.addEventListener("click", () => {
+            if (!unlocked) { showToast(`需 ${th.reqText} 解锁，或勾选下方试穿`); return; }
+            progress.themeId = th.id;
+            saveProgress();
+            Assets2D.applyTheme(th.id);
+            renderThemesModal();
+          });
+          envGrid.appendChild(card);
+        });
+
+        const heroGrid = document.getElementById("heroSkinGrid");
+        heroGrid.innerHTML = "";
+        HERO_SKINS.forEach(hs => {
+          const unlocked = progress.tryAll || (gold >= hs.reqGold && plat >= hs.reqPlat);
+          const card = document.createElement("div");
+          card.className = "skin-card" + (progress.heroId === hs.id ? " active" : "") + (!unlocked ? " locked" : "");
+          card.innerHTML = `
+            <canvas class="hero-preview-cvs" width="112" height="112"></canvas>
+            <div class="skin-name">${hs.name}</div>
+            <div class="skin-req">${unlocked ? (progress.heroId === hs.id ? "使用中" : "点击启用") : UI_SVGS.lock + " " + hs.reqText}</div>
+          `;
+          const pCtx = card.querySelector("canvas").getContext("2d");
+          pCtx.clearRect(0, 0, 112, 112);
+          Assets2D.drawHero(pCtx, 12, 12, 88, "right", 0, hs.id);
+          card.addEventListener("click", () => {
+            if (!unlocked) { showToast(`需 ${hs.reqText} 解锁，或勾选下方试穿`); return; }
+            progress.heroId = hs.id;
+            saveProgress();
+            renderThemesModal();
+          });
+          heroGrid.appendChild(card);
+        });
+        document.getElementById("chkTryAll").checked = Boolean(progress.tryAll);
+      }
+
+      /* =====================================================================
+         11. 事件绑定与移动端自动竖屏适配
+         ===================================================================== */
+      function detectMobile() {
+        const isMob = /Android|iPhone|iPad|iPod|Mobile|MicroMessenger/i.test(navigator.userAgent) ||
+          (window.matchMedia && window.matchMedia("(pointer: coarse)").matches && window.innerWidth <= 820);
+        document.body.classList.toggle("is-mobile", isMob);
+        if (isMob) document.body.classList.remove("mobile-preview");
+      }
+
+      document.getElementById("btnMobileToggle").addEventListener("click", () => {
+        const on = document.body.classList.toggle("mobile-preview");
+        document.getElementById("mobileToggleText").textContent = on ? "全屏模式" : "手机竖屏";
+        setTimeout(resizeCanvas, 300);
+      });
+
+      document.getElementById("btnStartGame").addEventListener("click", () => { audio.ensure(); exitCover(); });
+      document.getElementById("btnCoverChapters").addEventListener("click", () => { renderChaptersModal(); document.getElementById("chaptersOverlay").classList.add("open"); });
+      document.getElementById("btnCoverThemes").addEventListener("click", () => { renderThemesModal(); document.getElementById("themesOverlay").classList.add("open"); });
+      document.getElementById("btnHome").addEventListener("click", enterCover);
+      document.getElementById("btnOpenChapters").addEventListener("click", () => { renderChaptersModal(); document.getElementById("chaptersOverlay").classList.add("open"); });
+      document.getElementById("btnThemes").addEventListener("click", () => { renderThemesModal(); document.getElementById("themesOverlay").classList.add("open"); });
+      document.getElementById("btnCloseChapters").addEventListener("click", () => document.getElementById("chaptersOverlay").classList.remove("open"));
+      document.getElementById("btnCloseThemes").addEventListener("click", () => document.getElementById("themesOverlay").classList.remove("open"));
+
+      ["chaptersOverlay", "themesOverlay"].forEach(id => {
+        const ov = document.getElementById(id);
+        ov.addEventListener("click", e => { if (e.target === ov) ov.classList.remove("open"); });
+      });
+
+      document.getElementById("skinTabEnv").addEventListener("click", () => {
+        document.getElementById("skinTabEnv").classList.add("active");
+        document.getElementById("skinTabHero").classList.remove("active");
+        document.getElementById("envSkinGrid").style.display = "grid";
+        document.getElementById("heroSkinGrid").style.display = "none";
+      });
+      document.getElementById("skinTabHero").addEventListener("click", () => {
+        document.getElementById("skinTabHero").classList.add("active");
+        document.getElementById("skinTabEnv").classList.remove("active");
+        document.getElementById("heroSkinGrid").style.display = "grid";
+        document.getElementById("envSkinGrid").style.display = "none";
+      });
+      document.getElementById("chkTryAll").addEventListener("change", e => {
+        progress.tryAll = e.target.checked;
+        saveProgress();
+        renderThemesModal();
+      });
+
+      document.getElementById("btnImportRun").addEventListener("click", () => {
+        importLevelFromJson(document.getElementById("importJsonInput").value);
+      });
+
+      // 长按连续悔棋
+      let undoHoldDelay = null, undoHoldInterval = null;
+      const btnUndo = document.getElementById("btnUndo");
+      function stopUndoHold() { clearTimeout(undoHoldDelay); clearInterval(undoHoldInterval); }
+      btnUndo.addEventListener("pointerdown", e => {
+        e.preventDefault();
+        undo();
+        stopUndoHold();
+        undoHoldDelay = setTimeout(() => {
+          undoHoldInterval = setInterval(() => { if (!undo()) stopUndoHold(); }, 125);
+        }, 340);
+      });
+      ["pointerup", "pointercancel", "pointerleave"].forEach(ev => btnUndo.addEventListener(ev, stopUndoHold));
+
+      document.getElementById("btnReset").addEventListener("click", restartLevelWithUndo);
+      document.getElementById("btnSound").addEventListener("click", e => {
+        audio.muted = !audio.muted;
+        e.currentTarget.style.opacity = audio.muted ? "0.45" : "1";
+        document.getElementById("icoSound").innerHTML = audio.muted ? UI_SVGS.soundOff : UI_SVGS.soundOn;
+      });
+      document.getElementById("btnToggleDpad").addEventListener("click", () => {
+        document.getElementById("dpadBox").classList.toggle("open");
+        resizeCanvas();
+      });
+
+      document.getElementById("btnHint").addEventListener("click", () => {
+        const pop = document.getElementById("hintPopover");
+        document.getElementById("hintPopText").textContent = LEVELS[game.levelIdx].hint || "观察光路与占格压制关系。";
+        pop.classList.toggle("open");
+      });
+      document.getElementById("btnCloseHint").addEventListener("click", () => document.getElementById("hintPopover").classList.remove("open"));
+      document.getElementById("btnBfsStep").addEventListener("click", () => {
+        if (progress.hintsLeft <= 0) { showToast("指引次数不足，点击右侧 +3 补给"); return; }
+        const mv = GameEngine.findNextBestMove(game.staticMap, game.dyn);
+        if (!mv) {
+          game.deadlock = true; updateHUD();
+          document.getElementById("hintPopover").classList.remove("open");
+          showToast("当前已走入死角，建议先点悔棋退回");
+          return;
+        }
+        progress.hintsLeft--; saveProgress(); updateHUD();
+        game.hintArrow = { dr: mv.dr, dc: mv.dc, expireAt: performance.now() + 3400 };
+        document.getElementById("hintPopover").classList.remove("open");
+        showToast(`建议方向：${mv.sym}`);
+      });
+      document.getElementById("btnAdRefill").addEventListener("click", () => {
+        progress.hintsLeft += 3; saveProgress(); updateHUD();
+        showToast("已补给 +3 次方向指引");
+      });
+
+      document.getElementById("btnClearReplay").addEventListener("click", () => loadLevel(game.levelIdx));
+      document.getElementById("btnNextLevel").addEventListener("click", () => loadLevel((game.levelIdx + 1) % LEVELS.length));
+      document.getElementById("btnShareScore").addEventListener("click", () => {
+        const lvl = LEVELS[game.levelIdx];
+        const opt = GameEngine.getOptimalSteps(lvl);
+        const ta = document.createElement("textarea");
+        ta.value = `我在《光影推箱》第 ${lvl.code} 关用 ${game.steps} 步通关${opt && game.steps <= opt ? "（达成理论最优！）" : ""}，来挑战看看！`;
+        ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); showToast("战绩文案已复制"); } catch (e) {}
+        document.body.removeChild(ta);
+      });
+
+      // 方向键支持长按连走
+      let dpadDelay = null, dpadInterval = null;
+      function stopDpadHold() { clearTimeout(dpadDelay); clearInterval(dpadInterval); }
+      document.querySelectorAll(".dpad-btn").forEach(btn => {
+        const dir = btn.dataset.dir;
+        const mapDir = { up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1] };
+        const [dr, dc] = mapDir[dir];
+        btn.addEventListener("pointerdown", e => {
+          e.preventDefault();
+          move(dr, dc, dir);
+          stopDpadHold();
+          dpadDelay = setTimeout(() => {
+            dpadInterval = setInterval(() => { move(dr, dc, dir); }, 140);
+          }, 300);
+        });
+        ["pointerup", "pointercancel", "pointerleave"].forEach(ev => btn.addEventListener(ev, stopDpadHold));
+      });
+
+      // 画布触控与鼠标指针接入 TouchInputController
+      canvas.addEventListener("pointerdown", e => {
+        const rect = canvas.getBoundingClientRect();
+        canvas.setPointerCapture(e.pointerId);
+        touchCtrl.onStart(e.clientX - rect.left, e.clientY - rect.top, e.pointerId);
+      });
+      canvas.addEventListener("pointermove", e => {
+        const rect = canvas.getBoundingClientRect();
+        touchCtrl.onMove(e.clientX - rect.left, e.clientY - rect.top, e.pointerId);
+      });
+      canvas.addEventListener("pointerup", e => {
+        const rect = canvas.getBoundingClientRect();
+        touchCtrl.onEnd(e.clientX - rect.left, e.clientY - rect.top, e.pointerId);
+      });
+      canvas.addEventListener("pointercancel", () => touchCtrl.cancel());
+
+      window.addEventListener("keydown", e => {
+        if (document.activeElement && ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+        if (document.getElementById("clearOverlay").classList.contains("open")) {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); document.getElementById("btnNextLevel").click(); }
+          return;
+        }
+        if (game.inCover) return;
+        const k = e.key.toLowerCase();
+        if (k === "arrowup" || k === "w") { e.preventDefault(); move(-1, 0, "up"); }
+        else if (k === "arrowdown" || k === "s") { e.preventDefault(); move(1, 0, "down"); }
+        else if (k === "arrowleft" || k === "a") { e.preventDefault(); move(0, -1, "left"); }
+        else if (k === "arrowright" || k === "d") { e.preventDefault(); move(0, 1, "right"); }
+        else if (k === "z") { e.preventDefault(); undo(); }
+        else if (k === "r") { e.preventDefault(); restartLevelWithUndo(); }
+      });
+
+      window.addEventListener("resize", () => { detectMobile(); resizeCanvas(); });
+
+      window.QingxueAPI = {
+        engine: GameEngine,
+        assets: Assets2D,
+        touchController: touchCtrl,
+        importLevel: importLevelFromJson
+      };
+
+      window.onload = function () {
+        detectMobile();
+        loadProgress();
+        Assets2D.applyTheme(progress.themeId);
+        enterCover();
+        requestAnimationFrame(animate);
+      };
+    })();
+  </script>
+</body>
+</html>
