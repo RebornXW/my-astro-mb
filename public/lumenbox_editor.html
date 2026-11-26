@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>光影推箱 · 关卡工坊 5.0（自由点菜 & 必触发巧思造图）</title>
+  <title>光影推箱 · 关卡工坊</title>
   <style>
     :root {
       --bg-grad: linear-gradient(155deg, #E6EBF1 0%, #F4EFE6 52%, #EAE3D7 100%);
@@ -761,22 +761,29 @@
       box-shadow: 0 2px 8px rgba(229, 164, 53, 0.18);
     }
 
-    .clever-switch-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 4px;
-      border: 1.5px solid var(--border-strong);
+    .clever-switch-badge {
+      padding: 1px 6px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #F4F1EB;
+      color: var(--ink-muted);
       flex-shrink: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 9px;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.35;
     }
 
-    .clever-switch.active .clever-switch-dot {
+    .clever-switch.active .clever-switch-badge {
       background: var(--gold);
       border-color: #C9861A;
       color: #FFFFFF;
+    }
+
+    .clever-switch.banned .clever-switch-badge {
+      background: var(--danger);
+      border-color: #B63A32;
+      color: #FFFFFF;
+      text-decoration: none;
     }
 
     .cand-item-body {
@@ -803,6 +810,107 @@
       gap: 4px;
     }
 
+
+
+    .clever-switch.banned {
+      border-color: var(--danger);
+      background: var(--danger-bg);
+      color: #A8322B;
+      box-shadow: 0 2px 8px rgba(217, 91, 82, 0.14);
+    }
+
+    .clever-switch.banned span:first-child {
+      text-decoration: line-through;
+      opacity: 0.88;
+    }
+
+    .clever-switch.banned .clever-switch-dot {
+      background: var(--danger);
+      border-color: #B63A32;
+      color: #FFFFFF;
+    }
+
+    .clever-legend {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 10.5px;
+      color: var(--ink-muted);
+      flex-wrap: wrap;
+    }
+
+    .clever-legend b.req { color: #9A5F0A; }
+    .clever-legend b.ban { color: #B43830; }
+
+    .recipe-summary-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 6px 9px;
+      border-radius: 9px;
+      background: #F7F4EE;
+      border: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--ink-soft);
+      font-weight: 700;
+    }
+
+    .picker-details summary {
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--ink);
+      user-select: none;
+      list-style: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .picker-details summary::-webkit-details-marker { display: none; }
+    .picker-details[open] .picker-grid { margin-top: 7px; }
+
+    .cand-card-wrap {
+      border: 1.5px solid var(--border);
+      background: #FFFFFF;
+      border-radius: 12px;
+      padding: 9px 10px;
+      cursor: pointer;
+      transition: all 0.14s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      text-align: left;
+    }
+
+    .cand-card-wrap:hover { border-color: var(--ink); transform: translateY(-1px); }
+    .cand-card-wrap.active {
+      border-color: var(--gold);
+      background: #FFFBF0;
+      box-shadow: 0 0 0 2px rgba(229, 164, 53, 0.18);
+    }
+
+    .cand-actions {
+      display: flex;
+      gap: 6px;
+      padding-top: 3px;
+      border-top: 1px dashed rgba(156, 146, 132, 0.22);
+    }
+
+    .cand-mini-btn {
+      flex: 1;
+      border: 1px solid var(--border-strong);
+      background: #FAF8F4;
+      color: var(--ink);
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 4px 7px;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+
+    .cand-mini-btn:hover { background: var(--ink); color: #FFFDF9; border-color: var(--ink); }
 
     /* 12x12 关卡库槽位管理样式 */
     .lib-head-row {
@@ -905,8 +1013,8 @@
       <div class="brand">
         <div class="brand-mark">光</div>
         <div class="brand-info">
-          <h1>光影推箱 · 关卡工坊 5.0</h1>
-          <span>自由点菜元件池 · 8 项必触发巧思筛选 · 缩略图相面 & 草图进化</span>
+          <h1>光影推箱 · 关卡工坊</h1>
+          <span>自由配道具 · 技巧必含/禁用筛选 · 草图微调进化</span>
         </div>
       </div>
 
@@ -918,7 +1026,7 @@
       <div class="topbar-right">
         <button class="btn btn-jade" id="btnTopSaveSlot" title="保存当前画布到所选章节槽位 (Ctrl+S)">💾 存槽位</button>
         <button class="btn" id="btnTopExportLevelsJs" title="导出完整的 core/levels.js 文件">📦 导出 levels.js</button>
-        <button class="btn" id="btnOpenPcgTab">🎲 定制造图 5.0</button>
+        <button class="btn" id="btnOpenPcgTab">🎲 地图生成器</button>
         <button class="btn btn-gold" id="btnRunBFS">🔍 BFS 光学纯净验关</button>
       </div>
     </header>
@@ -1017,7 +1125,7 @@
       <aside class="side-panel panel-right">
         <div class="right-tabs">
           <button class="right-tab-btn active" id="tabBtnVerify">🔍 光学验关</button>
-          <button class="right-tab-btn" id="tabBtnPcg">🎲 定制造图 5.0</button>
+          <button class="right-tab-btn" id="tabBtnPcg">🎲 地图生成器</button>
         </div>
 
         <!-- Tab 1：BFS 验关与 JSON -->
@@ -1079,85 +1187,102 @@
           </section>
         </div>
 
-        <!-- Tab 2：定制造图 5.0 -->
+        <!-- Tab 2：地图生成器 -->
         <div id="tabPanePcg" style="display:none; flex-direction:column; gap:12px;">
           <section class="card">
             <div class="card-head">
-              <span>🎲 定制造图 5.0</span>
-              <small>点菜元件 · 定向筛选巧思</small>
+              <span>🎲 地图生成器</span>
+              <small>点选道具 · 必含 / 禁用技巧</small>
             </div>
 
             <div class="pcg-source-switch">
-              <button class="pcg-source-btn active" id="pcgModeScratch">🌱 从零点菜生成</button>
-              <button class="pcg-source-btn" id="pcgModeDraft">🔧 微调当前草图</button>
+              <button class="pcg-source-btn active" id="pcgModeScratch">🌱 重新生成</button>
+              <button class="pcg-source-btn" id="pcgModeDraft">🔧 微调当前画布</button>
             </div>
 
+            <!-- 模式 A：重新生成（道具直接可见可点！） -->
             <div id="pcgScratchPanel" style="display:flex; flex-direction:column; gap:9px;">
               <div class="field">
-                <label>快捷套用章节配置（点选后仍可自由增减）</label>
+                <label>快捷章节预设（点击自动填好道具，仍可自由修改）</label>
                 <div class="preset-chips" id="pcgPresetChips"></div>
               </div>
 
               <div class="field">
-                <label>自由点菜元件数量</label>
+                <label>道具数量（点 − / + 自由增减）</label>
                 <div class="picker-grid" id="elemPickerGrid"></div>
               </div>
 
               <div class="row-2">
                 <div class="field">
-                  <label for="pcgCols">生成列数 (5~10)</label>
+                  <label for="pcgCols">地图宽 (5~10)</label>
                   <input class="input" id="pcgCols" type="number" min="5" max="10" value="7" />
                 </div>
                 <div class="field">
-                  <label for="pcgRows">生成行数 (5~8)</label>
+                  <label for="pcgRows">地图高 (5~8)</label>
                   <input class="input" id="pcgRows" type="number" min="5" max="8" value="6" />
                 </div>
               </div>
+
+              <div class="field">
+                <label for="pcgMaxWalls">内部墙壁数量（越少越空旷）</label>
+                <select class="input" id="pcgMaxWalls">
+                  <option value="0">0 块（全空旷无内墙）</option>
+                  <option value="1">最多 1 块（很空旷）</option>
+                  <option value="2" selected>最多 2 块（较空旷 · 推荐）</option>
+                  <option value="3">最多 3 块（适中）</option>
+                  <option value="5">最多 5 块（紧凑）</option>
+                </select>
+              </div>
             </div>
 
-            <div id="pcgDraftTip" class="draft-tip-box" style="display:none;">
-              <b>🔧 草图微调进化模式：</b>将保留你当前画布的元件清单与大致骨架，自动尝试微调内墙、道具站位与朝向，帮你把半成品草图抛光成<b>无逃课、命中下方巧思开关</b>的精品图！
+            <!-- 模式 B：微调当前画布 -->
+            <div id="pcgDraftPanel" style="display:none; flex-direction:column; gap:8px;">
+              <div class="draft-tip-box">
+                <b>🔧 微调当前画布：</b>保留你当前画布上的全部道具，自动调整站位、墙壁与朝向，帮你把草图打磨成更巧妙的关卡。
+              </div>
+              <div class="pcg-checks">
+                <label><input type="checkbox" id="pcgLockDraftWalls" /> 🔒 锁住现有内墙（不增删墙壁，只挪道具）</label>
+              </div>
             </div>
 
             <div class="row-2">
               <div class="field">
                 <label for="pcgMinSteps">最少步数</label>
-                <input class="input" id="pcgMinSteps" type="number" min="4" max="30" value="8" />
+                <input class="input" id="pcgMinSteps" type="number" min="4" max="30" value="7" />
               </div>
               <div class="field">
-                <label for="pcgMaxSteps">最多步数（防冗长）</label>
-                <input class="input" id="pcgMaxSteps" type="number" min="6" max="40" value="18" />
+                <label for="pcgMaxSteps">最多步数</label>
+                <input class="input" id="pcgMaxSteps" type="number" min="6" max="40" value="20" />
               </div>
             </div>
 
             <div class="field">
-              <label>✨ 必触发巧思开关（可多选，勾选即作为硬筛选门槛）</label>
+              <label>✨ 技巧筛选（左键点击切换：不限 → 必含 → 禁用）</label>
               <div class="clever-switch-grid" id="cleverSwitchGrid"></div>
             </div>
 
             <div class="field">
-              <label for="pcgBudget">进化轮次</label>
+              <label for="pcgBudget">生成耗时</label>
               <select class="input" id="pcgBudget">
-                <option value="220">快速探索（220 轮 · ~2s）</option>
-                <option value="450" selected>标准炼图（450 轮 · ~4s）</option>
-                <option value="800">深度炼丹（800 轮 · ~7s）</option>
+                <option value="260">快速（260 轮 · ~2秒）</option>
+                <option value="520" selected>标准（520 轮 · ~4秒）</option>
+                <option value="950">深度（950 轮 · ~7秒）</option>
               </select>
             </div>
 
             <div class="pcg-checks">
-              <label><input type="checkbox" id="pcgAutoPrune" checked /> ✂️ 剪枝废格与厚墙</label>
               <label><input type="checkbox" id="pcgRequireMirror" checked /> 🪞 禁透镜当障碍物</label>
-              <label><input type="checkbox" id="pcgUniqueMech" checked /> 🧬 光学套路去重</label>
+              <label><input type="checkbox" id="pcgUniqueMech" checked /> 🧬 套路去重</label>
             </div>
 
             <div class="btn-row">
-              <button class="btn btn-gold" id="btnStartPcg">✨ 开始定制造图</button>
+              <button class="btn btn-gold" id="btnStartPcg">✨ 开始生成地图</button>
               <button class="btn" id="btnStopPcg" style="display:none; flex:0;">⏹ 停止</button>
             </div>
             <div class="pcg-progress-wrap" id="pcgProgressWrap">
               <div class="pcg-bar-track"><div class="pcg-bar-fill" id="pcgBarFill"></div></div>
               <div class="pcg-stat">
-                <span id="pcgStatText">正在进化筛选...</span>
+                <span id="pcgStatText">正在搜索...</span>
                 <span id="pcgStatPct">0%</span>
               </div>
             </div>
@@ -1165,12 +1290,12 @@
 
           <section class="card">
             <div class="card-head">
-              <span>Top 5 候选图（实时缩略图）</span>
-              <small>看图相面 · 点击载入</small>
+              <span>候选地图（最多 5 张）</span>
+              <small>点击载入 · 可继续微调</small>
             </div>
             <div class="cand-list" id="pcgCandList">
               <div style="font-size:11.5px; color:var(--ink-soft); line-height:1.5;">
-                在上方自由点选本关元件与<b>必触发巧思开关</b>（例如勾选 <code>⚡ 占格压制</code> 或 <code>🪞 双位折光</code>），算法将采用双层爬山进化，并直接展示<b>实时迷你棋盘缩略图</b>方便你一眼挑出雅观神图。
+                选好上面的预设或道具，点「✨ 开始生成地图」。如果看到不错的苗子，点卡片上的「🔄 继续微调」可以接着打磨。
               </div>
             </div>
           </section>
@@ -1217,46 +1342,46 @@
       const LevelGenerator = (function () {
         const PRESETS = [
           {
-            id: "ch1_ice_basic",
+            id: "ch1_ice",
             label: "❄️ 卷一·纯冰",
-            rows: 5, cols: 7, minSteps: 8, maxSteps: 16,
-            counts: { S: 1, L: 0, M: 0, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2, wall: 3 },
-            clever: ["body_shadow"]
+            rows: 6, cols: 7, minSteps: 7, maxSteps: 18, maxWalls: 2,
+            counts: { S: 1, L: 0, M: 0, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2 },
+            rules: { suppression: "ban" }
           },
           {
             id: "ch1_lantern",
-            label: "🏮 纯提灯",
-            rows: 5, cols: 7, minSteps: 8, maxSteps: 16,
-            counts: { S: 0, L: 1, M: 0, SP: 0, B: 0, C: 1, F: 0, I: 1, V: 0, X: 1, wall: 3 },
-            clever: ["ping_pong"]
+            label: "🏮 卷一·提灯",
+            rows: 6, cols: 7, minSteps: 7, maxSteps: 18, maxWalls: 2,
+            counts: { S: 0, L: 1, M: 0, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2 },
+            rules: { suppression: "ban", ping_pong: "require" }
           },
           {
             id: "mirror_dual",
-            label: "🪞 双位折光",
-            rows: 6, cols: 7, minSteps: 10, maxSteps: 20,
-            counts: { S: 1, L: 0, M: 1, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2, wall: 3 },
-            clever: ["mirror_dual"]
+            label: "🪞 折光镜",
+            rows: 6, cols: 7, minSteps: 8, maxSteps: 20, maxWalls: 2,
+            counts: { S: 1, L: 0, M: 1, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2 },
+            rules: { suppression: "ban" }
           },
           {
             id: "ch2_amber",
             label: "🟧 卷二·纯珀",
-            rows: 5, cols: 7, minSteps: 8, maxSteps: 17,
-            counts: { S: 1, L: 0, M: 1, SP: 0, B: 1, C: 0, F: 1, I: 0, V: 1, X: 2, wall: 3 },
-            clever: ["interleaved"]
+            rows: 6, cols: 7, minSteps: 7, maxSteps: 19, maxWalls: 2,
+            counts: { S: 1, L: 0, M: 1, SP: 0, B: 1, C: 0, F: 1, I: 0, V: 1, X: 2 },
+            rules: { suppression: "ban" }
           },
           {
             id: "ch3_fusion",
-            label: "✨ 冰珀交响",
-            rows: 6, cols: 7, minSteps: 9, maxSteps: 19,
-            counts: { S: 1, L: 0, M: 1, SP: 0, B: 0, C: 1, F: 1, I: 0, V: 0, X: 2, wall: 3 },
-            clever: ["swap"]
+            label: "✨ 卷三·冰珀",
+            rows: 6, cols: 7, minSteps: 8, maxSteps: 20, maxWalls: 2,
+            counts: { S: 1, L: 0, M: 1, SP: 0, B: 0, C: 1, F: 1, I: 0, V: 0, X: 2 },
+            rules: { suppression: "ban", swap: "require" }
           },
           {
             id: "ch4_suppress",
-            label: "⚡ 占格压制",
-            rows: 6, cols: 7, minSteps: 9, maxSteps: 19,
-            counts: { S: 1, L: 0, M: 0, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2, wall: 3 },
-            clever: ["suppression"]
+            label: "⚡ 卷四·压制",
+            rows: 6, cols: 7, minSteps: 8, maxSteps: 20, maxWalls: 2,
+            counts: { S: 1, L: 0, M: 0, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2 },
+            rules: { suppression: "require" }
           }
         ];
 
@@ -1269,6 +1394,16 @@
             const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
           }
           return arr;
+        }
+
+        function countInnerWalls(grid) {
+          let n = 0;
+          for (let r = 1; r < grid.length - 1; r++) {
+            for (let c = 1; c < grid[0].length - 1; c++) {
+              if (grid[r][c] === "#") n++;
+            }
+          }
+          return n;
         }
 
         function isConnected(grid) {
@@ -1319,21 +1454,12 @@
           return false;
         }
 
+        // 智能光学对齐建图：大概率把折光镜与光敏元件放在太阳/镜子的光路上，大幅提升巧思命中率
         function createRandomGridFromConfig(cfg) {
           const rows = Math.max(5, Math.min(8, Number(cfg.rows) || 6));
           const cols = Math.max(5, Math.min(10, Number(cfg.cols) || 7));
           const cts = cfg.counts || {};
-          const items = [];
-          const pushN = (n, fn) => { for (let i = 0; i < (n || 0); i++) items.push(fn()); };
-          pushN(cts.L, () => "L");
-          pushN(cts.M, () => pick(["\\", "/"]));
-          pushN(cts.SP, () => pick(["^", "v", "<", ">"]));
-          pushN(cts.B, () => "B");
-          pushN(cts.C, () => "C");
-          pushN(cts.F, () => "F");
-          pushN(cts.I, () => "I");
-          pushN(cts.V, () => "V");
-          pushN(cts.X, () => "X");
+          const maxCap = typeof cfg.maxInnerWalls === "number" ? cfg.maxInnerWalls : 2;
 
           const grid = Array.from({ length: rows }, (_, r) =>
             Array.from({ length: cols }, (_, c) =>
@@ -1351,52 +1477,97 @@
             borderSpots.push([r, cols - 1, r, cols - 2]);
           }
           shuffle(borderSpots);
+          const suns = [];
           const sunMouths = new Set();
           const sunCount = Math.min(cts.S || 0, borderSpots.length);
           for (let i = 0; i < sunCount; i++) {
             const [sr, sc, mr, mc] = borderSpots[i];
             grid[sr][sc] = "S";
+            suns.push([sr, sc]);
             sunMouths.add(`${mr},${mc}`);
           }
 
-          const inner = [];
+          const allInner = [];
           for (let r = 1; r < rows - 1; r++) {
-            for (let c = 1; c < cols - 1; c++) {
-              if (!sunMouths.has(`${r},${c}`)) inner.push([r, c]);
-            }
+            for (let c = 1; c < cols - 1; c++) allInner.push([r, c]);
           }
-          shuffle(inner);
+          shuffle(allInner);
+          const used = new Set();
+          const keyOf = p => `${p[0]},${p[1]}`;
 
-          const targetWalls = Math.max(0, cts.wall || 0);
+          const takeAligned = anchors => {
+            if (!anchors.length) return null;
+            const cands = allInner.filter(p => !used.has(keyOf(p)) && anchors.some(a => a[0] === p[0] || a[1] === p[1]));
+            if (!cands.length) return null;
+            const chosen = pick(cands);
+            used.add(keyOf(chosen));
+            return chosen;
+          };
+          const takeAny = () => {
+            for (let i = 0; i < allInner.length; i++) {
+              const p = allInner[i];
+              if (!used.has(keyOf(p))) { used.add(keyOf(p)); return p; }
+            }
+            return null;
+          };
+
+          // 1) 优先放置折光镜（65% 对齐太阳光路）
+          const mirrorAnchors = [];
+          for (let i = 0; i < (cts.M || 0); i++) {
+            const pos = (suns.length && Math.random() < 0.65 ? takeAligned(suns) : null) || takeAny();
+            if (!pos) return null;
+            grid[pos[0]][pos[1]] = pick(["\\", "/"]);
+            mirrorAnchors.push(pos);
+          }
+
+          // 2) 放置内墙（0 ~ maxCap 随机，保持空旷）
+          const targetWalls = maxCap > 0 ? randInt(maxCap + 1) : 0;
           let placedWalls = 0;
-          for (let i = 0; i < inner.length && placedWalls < targetWalls; i++) {
-            const [r, c] = inner[i];
-            grid[r][c] = "#";
-            if (isConnected(grid)) placedWalls++;
-            else grid[r][c] = ".";
-          }
-
-          const empties = [];
-          for (let r = 1; r < rows - 1; r++) {
-            for (let c = 1; c < cols - 1; c++) {
-              if (grid[r][c] === ".") empties.push([r, c]);
+          for (let i = 0; i < allInner.length && placedWalls < targetWalls; i++) {
+            const p = allInner[i];
+            const k = keyOf(p);
+            if (used.has(k) || sunMouths.has(k)) continue;
+            grid[p[0]][p[1]] = "#";
+            if (isConnected(grid)) {
+              used.add(k);
+              placedWalls++;
+            } else {
+              grid[p[0]][p[1]] = ".";
             }
           }
-          shuffle(empties);
-          if (empties.length < items.length + 2) return null;
 
-          const pPos = empties.pop();
+          // 3) 放置主角、终点与其他道具（光敏元件 50% 对齐太阳或镜子）
+          const pPos = takeAny();
+          if (!pPos) return null;
           grid[pPos[0]][pPos[1]] = "P";
+
+          const optAnchors = suns.concat(mirrorAnchors);
+          const items = [];
+          const pushN = (n, fn) => { for (let i = 0; i < (n || 0); i++) items.push(fn()); };
+          pushN(cts.I, () => "I");
+          pushN(cts.V, () => "V");
+          pushN(cts.C, () => "C");
+          pushN(cts.F, () => "F");
+          pushN(cts.L, () => "L");
+          pushN(cts.SP, () => pick(["^", "v", "<", ">"]));
+          pushN(cts.B, () => "B");
+          pushN(cts.X, () => "X");
+
           for (let i = 0; i < items.length; i++) {
-            const pos = empties.pop();
-            grid[pos[0]][pos[1]] = items[i];
+            const ch = items[i];
+            const isReactive = ch === "I" || ch === "V" || ch === "C" || ch === "F";
+            const pos = (isReactive && optAnchors.length && Math.random() < 0.50 ? takeAligned(optAnchors) : null) || takeAny();
+            if (!pos) return null;
+            grid[pos[0]][pos[1]] = ch;
           }
           return grid;
         }
 
-        function mutateGrid(grid, stepsCount = 1) {
+        function mutateGrid(grid, stepsCount = 1, opts = {}) {
           const rows = grid.length, cols = grid[0].length;
           const next = grid.map(r => r.slice());
+          const lockWalls = Boolean(opts.lockWalls);
+          const maxInnerWalls = typeof opts.maxInnerWalls === "number" ? opts.maxInnerWalls : 99;
 
           for (let k = 0; k < stepsCount; k++) {
             const empties = [], movables = [], innerWalls = [], borderSuns = [], borderWalls = [];
@@ -1419,20 +1590,23 @@
               }
             }
 
+            const canAddWall = !lockWalls && innerWalls.length < maxInnerWalls && empties.length > 4;
+            const canDelWall = !lockWalls && innerWalls.length > 0;
             const op = Math.random();
-            if (op < 0.46 && movables.length && empties.length) {
+
+            if (op < 0.56 && movables.length && empties.length) {
               const [r1, c1, ch] = pick(movables);
               const [r2, c2] = pick(empties);
               next[r1][c1] = ".";
               next[r2][c2] = ch;
-            } else if (op < 0.68 && empties.length > 3) {
+            } else if (op < 0.70 && canAddWall) {
               const [r, c] = pick(empties);
               next[r][c] = "#";
               if (!isConnected(next) || hasBlockedSun(next)) next[r][c] = ".";
-            } else if (op < 0.82 && innerWalls.length > 0) {
+            } else if (op < 0.80 && canDelWall) {
               const [r, c] = pick(innerWalls);
               next[r][c] = ".";
-            } else if (op < 0.92 && borderSuns.length && borderWalls.length) {
+            } else if (op < 0.90 && borderSuns.length && borderWalls.length) {
               const [sr, sc] = pick(borderSuns);
               const [wr, wc] = pick(borderWalls);
               next[sr][sc] = "#";
@@ -1455,7 +1629,6 @@
           return next;
         }
 
-        // ★ 剥离外围毫无意义的“双层死墙”（保留必要的一圈围墙或太阳嵌墙）
         function stripOuterDeadWalls(grid) {
           let g = grid.map(r => r.slice());
           let stripped = 0;
@@ -1469,7 +1642,7 @@
           return { grid: g, stripped };
         }
 
-        function pruneGrid(grid, origSolve) {
+        function pruneGrid(grid, origSolve, evalOpts = {}) {
           if (!origSolve || origSolve.status !== "solved" || !origSolve.metrics || !origSolve.metrics.activeCells) {
             return { grid, res: origSolve, prunedCount: 0 };
           }
@@ -1511,7 +1684,7 @@
                 continue;
               }
 
-              const testRes = GameEngine.solveBFS(curGrid.map(row => row.join("")), 14000);
+              const testRes = GameEngine.solveBFS(curGrid.map(row => row.join("")), 14000, evalOpts);
               const noNewCheese = testRes.status === "solved"
                 && testRes.steps >= curSolve.steps
                 && testRes.cheeseWarnings.length <= curSolve.cheeseWarnings.length;
@@ -1531,13 +1704,13 @@
           if (strippedRes.stripped > 0) {
             curGrid = strippedRes.grid;
             prunedCount += strippedRes.stripped;
-            curSolve = GameEngine.solveBFS(curGrid.map(row => row.join("")), 14000);
+            curSolve = GameEngine.solveBFS(curGrid.map(row => row.join("")), 14000, evalOpts);
           }
 
           return { grid: curGrid, res: curSolve, prunedCount };
         }
 
-        return { PRESETS, createRandomGridFromConfig, mutateGrid, stripOuterDeadWalls, pruneGrid };
+        return { PRESETS, countInnerWalls, createRandomGridFromConfig, mutateGrid, stripOuterDeadWalls, pruneGrid };
       })();
 
       /* =====================================================================
@@ -3086,7 +3259,7 @@
 
       function runSolver() {
         stopDemo();
-        const res = GameEngine.solveBFS(getGridStrings(), 80000);
+        const res = GameEngine.solveBFS(getGridStrings(), 80000, { openStyle: true });
         app.lastSolve = res;
 
         const box = document.getElementById("solverBox");
@@ -3126,12 +3299,12 @@
             ${renderTagsHtml(m.highlights)}
             <div class="diff-grid">
               <div class="diff-cell"><span>巧思复用</span><b>${m.cleverScore} / 35</b></div>
-              <div class="diff-cell"><span>空间紧凑</span><b>${m.compactScore} / 25</b></div>
+              <div class="diff-cell"><span>空间美感</span><b>${m.compactScore} / 25</b></div>
               <div class="diff-cell"><span>思维深度</span><b>${m.depthScore} / 25</b></div>
               <div class="diff-cell"><span>纯净度</span><b>${m.purityScore} / 15</b></div>
             </div>
             <div style="font-size:11px; color:var(--ink-soft);">
-              空地 <b>${m.floorCount}</b> 格（废格 ${m.wasteFloors} · 冗余厚墙 ${m.redundantWallLayers}）· 探索 <b>${res.explored.toLocaleString()}</b> 态
+              空地 <b>${m.floorCount}</b> 格 · 内墙 <b>${m.innerWallCount}</b> 块 · 探索 <b>${res.explored.toLocaleString()}</b> 态
             </div>
             <div class="cand-flow">🧬 套路：${m.mechanicFlow}</div>
           `;
@@ -3187,7 +3360,7 @@
       }
 
       /* =====================================================================
-         定制造图 5.0 调度器（点菜元件池 + 8 项必触发巧思 + 双层爬山进化 + 缩略图）
+         地图生成器调度器（两阶段平滑进化 · 必含/禁用三态 · 稳定高出图率）
          ===================================================================== */
       function switchRightTab(tab) {
         const isPcg = tab === "pcg";
@@ -3207,28 +3380,29 @@
         { key: "F", label: "🟧 暖珀箱", max: 3 },
         { key: "I", label: "🧊 冰墙", max: 3 },
         { key: "V", label: "🟨 珀墙", max: 3 },
-        { key: "X", label: "◇ 终点", max: 4 },
-        { key: "wall", label: "🧱 内墙", max: 8 }
+        { key: "X", label: "◇ 终点", max: 4 }
       ];
 
       const CLEVER_SWITCHES = [
-        { id: "mirror_dual", label: "🪞 双位折光", check: m => m.mirrorDualRefractCount > 0 },
         { id: "suppression", label: "⚡ 占格压制", check: m => m.suppressionCount > 0 },
+        { id: "mirror_dual", label: "🪞 双位折光", check: m => m.mirrorDualRefractCount > 0 },
+        { id: "wood_shadow", label: "☂️ 借物遮阳", check: m => (m.woodShadowFlips || 0) > 0 },
         { id: "body_shadow", label: "👤 自身成荫", check: m => m.bodyShadowFlips > 0 },
         { id: "ping_pong", label: "🌗 状态拉扯", check: m => m.pingPongFlips > 0 },
         { id: "interleaved", label: "🔁 交错复用", check: m => m.interleavedReuses > 0 },
         { id: "hands_free", label: "✋ 空手终结", check: m => Boolean(m.handsFreeVictory) },
         { id: "unseat", label: "🔄 退槽借位", check: m => m.goalUnseats > 0 },
-        { id: "swap", label: "✨ 冰珀互换", check: m => m.swapCount > 0 }
+        { id: "swap", label: "✨ 冰珀互换", check: m => m.swapCount > 0 },
+        { id: "multi_flip", label: "💥 连锁相变", check: m => (m.multiFlipSteps || 0) > 0 }
       ];
 
       const pcgState = {
         running: false,
         timer: null,
-        sourceMode: "scratch", // "scratch" | "draft"
-        activePresetId: "mirror_dual",
-        counts: { S: 1, L: 0, M: 1, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2, wall: 3 },
-        cleverSelected: new Set(["mirror_dual"]),
+        sourceMode: "scratch",
+        activePresetId: "ch1_ice",
+        counts: { S: 1, L: 0, M: 0, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2 },
+        cleverRules: { suppression: "ban" },
         candidates: [],
         activeSig: null
       };
@@ -3264,6 +3438,22 @@
         });
       }
 
+      function applyPreset(p) {
+        pcgState.activePresetId = p.id;
+        pcgState.counts = Object.assign({}, p.counts);
+        pcgState.cleverRules = Object.assign({}, p.rules || {});
+        document.getElementById("pcgCols").value = p.cols;
+        document.getElementById("pcgRows").value = p.rows;
+        document.getElementById("pcgMinSteps").value = p.minSteps;
+        document.getElementById("pcgMaxSteps").value = p.maxSteps;
+        if (typeof p.maxWalls === "number") {
+          document.getElementById("pcgMaxWalls").value = String(p.maxWalls);
+        }
+        renderPresetChipsUI();
+        renderElemPickerUI();
+        renderCleverSwitchesUI();
+      }
+
       function renderPresetChipsUI() {
         const root = document.getElementById("pcgPresetChips");
         root.innerHTML = "";
@@ -3272,18 +3462,7 @@
           btn.type = "button";
           btn.className = "preset-chip" + (pcgState.activePresetId === p.id ? " active" : "");
           btn.textContent = p.label;
-          btn.addEventListener("click", () => {
-            pcgState.activePresetId = p.id;
-            pcgState.counts = Object.assign({}, p.counts);
-            pcgState.cleverSelected = new Set(p.clever || []);
-            document.getElementById("pcgCols").value = p.cols;
-            document.getElementById("pcgRows").value = p.rows;
-            document.getElementById("pcgMinSteps").value = p.minSteps;
-            document.getElementById("pcgMaxSteps").value = p.maxSteps;
-            renderPresetChipsUI();
-            renderElemPickerUI();
-            renderCleverSwitchesUI();
-          });
+          btn.addEventListener("click", () => applyPreset(p));
           root.appendChild(btn);
         });
       }
@@ -3292,14 +3471,23 @@
         const root = document.getElementById("cleverSwitchGrid");
         root.innerHTML = "";
         CLEVER_SWITCHES.forEach(sw => {
-          const on = pcgState.cleverSelected.has(sw.id);
+          const mode = pcgState.cleverRules[sw.id] || "any";
           const btn = document.createElement("button");
           btn.type = "button";
-          btn.className = "clever-switch" + (on ? " active" : "");
-          btn.innerHTML = `<span>${sw.label}</span><span class="clever-switch-dot">${on ? "✓" : ""}</span>`;
+          btn.className = "clever-switch" + (mode === "require" ? " active" : (mode === "ban" ? " banned" : ""));
+          btn.title = "左键循环：不限 → 必含 → 禁用；右键快捷切换禁用";
+          const badgeTxt = mode === "require" ? "必含" : (mode === "ban" ? "禁用" : "不限");
+          btn.innerHTML = `<span>${sw.label}</span><span class="clever-switch-badge">${badgeTxt}</span>`;
           btn.addEventListener("click", () => {
-            if (pcgState.cleverSelected.has(sw.id)) pcgState.cleverSelected.delete(sw.id);
-            else pcgState.cleverSelected.add(sw.id);
+            if (mode === "any") pcgState.cleverRules[sw.id] = "require";
+            else if (mode === "require") pcgState.cleverRules[sw.id] = "ban";
+            else delete pcgState.cleverRules[sw.id];
+            renderCleverSwitchesUI();
+          });
+          btn.addEventListener("contextmenu", ev => {
+            ev.preventDefault();
+            if (mode === "ban") delete pcgState.cleverRules[sw.id];
+            else pcgState.cleverRules[sw.id] = "ban";
             renderCleverSwitchesUI();
           });
           root.appendChild(btn);
@@ -3312,33 +3500,29 @@
         document.getElementById("pcgModeScratch").classList.toggle("active", !isDraft);
         document.getElementById("pcgModeDraft").classList.toggle("active", isDraft);
         document.getElementById("pcgScratchPanel").style.display = isDraft ? "none" : "flex";
-        document.getElementById("pcgDraftTip").style.display = isDraft ? "block" : "none";
+        document.getElementById("pcgDraftPanel").style.display = isDraft ? "flex" : "none";
       }
 
       function initPcg5UI() {
-        renderPresetChipsUI();
-        renderElemPickerUI();
-        renderCleverSwitchesUI();
+        applyPreset(LevelGenerator.PRESETS[0]);
         setPcgSourceMode("scratch");
       }
 
       function renderPcgCandidates(emptyMsg) {
         const list = document.getElementById("pcgCandList");
         if (!pcgState.candidates.length) {
-          list.innerHTML = `<div style="font-size:11.5px; color:var(--ink-soft); line-height:1.5;">${emptyMsg || "暂未筛出同时满足全部已选巧思开关与步数区间的地图，可增加进化轮次、放宽步数区间或减少勾选巧思数重试。"}</div>`;
+          list.innerHTML = `<div style="font-size:11.5px; color:var(--ink-soft); line-height:1.5;">${emptyMsg || "暂未筛出满足条件的地图，可增加轮次或放宽步数/必含技巧限制。"}</div>`;
           return;
         }
         list.innerHTML = "";
         pcgState.candidates.forEach((c, idx) => {
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "cand-item" + (pcgState.activeSig === c.sig ? " active" : "");
+          const card = document.createElement("div");
+          card.className = "cand-card-wrap" + (pcgState.activeSig === c.sig ? " active" : "");
           const m = c.res.metrics;
-          const pruneTag = c.prunedCount > 0 ? ` · 剪枝 -${c.prunedCount}` : "";
-          const exactTag = c.exactMatch ? "" : ` <span style="color:#B45B18;">(近命中)</span>`;
-          btn.innerHTML = `
+          const noteTag = c.note ? ` <span style="color:#B45B18; font-weight:700;">(${c.note})</span>` : "";
+          card.innerHTML = `
             <div class="cand-top">
-              <span>#${idx + 1} ${c.recipeName} · ${m.score} 分${exactTag}</span>
+              <span>#${idx + 1} ${c.recipeName} · ${m.score} 分${noteTag}</span>
               <span class="grade-pill grade-${m.grade}">${m.label}</span>
             </div>
             <div class="cand-item-body">
@@ -3347,16 +3531,20 @@
                 ${renderTagsHtml(m.highlights)}
                 <div class="cand-sub">
                   <span>最优 <b>${c.res.steps}</b> 步</span>
-                  <span>空地 <b>${m.floorCount}</b> 格${pruneTag}</span>
+                  <span>内墙 <b>${m.innerWallCount}</b> 块</span>
                 </div>
                 <div class="cand-flow">🧬 ${m.mechanicFlow}</div>
               </div>
             </div>
+            <div class="cand-actions">
+              <button type="button" class="cand-mini-btn" data-act="load">📥 载入画布</button>
+              <button type="button" class="cand-mini-btn" data-act="evolve">🔄 继续微调</button>
+            </div>
           `;
-          const thumbCanvas = btn.querySelector("canvas.cand-thumb");
+          const thumbCanvas = card.querySelector("canvas.cand-thumb");
           Assets2D.renderMiniThumbnail(thumbCanvas, c.mapRows);
 
-          btn.addEventListener("click", () => {
+          const loadThisCandidate = () => {
             pcgState.activeSig = c.sig;
             renderPcgCandidates();
             loadLevelData({
@@ -3366,9 +3554,28 @@
               map: c.mapRows
             });
             runSolver();
-            showToast(`已载入候选 #${idx + 1}（优雅度 ${m.score} 分 / 最优 ${c.res.steps} 步）`);
+          };
+
+          card.addEventListener("click", () => {
+            loadThisCandidate();
+            showToast(`已载入候选 #${idx + 1}（最优 ${c.res.steps} 步 / ${m.score} 分）`);
           });
-          list.appendChild(btn);
+
+          card.querySelector('[data-act="load"]').addEventListener("click", ev => {
+            ev.stopPropagation();
+            loadThisCandidate();
+            showToast(`已载入候选 #${idx + 1}（最优 ${c.res.steps} 步）`);
+          });
+
+          card.querySelector('[data-act="evolve"]').addEventListener("click", ev => {
+            ev.stopPropagation();
+            loadThisCandidate();
+            setPcgSourceMode("draft");
+            showToast(`🔄 已切换为草图微调，继续优化 #${idx + 1}...`);
+            setTimeout(() => startPcg(), 60);
+          });
+
+          list.appendChild(card);
         });
       }
 
@@ -3376,34 +3583,35 @@
         pcgState.running = false;
         if (pcgState.timer) { clearTimeout(pcgState.timer); pcgState.timer = null; }
         document.getElementById("btnStartPcg").disabled = false;
-        document.getElementById("btnStartPcg").textContent = "✨ 开始定制造图";
+        document.getElementById("btnStartPcg").textContent = "✨ 开始生成地图";
         document.getElementById("btnStopPcg").style.display = "none";
       }
 
-      function validatePcgConfig(cts, rows, cols, reqSwitches) {
+      function validatePcgConfig(cts, rows, cols, rules) {
         const boxCnt = (cts.B || 0) + (cts.C || 0) + (cts.F || 0);
         const goalCnt = cts.X || 0;
         const lightCnt = (cts.S || 0) + (cts.L || 0) + (cts.SP || 0);
         const varCnt = (cts.C || 0) + (cts.F || 0) + (cts.I || 0) + (cts.V || 0);
 
-        if (goalCnt < 1) return "请至少放置 1 个终点「◇」";
-        if (boxCnt < goalCnt) return `目标箱数量(${boxCnt})不能少于终点数量(${goalCnt})`;
-        if (lightCnt < 1 && varCnt > 0) return "已放冰/珀元件，请至少放置 1 个光源（太阳/提灯/射灯）";
+        if (goalCnt < 1) return "请至少放 1 个终点「◇」";
+        if (boxCnt < goalCnt) return `箱子总数(${boxCnt})不能少于终点数量(${goalCnt})`;
+        if (lightCnt < 1 && varCnt > 0) return "已选冰/珀元件，请至少放 1 个光源（太阳/提灯/射灯）";
 
-        if (reqSwitches.has("mirror_dual") && (cts.M || 0) < 1) return "勾选了「🪞 双位折光」，请至少点选 1 面折光镜";
-        if (reqSwitches.has("swap") && ((cts.C || 0) < 1 || (cts.F || 0) < 1)) return "勾选了「✨ 冰珀互换」，需同时包含雪箱与暖珀箱";
-        if (reqSwitches.has("suppression") && varCnt < 1) return "勾选了「⚡ 占格压制」，需至少包含 1 个冰/珀墙或箱";
+        if (rules.mirror_dual === "require" && (cts.M || 0) < 1) return "「🪞 双位折光」设为必含，请至少放 1 面折光镜";
+        if (rules.wood_shadow === "require" && (cts.B || 0) < 1) return "「☂️ 借物遮阳」设为必含，请至少放 1 个木箱";
+        if (rules.swap === "require" && ((cts.C || 0) < 1 || (cts.F || 0) < 1)) return "「✨ 冰珀互换」设为必含，需同时放雪箱与暖珀箱";
+        if (rules.suppression === "require" && varCnt < 1) return "「⚡ 占格压制」设为必含，需至少放 1 个冰/珀墙或箱";
 
         if (pcgState.sourceMode === "scratch") {
           const innerSpace = (rows - 2) * (cols - 2);
-          const needed = (cts.L || 0) + (cts.M || 0) + (cts.SP || 0) + boxCnt + (cts.I || 0) + (cts.V || 0) + goalCnt + (cts.wall || 0) + 2;
-          if (needed > innerSpace) return `当前 ${cols}×${rows} 内部仅 ${innerSpace} 格，放不下所选全部元件与内墙，请增大尺寸或减少元件`;
+          const needed = (cts.L || 0) + (cts.M || 0) + (cts.SP || 0) + boxCnt + (cts.I || 0) + (cts.V || 0) + goalCnt + 2;
+          if (needed > innerSpace) return `${cols}×${rows} 内部只有 ${innerSpace} 格，放不下所选全部道具，请调大尺寸或减少道具`;
         }
         return null;
       }
 
       function countGridElements(grid) {
-        const cts = { S: 0, L: 0, M: 0, SP: 0, B: 0, C: 0, F: 0, I: 0, V: 0, X: 0, wall: 0 };
+        const cts = { S: 0, L: 0, M: 0, SP: 0, B: 0, C: 0, F: 0, I: 0, V: 0, X: 0 };
         for (let r = 0; r < grid.length; r++) {
           for (let c = 0; c < grid[0].length; c++) {
             const ch = grid[r][c];
@@ -3425,55 +3633,69 @@
       function startPcg() {
         if (pcgState.running) return;
         const isDraft = pcgState.sourceMode === "draft";
+        const evalOpts = { openStyle: true };
+
         const customCols = isDraft ? app.cols : Math.max(5, Math.min(10, Number(document.getElementById("pcgCols").value) || 7));
         const customRows = isDraft ? app.rows : Math.max(5, Math.min(8, Number(document.getElementById("pcgRows").value) || 6));
-        const budget = Math.max(60, Number(document.getElementById("pcgBudget").value) || 450);
-        const minSteps = Math.max(3, Number(document.getElementById("pcgMinSteps").value) || 8);
-        const maxSteps = Math.max(minSteps + 1, Number(document.getElementById("pcgMaxSteps").value) || 18);
-        const useAutoPrune = document.getElementById("pcgAutoPrune").checked;
+        const budget = Math.max(60, Number(document.getElementById("pcgBudget").value) || 520);
+        const minSteps = Math.max(3, Number(document.getElementById("pcgMinSteps").value) || 7);
+        const maxSteps = Math.max(minSteps + 1, Number(document.getElementById("pcgMaxSteps").value) || 20);
         const requireMirror = document.getElementById("pcgRequireMirror").checked;
         const useUniqueMech = document.getElementById("pcgUniqueMech").checked;
-        const reqSwitchList = CLEVER_SWITCHES.filter(sw => pcgState.cleverSelected.has(sw.id));
+
+        const reqSwitchList = CLEVER_SWITCHES.filter(sw => pcgState.cleverRules[sw.id] === "require");
+        const banSwitchList = CLEVER_SWITCHES.filter(sw => pcgState.cleverRules[sw.id] === "ban");
 
         const activeCounts = isDraft ? countGridElements(app.grid) : Object.assign({}, pcgState.counts);
         if (isDraft && !app.grid.some(row => row.includes("P"))) {
-          showToast("⚠️ 当前画布缺少主角「P」，无法微调进化");
+          showToast("⚠️ 当前画布缺少主角「P」，无法微调");
           return;
         }
-        const errText = validatePcgConfig(activeCounts, customRows, customCols, pcgState.cleverSelected);
+        const errText = validatePcgConfig(activeCounts, customRows, customCols, pcgState.cleverRules);
         if (errText) {
           showToast("⚠️ " + errText);
           return;
         }
 
+        const hasReactive = (activeCounts.C || 0) + (activeCounts.F || 0) + (activeCounts.I || 0) + (activeCounts.V || 0) > 0;
         const draftSeed = isDraft ? app.grid.map(r => r.slice()) : null;
+        const seedInnerWalls = draftSeed ? LevelGenerator.countInnerWalls(draftSeed) : 0;
+
+        let mutateOpts;
+        if (isDraft) {
+          const lockW = document.getElementById("pcgLockDraftWalls").checked;
+          mutateOpts = { lockWalls: lockW, maxInnerWalls: lockW ? seedInnerWalls : Math.min(4, seedInnerWalls + 1) };
+        } else {
+          const maxWalls = Number(document.getElementById("pcgMaxWalls").value);
+          mutateOpts = { lockWalls: maxWalls === 0, maxInnerWalls: maxWalls };
+        }
+
         const recipeLabel = isDraft
-          ? "草图进化"
-          : (LevelGenerator.PRESETS.find(p => p.id === pcgState.activePresetId)?.label.replace(/^[^\s]+\s/, "") || "定制配方");
+          ? "草图微调"
+          : (LevelGenerator.PRESETS.find(p => p.id === pcgState.activePresetId)?.label.replace(/^[^\s]+\s/, "") || "自定义");
 
         pcgState.running = true;
         pcgState.candidates = [];
         pcgState.activeSig = null;
 
         document.getElementById("btnStartPcg").disabled = true;
-        document.getElementById("btnStartPcg").textContent = "⏳ 正在定向炼图...";
+        document.getElementById("btnStartPcg").textContent = "⏳ 正在生成...";
         document.getElementById("btnStopPcg").style.display = "inline-flex";
         document.getElementById("pcgProgressWrap").classList.add("show");
         document.getElementById("pcgBarFill").style.width = "0%";
         document.getElementById("pcgStatPct").textContent = "0%";
-        document.getElementById("pcgStatText").textContent = `正在 ${customCols}×${customRows} 攀爬搜索...`;
+        document.getElementById("pcgStatText").textContent = `正在 ${customCols}×${customRows} 进化搜索...`;
 
         const bestByKey = new Map();
-        const breedPool = []; // 双层进化池：即便只命中部分巧思，也能作为优质父代继续变异冲刺全命中！
+        const breedPool = [];
         const seenStruct = new Set();
-        let iter = 0, solvedCount = 0, exactHits = 0, totalPruned = 0;
+        let iter = 0, solvedCount = 0, exactHits = 0, bannedDrops = 0;
 
-        function isOpticallyPure(res) {
-          if (!res || res.status !== "solved") return false;
-          if (res.redundantSuns && res.redundantSuns > 0) return false;
-          if (res.metrics.unusedItemCount > 0) return false;
-          if (requireMirror && res.metrics.mirrorAsObstacleCount > 0) return false;
-          return true;
+        function hasBannedTrick(res) {
+          for (let i = 0; i < banSwitchList.length; i++) {
+            if (banSwitchList[i].check(res.metrics)) return true;
+          }
+          return false;
         }
 
         function countCleverMatches(res) {
@@ -3484,52 +3706,84 @@
           return hits;
         }
 
-        function evalFitness(res) {
+        // 严格入围门槛（只用于最终 Top 5，绝不卡死进化父代池！）
+        function isStrictClean(res) {
+          if (!res || res.status !== "solved") return false;
+          if (hasBannedTrick(res)) return false;
+          if (res.redundantSuns && res.redundantSuns > 0) return false;
+          if (res.metrics.unusedItemCount > 0) return false;
+          if (requireMirror && res.metrics.mirrorAsObstacleCount > 0) return false;
+          if (hasReactive && res.metrics.phaseFlips === 0 && res.metrics.suppressionCount === 0) return false;
+          return true;
+        }
+
+        // 平滑阶梯适应度：让任何有解的“垫脚石”图都能进入进化池，顺着梯度快速爬出神图！
+        function evalSoftFitness(grid, res) {
+          const m = res.metrics;
           const hits = countCleverMatches(res);
+          const banned = hasBannedTrick(res);
           const inRange = res.steps >= minSteps && res.steps <= maxSteps;
-          const rangePenalty = inRange ? 0 : Math.min(25, Math.abs(res.steps - (res.steps < minSteps ? minSteps : maxSteps)) * 3);
-          return hits * 120 + (inRange ? 40 : 0) + res.metrics.score - rangePenalty;
+          const rangePenalty = inRange ? 0 : Math.min(28, Math.abs(res.steps - (res.steps < minSteps ? minSteps : maxSteps)) * 3);
+
+          // 奖励折光镜至少先接到光（哪怕还没达到双位折光，也是极佳父代）
+          let mirrorWarmBonus = 0;
+          if ((activeCounts.M || 0) > 0) {
+            if (m.mirrorAsObstacleCount === 0) mirrorWarmBonus += 110;
+            else {
+              const p0 = GameEngine.parseMap(grid.map(r => r.join("")));
+              const l0 = GameEngine.computeLighting(p0.staticMap, p0.dynState, true);
+              if (l0.hitMirrors && l0.hitMirrors.size > 0) mirrorWarmBonus += 45;
+            }
+          }
+
+          return (
+            hits * 140 +
+            (inRange ? 45 : 0) +
+            Math.min(70, m.phaseFlips * 22) +
+            mirrorWarmBonus +
+            m.score -
+            rangePenalty -
+            (banned ? 260 : 0) -
+            (res.redundantSuns || 0) * 55 -
+            m.unusedItemCount * 45 -
+            (m.unusedReactiveWallCount || 0) * 35 -
+            (requireMirror ? m.mirrorAsObstacleCount * 85 : 0)
+          );
         }
 
         function pushToBreedPool(grid, res) {
-          const fit = evalFitness(res);
+          const fit = evalSoftFitness(grid, res);
           breedPool.push({ grid, res, fit });
           breedPool.sort((a, b) => b.fit - a.fit);
-          if (breedPool.length > 10) breedPool.length = 10;
+          if (breedPool.length > 14) breedPool.length = 14;
         }
 
-        function recordCandidate(rawGrid, rawRes) {
-          if (!isOpticallyPure(rawRes)) return;
+        function processSolved(rawGrid, rawRes) {
           const rawStruct = rawGrid.map(r => r.join("").replace("P", ".")).join("|");
           if (seenStruct.has(rawStruct)) return;
           seenStruct.add(rawStruct);
 
-          pushToBreedPool(rawGrid, rawRes);
+          if (hasBannedTrick(rawRes)) bannedDrops++;
 
-          const rawHits = countCleverMatches(rawRes);
-          const rawInRange = rawRes.steps >= minSteps && rawRes.steps <= maxSteps;
-          if (rawHits < reqSwitchList.length || !rawInRange) return;
-
-          const lowestScore = pcgState.candidates.length >= 5
-            ? pcgState.candidates[pcgState.candidates.length - 1].res.metrics.score
-            : 0;
-          const rawKey = useUniqueMech ? rawRes.metrics.mechanicSig : rawStruct;
-          const existing = bestByKey.get(rawKey);
-          if (existing && existing.res.metrics.score >= rawRes.metrics.score + 8) return;
-          if (!existing && pcgState.candidates.length >= 5 && rawRes.metrics.score < lowestScore - 8) return;
-
-          let finalGrid = rawGrid, finalRes = rawRes, prunedCount = 0;
-          if (useAutoPrune) {
-            const pruned = LevelGenerator.pruneGrid(rawGrid, rawRes);
-            finalGrid = pruned.grid;
-            finalRes = pruned.res;
-            prunedCount = pruned.prunedCount;
-            totalPruned += prunedCount;
+          // 第 1 阶段：只要是有解图（>=3 步），立刻按平滑适应度入进化池，彻底告别 0 父代卡死！
+          if (rawRes.steps >= 3) {
+            pushToBreedPool(rawGrid, rawRes);
           }
 
-          if (!isOpticallyPure(finalRes)) return;
-          if (countCleverMatches(finalRes) < reqSwitchList.length) return;
-          if (finalRes.steps < minSteps || finalRes.steps > maxSteps) return;
+          // 第 2 阶段：严格筛选进入 Top 5 候选榜
+          if (!isStrictClean(rawRes)) return;
+          if ((rawRes.metrics.unusedReactiveWallCount || 0) > 0) return;
+          if (countCleverMatches(rawRes) < reqSwitchList.length) return;
+          if (rawRes.steps < minSteps || rawRes.steps > maxSteps) return;
+
+          // 仅剥离外围多余双层死墙，绝不把内部空地填死
+          let finalGrid = rawGrid, finalRes = rawRes;
+          const stripped = LevelGenerator.stripOuterDeadWalls(rawGrid);
+          if (stripped.stripped > 0) {
+            finalGrid = stripped.grid;
+            finalRes = GameEngine.solveBFS(finalGrid.map(r => r.join("")), 14000, evalOpts);
+            if (!isStrictClean(finalRes) || countCleverMatches(finalRes) < reqSwitchList.length) return;
+          }
 
           exactHits++;
           const mapRows = finalGrid.map(r => r.join(""));
@@ -3545,8 +3799,7 @@
             mapRows,
             sig: dedupKey,
             res: finalRes,
-            prunedCount,
-            exactMatch: true,
+            note: "",
             recipeName: `${finalGrid[0].length}×${finalGrid.length} ${recipeLabel}`
           };
           bestByKey.set(dedupKey, entry);
@@ -3559,9 +3812,8 @@
           if (pcgState.candidates.length > 5) pcgState.candidates.length = 5;
         }
 
-        // 若为草图进化模式，先把用户当前草图作为 0 号种子评估入池
         if (isDraft && draftSeed) {
-          const seedRes = GameEngine.solveBFS(draftSeed.map(r => r.join("")), 14000);
+          const seedRes = GameEngine.solveBFS(draftSeed.map(r => r.join("")), 14000, evalOpts);
           if (seedRes.status === "solved") pushToBreedPool(draftSeed, seedRes);
         }
 
@@ -3573,57 +3825,82 @@
             iter++;
             let grid;
             if (isDraft) {
-              if (breedPool.length > 0 && Math.random() < 0.72) {
-                const parent = breedPool[Math.floor(Math.random() * Math.min(4, breedPool.length))];
-                grid = LevelGenerator.mutateGrid(parent.grid, Math.random() < 0.7 ? 1 : 2);
+              if (breedPool.length > 0 && Math.random() < 0.75) {
+                const parent = breedPool[Math.floor(Math.random() * Math.min(5, breedPool.length))];
+                grid = LevelGenerator.mutateGrid(parent.grid, Math.random() < 0.72 ? 1 : 2, mutateOpts);
               } else {
-                grid = LevelGenerator.mutateGrid(draftSeed, 1 + Math.floor(Math.random() * 2));
+                grid = LevelGenerator.mutateGrid(draftSeed, 1 + Math.floor(Math.random() * 2), mutateOpts);
               }
-            } else if (breedPool.length > 0 && Math.random() < 0.68) {
-              const parent = breedPool[Math.floor(Math.random() * Math.min(4, breedPool.length))];
-              grid = LevelGenerator.mutateGrid(parent.grid, Math.random() < 0.75 ? 1 : 2);
+            } else if (breedPool.length > 0 && Math.random() < 0.72) {
+              const parent = breedPool[Math.floor(Math.random() * Math.min(5, breedPool.length))];
+              grid = LevelGenerator.mutateGrid(parent.grid, Math.random() < 0.72 ? 1 : 2, mutateOpts);
             } else {
-              grid = LevelGenerator.createRandomGridFromConfig({ rows: customRows, cols: customCols, counts: activeCounts });
+              grid = LevelGenerator.createRandomGridFromConfig({
+                rows: customRows,
+                cols: customCols,
+                counts: activeCounts,
+                maxInnerWalls: mutateOpts.maxInnerWalls
+              });
             }
             if (!grid) continue;
 
             const rows = grid.map(r => r.join(""));
-            const res = GameEngine.solveBFS(rows, 14000);
-            if (res.status === "solved" && isOpticallyPure(res)) {
+            const res = GameEngine.solveBFS(rows, 14000, evalOpts);
+            if (res.status === "solved") {
               solvedCount++;
-              recordCandidate(grid, res);
+              processSolved(grid, res);
             }
           }
 
           const pct = Math.round((iter / budget) * 100);
           document.getElementById("pcgBarFill").style.width = `${pct}%`;
           document.getElementById("pcgStatPct").textContent = `${pct}%`;
-          document.getElementById("pcgStatText").textContent = `进化 ${iter}/${budget} · 纯净解 ${solvedCount} · 全命中 ${exactHits}`;
-          renderPcgCandidates(`正在爬山探索（已积累 ${breedPool.length} 个优质父代，等待全命中巧思开关）...`);
+          document.getElementById("pcgStatText").textContent = `进度 ${iter}/${budget} · 有解 ${solvedCount} · 达标 ${exactHits}`;
+          renderPcgCandidates(`正在进化寻找巧思（已探索 ${solvedCount} 个有解局面，达标 ${exactHits} 张）...`);
 
           if (iter < budget) {
             pcgState.timer = setTimeout(runChunk, 0);
           } else {
             stopPcg();
-            if (pcgState.candidates.length > 0) {
-              renderPcgCandidates();
-              showToast(`🎉 定制造图 5.0 完成！全命中 ${bestByKey.size} 种套路，共剪枝 ${totalPruned} 格`);
-            } else if (breedPool.length > 0) {
-              // 若极苛刻的多选组合未 100% 全命中，自动展示最接近的 Top 3 供用户微调
-              pcgState.candidates = breedPool.slice(0, 3).map((b, i) => ({
-                grid: b.grid,
-                mapRows: b.grid.map(r => r.join("")),
-                sig: `near_${i}_${b.res.metrics.mechanicSig}`,
-                res: b.res,
-                prunedCount: 0,
-                exactMatch: false,
-                recipeName: `${b.grid[0].length}×${b.grid.length} ${recipeLabel}`
-              }));
-              renderPcgCandidates();
-              showToast("未找到 100% 全命中图，已为你列出最接近的候选图（可载入后点「微调当前草图」继续进化）");
+            // 若严格达标不足 3 张，从进化池补录最接近且严格遵守「禁用 Ban」的候选（明确标注原因，方便继续微调）
+            if (pcgState.candidates.length < 3 && breedPool.length > 0) {
+              const existingRows = new Set(pcgState.candidates.map(c => c.mapRows.join("|")));
+              const nearPool = breedPool.filter(b =>
+                !hasBannedTrick(b.res) &&
+                (!requireMirror || b.res.metrics.mirrorAsObstacleCount === 0) &&
+                b.res.steps >= 3
+              );
+              for (let i = 0; i < nearPool.length && pcgState.candidates.length < 5; i++) {
+                const b = nearPool[i];
+                const mapRows = b.grid.map(r => r.join(""));
+                const key = mapRows.join("|");
+                if (existingRows.has(key)) continue;
+                existingRows.add(key);
+
+                const missTags = [];
+                if (countCleverMatches(b.res) < reqSwitchList.length) missTags.push("缺必含技巧");
+                if (b.res.steps < minSteps) missTags.push("步数略少");
+                else if (b.res.steps > maxSteps) missTags.push("步数偏多");
+                if ((b.res.metrics.unusedReactiveWallCount || 0) > 0) missTags.push("含未变相墙");
+
+                pcgState.candidates.push({
+                  grid: b.grid,
+                  mapRows,
+                  sig: `near_${i}_${b.res.metrics.mechanicSig}`,
+                  res: b.res,
+                  note: missTags.length ? missTags[0] : "近达标",
+                  recipeName: `${b.grid[0].length}×${b.grid.length} ${recipeLabel}`
+                });
+              }
+            }
+
+            renderPcgCandidates();
+            if (exactHits > 0) {
+              showToast(`🎉 生成完成！筛出 ${bestByKey.size} 种达标套路（拦截禁用技巧 ${bannedDrops} 次）`);
+            } else if (pcgState.candidates.length > 0) {
+              showToast("已为你列出最接近的合规候选图，可载入后点「继续微调」进一步优化");
             } else {
-              renderPcgCandidates();
-              showToast("暂未筛出满足条件的纯净解，可适当增加轮次或放宽步数区间");
+              showToast("未找到符合条件的图，建议调大轮次、适当放宽最少步数或减少必含技巧");
             }
           }
         }
@@ -3696,6 +3973,7 @@
       document.getElementById("tabBtnPcg").addEventListener("click", () => switchRightTab("pcg"));
       document.getElementById("pcgModeScratch").addEventListener("click", () => setPcgSourceMode("scratch"));
       document.getElementById("pcgModeDraft").addEventListener("click", () => setPcgSourceMode("draft"));
+
       document.getElementById("btnStartPcg").addEventListener("click", startPcg);
       document.getElementById("btnStopPcg").addEventListener("click", stopPcg);
       document.getElementById("btnPlayDemo").addEventListener("click", togglePlayDemo);
@@ -3859,7 +4137,7 @@
               "#######"
             ]
           });
-          showToast(`已切换至空槽 ${code}，可直接画图或用定制造图 5.0 生成`);
+          showToast(`已切换至空槽 ${code}，可直接画图或用右侧「地图生成器」生成`);
         }
         renderLibraryUI();
       }

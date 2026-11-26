@@ -137,13 +137,19 @@
       justify-content: space-between;
       padding: max(40px, env(safe-area-inset-top)) 20px max(40px, env(safe-area-inset-bottom));
       pointer-events: none;
-      transition: opacity 0.35s ease, transform 0.35s ease;
+      visibility: visible;
+      transition: opacity 0.32s ease, transform 0.32s ease, visibility 0.32s ease;
     }
 
     body:not(.in-cover) .cover-screen {
       opacity: 0;
       transform: scale(1.02);
+      visibility: hidden;
       pointer-events: none;
+    }
+
+    body:not(.in-cover) .cover-screen * {
+      pointer-events: none !important;
     }
 
     .cover-top {
@@ -296,7 +302,13 @@
     body.in-cover .hud-top,
     body.in-cover .hud-bottom {
       opacity: 0;
+      visibility: hidden;
       pointer-events: none;
+    }
+
+    body.in-cover .hud-top *,
+    body.in-cover .hud-bottom * {
+      pointer-events: none !important;
     }
 
     .hud-icon-btn {
@@ -401,13 +413,15 @@
       flex-direction: column;
       gap: 10px;
       opacity: 0;
+      visibility: hidden;
       transform: translateY(8px) scale(0.96);
       pointer-events: none;
-      transition: all 0.2s ease;
+      transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
     }
 
     .hint-popover.open {
       opacity: 1;
+      visibility: visible;
       transform: translateY(0) scale(1);
       pointer-events: auto;
     }
@@ -478,6 +492,7 @@
 
     .round-btn:active { transform: scale(0.91); }
     .round-btn:disabled { opacity: 0.34; cursor: not-allowed; transform: none; }
+    .round-btn.active { border-color: rgba(229, 164, 53, 0.72); background: var(--gold-soft); }
 
     @keyframes deadlockPulse {
       0%, 100% { box-shadow: 0 0 0 0 rgba(217, 91, 82, 0.55), var(--shadow-sm); border-color: rgba(217, 91, 82, 0.75); }
@@ -560,12 +575,14 @@
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
       opacity: 0;
+      visibility: hidden;
       pointer-events: none;
-      transition: opacity 0.25s ease;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
     }
 
     .overlay.open {
       opacity: 1;
+      visibility: visible;
       pointer-events: auto;
     }
 
@@ -3456,6 +3473,42 @@
         game.clearStarTimers = [];
       }
 
+      let undoHoldDelay = null, undoHoldInterval = null;
+      let dpadDelay = null, dpadInterval = null, dpadActivePointerId = null;
+
+      function stopUndoHold() {
+        clearTimeout(undoHoldDelay);
+        clearInterval(undoHoldInterval);
+        undoHoldDelay = null;
+        undoHoldInterval = null;
+      }
+
+      function stopDpadHold() {
+        clearTimeout(dpadDelay);
+        clearInterval(dpadInterval);
+        dpadDelay = null;
+        dpadInterval = null;
+        dpadActivePointerId = null;
+      }
+
+      function stopAllControlHolds() {
+        stopUndoHold();
+        stopDpadHold();
+        if (typeof touchCtrl !== "undefined" && touchCtrl && touchCtrl.cancel) touchCtrl.cancel();
+      }
+
+      function hasOpenModal() {
+        return ["clearOverlay", "chaptersOverlay", "themesOverlay"].some(id => {
+          const el = document.getElementById(id);
+          return el && el.classList.contains("open");
+        });
+      }
+
+      function closeHintPopover() {
+        const pop = document.getElementById("hintPopover");
+        if (pop) pop.classList.remove("open");
+      }
+
       function cancelAutoWalk() {
         game.walkQueue = [];
         game.walkTarget = null;
@@ -3487,7 +3540,7 @@
         const dpadOpen = document.getElementById("dpadBox").classList.contains("open");
         const padX = Math.max(22, w * 0.06);
         const padTop = game.inCover ? 156 : 74;
-        const padBot = game.inCover ? 156 : (dpadOpen ? 172 : 90);
+        const padBot = game.inCover ? 156 : (dpadOpen ? Math.min(204, Math.round(h * 0.28)) : 92);
         const availW = Math.max(180, w - padX * 2);
         const availH = Math.max(160, h - padTop - padBot);
         const ts = Math.max(30, Math.min(78, Math.floor(Math.min(availW / game.staticMap.cols, availH / game.staticMap.rows))));
@@ -3526,6 +3579,7 @@
 
       function enterCover() {
         game.inCover = true;
+        stopAllControlHolds();
         cancelAutoWalk();
         clearTimeout(game.deadlockTimer);
         clearStarRevealTimers();
@@ -3558,6 +3612,7 @@
         progress.lastIdx = safeIdx;
         saveProgress();
 
+        stopAllControlHolds();
         clearTimeout(game.deadlockTimer);
         clearStarRevealTimers();
         cancelAutoWalk();
@@ -3605,9 +3660,21 @@
 
       function restartLevelWithUndo() {
         if (game.inCover) return;
-        if (game.steps === 0 || game.won) {
+        stopAllControlHolds();
+        closeHintPopover();
+        if (game.won) {
+          audio.ensure();
           audio.undo();
           loadLevel(game.levelIdx);
+          return;
+        }
+        if (game.steps === 0) {
+          audio.ensure();
+          if (game.history.length > 0) {
+            showToast("已在初始位置 · 点悔棋可还原重置前", 1800);
+          } else {
+            showToast("已在初始位置", 1200);
+          }
           return;
         }
         clearTimeout(game.deadlockTimer);
@@ -3623,6 +3690,8 @@
         game.won = false;
         game.deadlock = false;
         game.hintArrow = null;
+        game.particles = [];
+        game.ripples = [];
         game.boardIntro = 0.25;
         game.pVis = { vr: game.dyn.player.r, vc: game.dyn.player.c, hop: 0, bumpDr: 0, bumpDc: 0, bumpT: 0, pushSquash: 0, pushDr: 0, pushDc: 0 };
         game.eVis.clear();
@@ -3675,8 +3744,11 @@
       }
 
       function move(dr, dc, dir, fromAutoWalk = false) {
-        if (game.inCover || game.won) return false;
-        if (!fromAutoWalk) cancelAutoWalk();
+        if (game.inCover || game.won || hasOpenModal()) return false;
+        if (!fromAutoWalk) {
+          cancelAutoWalk();
+          closeHintPopover();
+        }
         audio.ensure();
         game.dyn.player.dir = dir;
         game.hintArrow = null;
@@ -3762,6 +3834,7 @@
         if (GameEngine.isWon(game.staticMap, game.dyn, game.light.lit)) {
           game.won = true;
           game.deadlock = false;
+          stopAllControlHolds();
           cancelAutoWalk();
           clearTimeout(game.deadlockTimer);
           updateHUD();
@@ -3779,7 +3852,8 @@
       }
 
       function undo() {
-        if (game.inCover || !game.history.length || game.won) return false;
+        if (game.inCover || !game.history.length || game.won || hasOpenModal()) return false;
+        closeHintPopover();
         cancelAutoWalk();
         clearTimeout(game.deadlockTimer);
         audio.ensure();
@@ -3997,7 +4071,7 @@
       }
 
       const touchCtrl = TouchInputController.create({
-        canAccept: () => !game.inCover && !game.won,
+        canAccept: () => !game.inCover && !game.won && !hasOpenModal(),
         onDirection: (dr, dc, dir) => { move(dr, dc, dir); },
         onTap: (x, y) => {
           if (!game.staticMap || !game.dyn.player) return;
@@ -4828,11 +4902,19 @@
         if (isMob) document.body.classList.remove("mobile-preview");
       }
 
-      document.getElementById("btnMobileToggle").addEventListener("click", () => {
+      document.getElementById("btnMobileToggle").addEventListener("click", e => {
+        e.currentTarget.blur();
+        stopAllControlHolds();
         const on = document.body.classList.toggle("mobile-preview");
         document.getElementById("mobileToggleText").textContent = on ? "全屏模式" : "手机竖屏";
-        setTimeout(resizeCanvas, 300);
+        resizeCanvas();
+        setTimeout(resizeCanvas, 310);
       });
+
+      if (typeof ResizeObserver !== "undefined") {
+        const stageRO = new ResizeObserver(() => resizeCanvas());
+        stageRO.observe(appStage);
+      }
 
       document.getElementById("btnStartGame").addEventListener("click", () => { audio.ensure(); exitCover(); });
       document.getElementById("btnCoverChapters").addEventListener("click", () => { renderChaptersModal(false); document.getElementById("chaptersOverlay").classList.add("open"); });
@@ -4875,28 +4957,38 @@
         }
       });
 
-      // 长按连续悔棋
-      let undoHoldDelay = null, undoHoldInterval = null;
+      // 长按连续悔棋（仅主键触发、防右键菜单、窗口失焦/抬起必停）
       const btnUndo = document.getElementById("btnUndo");
-      function stopUndoHold() { clearTimeout(undoHoldDelay); clearInterval(undoHoldInterval); }
+      btnUndo.addEventListener("contextmenu", e => e.preventDefault());
       btnUndo.addEventListener("pointerdown", e => {
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        if (btnUndo.disabled || game.inCover) return;
         e.preventDefault();
-        undo();
+        stopDpadHold();
         stopUndoHold();
+        if (!undo()) return;
         undoHoldDelay = setTimeout(() => {
           undoHoldInterval = setInterval(() => { if (!undo()) stopUndoHold(); }, 125);
         }, 340);
       });
       ["pointerup", "pointercancel", "pointerleave"].forEach(ev => btnUndo.addEventListener(ev, stopUndoHold));
 
-      document.getElementById("btnReset").addEventListener("click", restartLevelWithUndo);
+      document.getElementById("btnReset").addEventListener("click", e => {
+        e.currentTarget.blur();
+        restartLevelWithUndo();
+      });
       document.getElementById("btnSound").addEventListener("click", e => {
+        e.currentTarget.blur();
         audio.muted = !audio.muted;
         e.currentTarget.style.opacity = audio.muted ? "0.45" : "1";
         document.getElementById("icoSound").innerHTML = audio.muted ? UI_SVGS.soundOff : UI_SVGS.soundOn;
       });
-      document.getElementById("btnToggleDpad").addEventListener("click", () => {
-        document.getElementById("dpadBox").classList.toggle("open");
+      document.getElementById("btnToggleDpad").addEventListener("click", e => {
+        e.currentTarget.blur();
+        stopDpadHold();
+        const isOpen = document.getElementById("dpadBox").classList.toggle("open");
+        e.currentTarget.classList.toggle("active", isOpen);
+        closeHintPopover();
         resizeCanvas();
       });
 
@@ -4948,28 +5040,44 @@
         }
       });
 
-      // 方向键支持长按连走
-      let dpadDelay = null, dpadInterval = null;
-      function stopDpadHold() { clearTimeout(dpadDelay); clearInterval(dpadInterval); }
+      // 方向键支持长按连走（支持 pointer capture、撞墙/通关自动停、防长按菜单与失焦卡键）
       document.querySelectorAll(".dpad-btn").forEach(btn => {
         const dir = btn.dataset.dir;
         const mapDir = { up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1] };
         const [dr, dc] = mapDir[dir];
+        btn.addEventListener("contextmenu", e => e.preventDefault());
         btn.addEventListener("pointerdown", e => {
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          if (game.inCover || game.won || hasOpenModal()) return;
           e.preventDefault();
-          move(dr, dc, dir);
+          stopUndoHold();
           stopDpadHold();
+          dpadActivePointerId = e.pointerId;
+          try { btn.setPointerCapture(e.pointerId); } catch (err) {}
+          const moved = move(dr, dc, dir);
+          if (!moved || game.won) return;
           dpadDelay = setTimeout(() => {
-            dpadInterval = setInterval(() => { move(dr, dc, dir); }, 140);
-          }, 300);
+            dpadInterval = setInterval(() => {
+              if (!move(dr, dc, dir) || game.won) stopDpadHold();
+            }, 140);
+          }, 290);
         });
-        ["pointerup", "pointercancel", "pointerleave"].forEach(ev => btn.addEventListener(ev, stopDpadHold));
+        const releaseThis = e => {
+          if (dpadActivePointerId === null || e.pointerId === dpadActivePointerId) stopDpadHold();
+        };
+        ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => btn.addEventListener(ev, releaseThis));
       });
+
+      window.addEventListener("pointerup", () => { stopUndoHold(); stopDpadHold(); });
+      window.addEventListener("pointercancel", () => { stopUndoHold(); stopDpadHold(); });
+      window.addEventListener("blur", stopAllControlHolds);
 
       // 画布触控与鼠标指针接入 TouchInputController
       canvas.addEventListener("pointerdown", e => {
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        closeHintPopover();
         const rect = canvas.getBoundingClientRect();
-        canvas.setPointerCapture(e.pointerId);
+        try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
         touchCtrl.onStart(e.clientX - rect.left, e.clientY - rect.top, e.pointerId);
       });
       canvas.addEventListener("pointermove", e => {
@@ -4984,11 +5092,16 @@
 
       window.addEventListener("keydown", e => {
         if (document.activeElement && ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+        if (e.key === "Escape") {
+          ["chaptersOverlay", "themesOverlay"].forEach(id => document.getElementById(id).classList.remove("open"));
+          closeHintPopover();
+          return;
+        }
         if (document.getElementById("clearOverlay").classList.contains("open")) {
           if (e.key === "Enter" || e.key === " ") { e.preventDefault(); document.getElementById("btnNextLevel").click(); }
           return;
         }
-        if (game.inCover) return;
+        if (game.inCover || hasOpenModal()) return;
         const k = e.key.toLowerCase();
         if (k === "arrowup" || k === "w") { e.preventDefault(); move(-1, 0, "up"); }
         else if (k === "arrowdown" || k === "s") { e.preventDefault(); move(1, 0, "down"); }

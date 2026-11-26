@@ -78,7 +78,7 @@
     return dyn.entities.find(e => e.r === r && e.c === c && isEntitySolid(dyn, lit, e)) || null;
   }
 
-  function computeLighting(staticMap, dyn, includeVisuals = false) {
+  function computeLighting(staticMap, dyn, includeVisuals = false, disabledMirrorId = null) {
     const { rows, cols, walls, suns, treeWalls } = staticMap;
     const lit = Array.from({ length: rows }, () => Array(cols).fill(false));
     const beams = includeVisuals ? [] : null;
@@ -115,7 +115,12 @@
           if (e.kind === "F" && !isEntitySuppressed(dyn, e)) {
             blocked = true; blockKind = "F"; break;
           }
-          if (e.kind === "\\" || e.kind === "/") mirror = e;
+          if (e.kind === "\\" || e.kind === "/") {
+            if (disabledMirrorId !== null && e.id === disabledMirrorId) {
+              blocked = true; blockKind = "B"; break;
+            }
+            mirror = e;
+          }
         }
         if (blocked) {
           if (includeVisuals) blockers.push({ r, c, dr, dc, kind: blockKind });
@@ -181,7 +186,7 @@
     return false;
   }
 
-  function stepState(staticMap, dyn, lit, dr, dc, dir) {
+  function stepState(staticMap, dyn, lit, dr, dc, dir, disabledMirrorId = null) {
     if (!dyn.player) return null;
     const nr = dyn.player.r + dr, nc = dyn.player.c + dc;
     if (isCellBlocked(staticMap, dyn, lit, nr, nc)) return null;
@@ -200,7 +205,7 @@
       target.r = nr + dr; target.c = nc + dc;
     }
 
-    const nextLight = computeLighting(staticMap, nextDyn, false);
+    const nextLight = computeLighting(staticMap, nextDyn, false, disabledMirrorId);
     return {
       dyn: nextDyn,
       lit: nextLight.lit,
@@ -304,23 +309,15 @@
   /* =========================================================================
      Editor & PCG 5.0 Solvers (Optical Purity & Elegance Evaluation 4.0)
      ========================================================================= */
-  function evaluateElegance(staticMap, initDyn, path, explored, externalWarnings) {
+  function evaluateElegance(staticMap, initDyn, path, explored, externalWarnings, evalOpts = {}) {
+    const openStyle = Boolean(evalOpts && evalOpts.openStyle);
     const steps = path.length;
     let curDyn = cloneDyn(initDyn);
     let curLight = computeLighting(staticMap, curDyn, true);
     let curLit = curLight.lit;
 
     const warnings = [...(externalWarnings || [])];
-
-    const mirrorRefractSpots = new Map();
-    const recordMirrorHits = lightObj => {
-      if (!lightObj || !lightObj.effectiveMirrorHits) return;
-      lightObj.effectiveMirrorHits.forEach((spotSet, mid) => {
-        if (!mirrorRefractSpots.has(mid)) mirrorRefractSpots.set(mid, new Set());
-        spotSet.forEach(s => mirrorRefractSpots.get(mid).add(s));
-      });
-    };
-    recordMirrorHits(curLight);
+    const timeline = [{ dyn: cloneDyn(curDyn), lit: curLit, lightObj: curLight }];
 
     const entityUsed = new Map();
     initDyn.entities.forEach(e => entityUsed.set(e.id, false));
@@ -344,20 +341,30 @@
       return arr;
     };
 
+    const suppressedWallKeys = new Set();
     const hasSuppression = (dyn, lit) => {
+      let found = false;
       for (let i = 0; i < staticMap.iceWalls.length; i++) {
         const w = staticMap.iceWalls[i];
-        if (!lit[w.r][w.c] && isTerrainSuppressed(dyn, lit, w.r, w.c)) return true;
+        if (!lit[w.r][w.c] && isTerrainSuppressed(dyn, lit, w.r, w.c)) {
+          suppressedWallKeys.add(`I_${i}`);
+          found = true;
+        }
       }
       for (let i = 0; i < staticMap.treeWalls.length; i++) {
         const w = staticMap.treeWalls[i];
-        if (lit[w.r][w.c] && isTerrainSuppressed(dyn, lit, w.r, w.c)) return true;
+        if (lit[w.r][w.c] && isTerrainSuppressed(dyn, lit, w.r, w.c)) {
+          suppressedWallKeys.add(`V_${i}`);
+          found = true;
+        }
       }
       for (let i = 0; i < dyn.entities.length; i++) {
         const e = dyn.entities[i];
-        if (((e.kind === "C" && !lit[e.r][e.c]) || (e.kind === "F" && lit[e.r][e.c])) && isEntitySuppressed(dyn, e)) return true;
+        if (((e.kind === "C" && !lit[e.r][e.c]) || (e.kind === "F" && lit[e.r][e.c])) && isEntitySuppressed(dyn, e)) {
+          found = true;
+        }
       }
-      return false;
+      return found;
     };
 
     const PUSH_LABEL = { B: "推木箱", C: "推雪箱", F: "推暖珀", L: "推提灯", M: "推折光镜", SP: "推射灯" };
@@ -388,7 +395,7 @@
 
     const itemFlipCounts = new Map();
     const pushSeqIds = [];
-    let pushes = 0, phaseFlips = 0, bodyShadowFlips = 0;
+    let pushes = 0, phaseFlips = 0, bodyShadowFlips = 0, woodShadowFlips = 0, multiFlipSteps = 0;
     let suppressionCount = 0, goalUnseats = 0, swapCount = 0;
     let curWalkStreak = 0, maxWalkStreak = 0;
     let lastStepPushed = true;
@@ -412,7 +419,7 @@
       curDyn = res.dyn;
       curLight = computeLighting(staticMap, curDyn, true);
       curLit = curLight.lit;
-      recordMirrorHits(curLight);
+      timeline.push({ dyn: cloneDyn(curDyn), lit: curLit, lightObj: curLight });
       markCells(curDyn, curLit);
 
       const nextPhases = snapshotPhases(curDyn, curLit);
@@ -434,6 +441,11 @@
       }
       prevPhases = nextPhases;
 
+      if (stepFlips >= 2) {
+        multiFlipSteps++;
+        pushEvent("CHAIN", "连锁相变");
+      }
+
       if (flippedBoxes.length >= 2) {
         for (let a = 0; a < flippedBoxes.length; a++) {
           for (let b = a + 1; b < flippedBoxes.length; b++) {
@@ -448,6 +460,9 @@
       if (!res.pushedKind && stepFlips > 0) {
         bodyShadowFlips++;
         pushEvent("BODY", "自身成荫");
+      } else if (res.pushedKind === "B" && stepFlips > 0) {
+        woodShadowFlips++;
+        pushEvent("B_SHD", "借物遮阳");
       }
 
       if (!res.pushedKind && stepFlips === 0) {
@@ -480,21 +495,67 @@
       if (e) entityUsed.set(e.id, true);
     });
 
+    // ★ 严格审计 1（反事实光学剥离）：把折光镜关闭反射变成普通挡光石块，验证原解是否依然成立！
+    const reactiveCellsOf = dyn => {
+      const pts = [];
+      for (let i = 0; i < staticMap.iceWalls.length; i++) pts.push([staticMap.iceWalls[i].r, staticMap.iceWalls[i].c]);
+      for (let i = 0; i < staticMap.treeWalls.length; i++) pts.push([staticMap.treeWalls[i].r, staticMap.treeWalls[i].c]);
+      for (let i = 0; i < dyn.entities.length; i++) {
+        const en = dyn.entities[i];
+        if (en.kind === "C" || en.kind === "F") pts.push([en.r, en.c]);
+      }
+      return pts;
+    };
+
     let mirrorAsObstacleCount = 0;
     let mirrorDualRefractCount = 0;
     initDyn.entities.forEach(e => {
       if (e.kind !== "\\" && e.kind !== "/") return;
-      const spots = mirrorRefractSpots.get(e.id);
-      const refractCount = spots ? spots.size : 0;
-      if (refractCount === 0) {
+
+      // 1) 反事实重放：关闭该镜折光（退化为普通实心障碍物），检查原最优路线是否仍能走通并通关
+      let cfDyn = cloneDyn(initDyn);
+      let cfLit = computeLighting(staticMap, cfDyn, false, e.id).lit;
+      let cfStillWins = true;
+      for (let s = 0; s < path.length; s++) {
+        const mv = path[s];
+        const rStep = stepState(staticMap, cfDyn, cfLit, mv.dr, mv.dc, mv.dir, e.id);
+        if (!rStep) { cfStillWins = false; break; }
+        cfDyn = rStep.dyn;
+        cfLit = rStep.lit;
+      }
+      if (cfStillWins && !isWon(staticMap, cfDyn, cfLit)) cfStillWins = false;
+
+      // 2) 统计该镜真正改变过“光敏元件(I/V/C/F)”明暗状态的独立折光位点
+      const trueSpots = new Set();
+      for (let t = 0; t < timeline.length; t++) {
+        const st = timeline[t];
+        const hitSet = st.lightObj && st.lightObj.effectiveMirrorHits ? st.lightObj.effectiveMirrorHits.get(e.id) : null;
+        if (!hitSet || hitSet.size === 0) continue;
+        const litWithout = computeLighting(staticMap, st.dyn, false, e.id).lit;
+        const rCells = reactiveCellsOf(st.dyn);
+        let affectedReactive = false;
+        for (let ci = 0; ci < rCells.length; ci++) {
+          const [rr, cc] = rCells[ci];
+          if (st.lit[rr][cc] !== litWithout[rr][cc]) {
+            affectedReactive = true;
+            break;
+          }
+        }
+        if (affectedReactive) {
+          hitSet.forEach(sp => trueSpots.add(sp));
+        }
+      }
+
+      if (cfStillWins || trueSpots.size === 0) {
         mirrorAsObstacleCount++;
-        warnings.push("不优雅：折光镜全程未折射光线（被当成了障碍物/挡光板）");
-      } else if (refractCount >= 2) {
+        warnings.push("不优雅：折光镜退化为障碍物（关闭折光后原路线仍可通关，或折光未作用于任何冰/珀元件）");
+      } else if (trueSpots.size >= 2) {
         mirrorDualRefractCount++;
         pushEvent("M_REUSE", "镜子双位折光");
       }
     });
 
+    // ★ 严格审计 2：毫无意义的闲置道具 & 全程未变相也未压制的装饰性冰/珀墙
     let unusedItemCount = 0;
     initDyn.entities.forEach(e => {
       if (e.kind === "\\" || e.kind === "/") return;
@@ -503,6 +564,25 @@
         warnings.push(`存在毫无意义的闲置道具「${e.kind}」（全程未参与解题）`);
       }
     });
+
+    let unusedReactiveWallCount = 0;
+    staticMap.iceWalls.forEach((w, idx) => {
+      const k = `I_${idx}`;
+      if (!itemFlipCounts.get(k) && !suppressedWallKeys.has(k)) unusedReactiveWallCount++;
+    });
+    staticMap.treeWalls.forEach((w, idx) => {
+      const k = `V_${idx}`;
+      if (!itemFlipCounts.get(k) && !suppressedWallKeys.has(k)) unusedReactiveWallCount++;
+    });
+    if (unusedReactiveWallCount > 0) {
+      warnings.push(`存在 ${unusedReactiveWallCount} 块装饰性冰/珀墙（全程未触发融化/凝实或压制）`);
+    }
+
+    const totalReactiveCount = staticMap.iceWalls.length + staticMap.treeWalls.length +
+      initDyn.entities.filter(e => e.kind === "C" || e.kind === "F").length;
+    if (totalReactiveCount > 0 && phaseFlips === 0 && suppressionCount === 0) {
+      warnings.push("光影元件全程未发生相变（退化为普通推箱子）");
+    }
 
     const idAppearances = new Map();
     for (let i = 0; i < pushSeqIds.length; i++) {
@@ -514,10 +594,13 @@
     let pingPongFlips = 0;
     itemFlipCounts.forEach(cnt => { if (cnt >= 2) pingPongFlips++; });
 
-    let floorCount = 0, wasteFloors = 0;
+    let floorCount = 0, wasteFloors = 0, innerWallCount = 0;
     for (let r = 0; r < staticMap.rows; r++) {
       for (let c = 0; c < staticMap.cols; c++) {
-        if (!staticMap.walls[r][c] && !staticMap.suns.some(s => s.r === r && s.c === c)) {
+        const isBorder = r === 0 || c === 0 || r === staticMap.rows - 1 || c === staticMap.cols - 1;
+        if (staticMap.walls[r][c]) {
+          if (!isBorder) innerWallCount++;
+        } else if (!staticMap.suns.some(s => s.r === r && s.c === c)) {
           floorCount++;
           const isStaticFeature = staticMap.goals.some(g => g.r === r && g.c === c)
             || staticMap.iceWalls.some(w => w.r === r && w.c === c)
@@ -545,37 +628,53 @@
     if (staticMap.cols > 5 && isColAllDeadWall(0) && isColAllDeadWall(1)) redundantWallLayers++;
     if (staticMap.cols > 5 && isColAllDeadWall(staticMap.cols - 1) && isColAllDeadWall(staticMap.cols - 2)) redundantWallLayers++;
     if (redundantWallLayers > 0) {
-      warnings.push(`存在 ${redundantWallLayers} 处毫无意义的多余外层死墙（建议点击左侧「剪枝废格与厚墙」）`);
+      warnings.push(`存在 ${redundantWallLayers} 处多余外层死墙`);
     }
 
+    // 1) 巧思与复用（满分 35）：鼓励真折光复用、空手点睛、借物遮阳、交错复用与连锁相变
     const emergentTotal = suppressionCount + swapCount + goalUnseats;
     const cleverScore = Math.min(
       35,
       Math.round(
-        mirrorDualRefractCount * 12 +
+        mirrorDualRefractCount * 14 +
         (handsFreeVictory ? 10 : 0) +
         interleavedReuses * 9 +
         pingPongFlips * 7 +
         Math.min(12, bodyShadowFlips * 6) +
+        Math.min(10, woodShadowFlips * 6) +
+        Math.min(8, multiFlipSteps * 5) +
         emergentTotal * 8 +
-        Math.min(8, phaseFlips * 2.5)
+        Math.min(6, phaseFlips * 2)
       )
     );
 
-    const actionDensity = (pushes + bodyShadowFlips) / Math.max(1, floorCount);
-    const sizePts = floorCount <= 16 ? 12 : floorCount <= 22 ? 8 : floorCount <= 28 ? 4 : 0;
-    const compactScore = Math.min(25, Math.round(Math.min(13, actionDensity * 22) + sizePts));
+    // 2) 空间美感（满分 25）：开放庭院模式下奖励“少内墙 + 高操作密度”，紧凑模式下奖励小空间
+    let compactScore;
+    if (openStyle) {
+      const openPts = innerWallCount === 0 ? 16 : innerWallCount === 1 ? 15 : innerWallCount === 2 ? 12 : innerWallCount === 3 ? 8 : Math.max(0, 7 - (innerWallCount - 3) * 2);
+      const actPts = Math.min(9, Math.round((pushes + bodyShadowFlips) * 0.9));
+      compactScore = Math.min(25, openPts + actPts);
+    } else {
+      const actionDensity = (pushes + bodyShadowFlips) / Math.max(1, floorCount);
+      const sizePts = floorCount <= 16 ? 12 : floorCount <= 22 ? 8 : floorCount <= 28 ? 4 : 0;
+      compactScore = Math.min(25, Math.round(Math.min(13, actionDensity * 22) + sizePts));
+    }
 
+    // 3) 思维深度（满分 25）
     const trapDensity = steps > 0 ? explored / steps : 1;
     const depthScore = Math.min(
       25,
       Math.round(Math.min(17, Math.log10(Math.max(1, trapDensity)) * 9.5) + Math.min(8, steps * 0.45))
     );
 
-    const walkPenalty = Math.max(0, maxWalkStreak - 4) * 2;
-    const purityScore = Math.max(0, 15 - wasteFloors * 2 - redundantWallLayers * 4 - walkPenalty);
+    // 4) 建筑与光学纯净度（满分 15）
+    const walkPenalty = Math.max(0, maxWalkStreak - (openStyle ? 5 : 4)) * 2;
+    const wallClutterPenalty = openStyle ? Math.max(0, innerWallCount - 2) * 3 : 0;
+    const wastePenalty = openStyle ? 0 : wasteFloors * 2;
+    const purityScore = Math.max(0, 15 - wastePenalty - wallClutterPenalty - redundantWallLayers * 4 - walkPenalty);
 
-    const penalty = mirrorAsObstacleCount * 35 + unusedItemCount * 25 + (externalWarnings ? externalWarnings.length * 25 : 0);
+    const noFlipPenalty = (totalReactiveCount > 0 && phaseFlips === 0 && suppressionCount === 0) ? 30 : 0;
+    const penalty = mirrorAsObstacleCount * 45 + unusedItemCount * 25 + unusedReactiveWallCount * 20 + noFlipPenalty + (externalWarnings ? externalWarnings.length * 25 : 0);
     const score = Math.max(0, Math.min(100, cleverScore + compactScore + depthScore + purityScore - penalty));
 
     let grade = "C", label = "C 级教学";
@@ -586,13 +685,17 @@
     const highlights = [];
     if (mirrorDualRefractCount > 0) highlights.push({ text: `🪞 双位折光 ×${mirrorDualRefractCount}`, cls: "gold" });
     if (handsFreeVictory) highlights.push({ text: `✋ 空手点睛`, cls: "jade" });
+    if (woodShadowFlips > 0) highlights.push({ text: `☂️ 借物遮阳`, cls: "jade" });
+    if (multiFlipSteps > 0) highlights.push({ text: `💥 连锁相变`, cls: "gold" });
     if (interleavedReuses > 0) highlights.push({ text: `🔁 交错复用 ×${interleavedReuses}`, cls: "gold" });
     if (pingPongFlips > 0) highlights.push({ text: `🌗 来回拉扯 ×${pingPongFlips}`, cls: "ice" });
     if (bodyShadowFlips > 0) highlights.push({ text: `👤 自身成荫`, cls: "jade" });
     if (swapCount > 0) highlights.push({ text: `✨ 冰珀互换`, cls: "gold" });
     if (goalUnseats > 0) highlights.push({ text: `🔄 退槽反直觉`, cls: "gold" });
     if (suppressionCount > 0) highlights.push({ text: `⚡ 占格压制`, cls: "ice" });
-    if (wasteFloors === 0 && redundantWallLayers === 0 && floorCount <= 20) {
+    if (innerWallCount <= 2 && redundantWallLayers === 0 && cleverScore >= 12) {
+      highlights.push({ text: `🏛️ 疏朗庭院`, cls: "jade" });
+    } else if (!openStyle && wasteFloors === 0 && redundantWallLayers === 0 && floorCount <= 20) {
       highlights.push({ text: `💎 零废格微缩`, cls: "jade" });
     }
 
@@ -602,16 +705,16 @@
       : "开局即通关";
 
     return {
-      steps, pushes, phaseFlips, interleavedReuses, pingPongFlips, bodyShadowFlips,
-      suppressionCount, goalUnseats, swapCount, handsFreeVictory, floorCount, wasteFloors, redundantWallLayers,
-      mirrorAsObstacleCount, mirrorDualRefractCount, unusedItemCount,
+      steps, pushes, phaseFlips, interleavedReuses, pingPongFlips, bodyShadowFlips, woodShadowFlips, multiFlipSteps,
+      suppressionCount, goalUnseats, swapCount, handsFreeVictory, floorCount, wasteFloors, innerWallCount, redundantWallLayers,
+      mirrorAsObstacleCount, mirrorDualRefractCount, unusedItemCount, unusedReactiveWallCount,
       maxWalkStreak, trapDensity: Math.round(trapDensity),
       cleverScore, compactScore, depthScore, purityScore,
       score, grade, label, highlights, mechanicSig, mechanicFlow, activeCells
     };
   }
 
-  function solveBFS(gridRows, maxStates = 80000) {
+  function solveBFS(gridRows, maxStates = 80000, evalOpts = {}) {
     const t0 = nowMs();
     const { staticMap, dynState } = parseMap(gridRows);
 
@@ -628,7 +731,7 @@
         status: "solved", steps: 0, path: [], explored: 1,
         ms: Math.max(1, Math.round(nowMs() - t0)),
         cheeseWarnings: [], redundantSuns: 0,
-        metrics: evaluateElegance(staticMap, dynState, [], 1, [])
+        metrics: evaluateElegance(staticMap, dynState, [], 1, [], evalOpts)
       };
     }
 
@@ -703,10 +806,11 @@
             if (redundantSuns > 0) extWarnings.push(`存在 ${redundantSuns} 颗对解题无影响的冗余太阳`);
           }
 
-          const metrics = evaluateElegance(staticMap, dynState, path, visited.size, extWarnings);
+          const metrics = evaluateElegance(staticMap, dynState, path, visited.size, extWarnings, evalOpts);
           const allWarnings = [...extWarnings];
-          if (metrics.mirrorAsObstacleCount > 0) allWarnings.push("折光镜全程未有效折光（被当成了障碍物）");
+          if (metrics.mirrorAsObstacleCount > 0) allWarnings.push("折光镜退化为障碍物（关闭折光后仍可通关，或折光未作用于冰/珀元件）");
           if (metrics.unusedItemCount > 0) allWarnings.push(`存在 ${metrics.unusedItemCount} 个未参与解题的闲置道具`);
+          if (metrics.unusedReactiveWallCount > 0) allWarnings.push(`存在 ${metrics.unusedReactiveWallCount} 块装饰性冰/珀墙（全程未变相）`);
           if (metrics.redundantWallLayers > 0) allWarnings.push(`存在 ${metrics.redundantWallLayers} 处外围冗余死墙`);
 
           return {
