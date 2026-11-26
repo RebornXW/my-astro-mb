@@ -1,0 +1,4133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>光影推箱 · 关卡工坊 5.0（自由点菜 & 必触发巧思造图）</title>
+  <style>
+    :root {
+      --bg-grad: linear-gradient(155deg, #E6EBF1 0%, #F4EFE6 52%, #EAE3D7 100%);
+      --glass: rgba(255, 253, 249, 0.84);
+      --glass-strong: rgba(255, 253, 249, 0.96);
+      --border: rgba(156, 146, 132, 0.24);
+      --border-strong: rgba(120, 112, 100, 0.36);
+      --ink: #2C303A;
+      --ink-soft: #6C7280;
+      --ink-muted: #989EA8;
+      --gold: #E5A435;
+      --gold-bg: #FFF5DD;
+      --jade: #47A17B;
+      --jade-bg: #E6F5EE;
+      --ice: #5BAEDB;
+      --ice-bg: #E7F5FC;
+      --danger: #D95B52;
+      --danger-bg: #FCECEB;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --shadow-sm: 0 4px 16px rgba(44, 48, 58, 0.05);
+      --shadow-md: 0 12px 32px rgba(44, 48, 58, 0.09);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      background: var(--bg-grad);
+      color: var(--ink);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-size: 13px;
+      line-height: 1.45;
+      overflow-x: hidden;
+    }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      height: 58px;
+      padding: 0 18px;
+      background: var(--glass);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+      z-index: 30;
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: linear-gradient(145deg, #354152 0%, #222A36 100%);
+      color: #FFE69A;
+      font-weight: 800;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(34, 42, 54, 0.25);
+    }
+
+    .brand-info h1 { font-size: 14.5px; font-weight: 800; letter-spacing: 1px; }
+    .brand-info span { font-size: 11px; color: var(--ink-soft); display: block; }
+
+    .mode-switch {
+      display: inline-flex;
+      background: rgba(156, 146, 132, 0.14);
+      padding: 3px;
+      border-radius: 999px;
+      gap: 4px;
+    }
+
+    .mode-btn {
+      border: none;
+      background: transparent;
+      color: var(--ink-soft);
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 6px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .mode-btn.active {
+      background: #FFFFFF;
+      color: var(--ink);
+      box-shadow: 0 2px 8px rgba(44, 48, 58, 0.1);
+    }
+
+    .mode-btn.play-active {
+      background: var(--jade);
+      color: #FFFFFF;
+      box-shadow: 0 3px 10px rgba(71, 161, 123, 0.32);
+    }
+
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+
+    .workspace {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 286px 1fr 336px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .side-panel {
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .panel-left { border-right: 1px solid var(--border); }
+    .panel-right { border-left: 1px solid var(--border); }
+
+    .card {
+      background: var(--glass-strong);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      color: var(--ink);
+    }
+
+    .card-head small { font-size: 11px; font-weight: 600; color: var(--ink-muted); }
+
+    .btn {
+      border: 1px solid var(--border-strong);
+      background: #FFFFFF;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 11px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.14s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover { border-color: var(--ink); transform: translateY(-1px); }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .btn-ink { background: var(--ink); border-color: var(--ink); color: #FFFDF9; }
+    .btn-ink:hover { filter: brightness(1.12); }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #F4C458 0%, #E39F2F 100%);
+      border-color: #D48E22;
+      color: #2B2110;
+      box-shadow: 0 4px 14px rgba(227, 159, 47, 0.28);
+    }
+
+    .btn-jade { background: var(--jade); border-color: #368765; color: #FFFFFF; }
+
+    .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn-row .btn { flex: 1; }
+
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 11px; font-weight: 700; color: var(--ink-soft); }
+
+    .input, .textarea {
+      width: 100%;
+      border: 1px solid var(--border-strong);
+      border-radius: 9px;
+      background: #FFFFFF;
+      color: var(--ink);
+      padding: 6px 9px;
+      font-size: 12.5px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .input:focus, .textarea:focus { border-color: var(--ink); }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    .brush-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+    .brush-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 7px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: #FFFFFF;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.14s ease;
+    }
+
+    .brush-btn:hover { border-color: var(--ink-muted); }
+    .brush-btn.selected {
+      border-color: var(--ink);
+      background: #F6F3EC;
+      box-shadow: 0 0 0 2px rgba(44, 48, 58, 0.12);
+    }
+
+    .brush-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .brush-meta { min-width: 0; display: flex; flex-direction: column; }
+    .brush-name { font-size: 11.5px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brush-char { font-size: 10px; color: var(--ink-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+    .template-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+    .stage-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .stage-topbar {
+      width: 100%;
+      max-width: 660px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 14px;
+      gap: 10px;
+      box-shadow: var(--shadow-sm);
+      z-index: 10;
+    }
+
+    .stage-status { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; min-width: 0; }
+
+    .pill-tag {
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      background: rgba(44, 48, 58, 0.08);
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    .pill-tag.play { background: var(--jade-bg); color: #2B7356; }
+    .pill-tag.demo { background: var(--gold-bg); color: #966210; }
+
+    .coord-readout {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11.5px;
+      color: var(--ink-soft);
+      white-space: nowrap;
+    }
+
+    .stage-canvas-wrap {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    canvas#editorCanvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+    .stage-footer {
+      font-size: 11.5px;
+      color: var(--ink-soft);
+      text-align: center;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(255, 253, 249, 0.56);
+    }
+
+    .solver-box {
+      border-radius: 12px;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      background: #F8F6F1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .solver-box.ok { background: var(--jade-bg); border-color: rgba(71, 161, 123, 0.45); }
+    .solver-box.fail { background: var(--danger-bg); border-color: rgba(217, 91, 82, 0.45); }
+    .solver-box.warn { background: var(--gold-bg); border-color: rgba(229, 164, 53, 0.5); }
+
+    .solver-headline {
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .solver-metrics { font-size: 11.5px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 5px; }
+
+    .cheese-alert {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #9A5F0A;
+      background: rgba(255, 245, 221, 0.9);
+      border: 1px dashed #DFA236;
+      padding: 6px 8px;
+      border-radius: 8px;
+      line-height: 1.4;
+    }
+
+    .path-preview {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      letter-spacing: 1px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 8px;
+      max-height: 76px;
+      overflow-y: auto;
+      word-break: break-all;
+      color: var(--ink);
+    }
+
+    .json-pre {
+      background: #262A33;
+      color: #F2EFE9;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      max-height: 190px;
+      overflow: auto;
+      white-space: pre;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: var(--ink);
+      color: #FFFDF9;
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.22s ease;
+      box-shadow: 0 10px 26px rgba(44, 48, 58, 0.24);
+      z-index: 120;
+    }
+
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(44, 48, 58, 0.36);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 110;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal-card {
+      width: 100%;
+      max-width: 460px;
+      background: #FFFDF9;
+      border: 1px solid #FFFFFF;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 24px 54px rgba(44, 48, 58, 0.22);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal-card h3 { font-size: 15px; font-weight: 800; }
+    .err-msg { font-size: 12px; font-weight: 700; color: var(--danger); display: none; }
+
+    .right-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      background: rgba(156, 146, 132, 0.14);
+      padding: 3px;
+      border-radius: 11px;
+      flex-shrink: 0;
+    }
+
+    .right-tab-btn {
+      border: none;
+      background: transparent;
+      color: var(--ink-soft);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 6px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .right-tab-btn.active {
+      background: #FFFFFF;
+      color: var(--ink);
+      box-shadow: 0 2px 6px rgba(44, 48, 58, 0.08);
+    }
+
+    .diff-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(120, 112, 100, 0.22);
+      margin-top: 2px;
+    }
+
+    .grade-pill {
+      font-size: 11px;
+      font-weight: 900;
+      padding: 2px 8px;
+      border-radius: 999px;
+      letter-spacing: 0.5px;
+    }
+
+    .grade-S { background: linear-gradient(135deg, #2C303A 0%, #4E5566 100%); color: #FFE596; }
+    .grade-A { background: #FDE8C8; color: #9C5A08; }
+    .grade-B { background: #E3F2FA; color: #266A94; }
+    .grade-C { background: #ECE9E2; color: #6C7280; }
+
+    .diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 2px; }
+
+    .diff-cell {
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(156, 146, 132, 0.18);
+      border-radius: 8px;
+      padding: 4px 7px;
+      font-size: 11px;
+      color: var(--ink-soft);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .diff-cell b { color: var(--ink); }
+
+    .clever-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+
+    .clever-tag {
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: rgba(44, 48, 58, 0.08);
+      color: var(--ink);
+    }
+
+    .clever-tag.gold { background: #FFF2CC; color: #8A5406; }
+    .clever-tag.jade { background: #DFF3EA; color: #22664B; }
+    .clever-tag.ice { background: #DFF1FC; color: #1E5D82; }
+    .clever-tag.danger { background: #FCECEB; color: #B43830; }
+
+    .pcg-progress-wrap { display: none; flex-direction: column; gap: 4px; }
+    .pcg-progress-wrap.show { display: flex; }
+
+    .pcg-bar-track {
+      width: 100%;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(156, 146, 132, 0.2);
+      overflow: hidden;
+    }
+
+    .pcg-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #5BAEDB 0%, #E5A435 100%);
+      transition: width 0.12s linear;
+    }
+
+    .pcg-stat { font-size: 11px; color: var(--ink-soft); display: flex; justify-content: space-between; }
+
+    .cand-list { display: flex; flex-direction: column; gap: 7px; }
+
+    .cand-item {
+      border: 1.5px solid var(--border);
+      background: #FFFFFF;
+      border-radius: 12px;
+      padding: 9px 10px;
+      cursor: pointer;
+      transition: all 0.14s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      text-align: left;
+    }
+
+    .cand-item:hover { border-color: var(--ink); transform: translateY(-1px); }
+    .cand-item.active {
+      border-color: var(--gold);
+      background: #FFFBF0;
+      box-shadow: 0 0 0 2px rgba(229, 164, 53, 0.18);
+    }
+
+    .cand-top { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 800; }
+    .cand-sub { font-size: 11px; color: var(--ink-soft); display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .cand-flow {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #2B6E52;
+      background: rgba(71, 161, 123, 0.1);
+      border-radius: 6px;
+      padding: 3px 7px;
+      line-height: 1.35;
+    }
+
+    .pcg-checks {
+      display: flex;
+      gap: 8px 12px;
+      flex-wrap: wrap;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--ink-soft);
+    }
+
+    .pcg-checks label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+    .pcg-checks input { accent-color: var(--ink); cursor: pointer; }
+
+    /* 5.0 定制造图 UI 样式 */
+    .pcg-source-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      background: rgba(156, 146, 132, 0.14);
+      padding: 3px;
+      border-radius: 9px;
+    }
+
+    .pcg-source-btn {
+      border: none;
+      background: transparent;
+      color: var(--ink-soft);
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 5px 6px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+
+    .pcg-source-btn.active {
+      background: #FFFFFF;
+      color: var(--ink);
+      box-shadow: 0 2px 6px rgba(44, 48, 58, 0.09);
+    }
+
+    .preset-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .preset-chip {
+      border: 1px solid var(--border-strong);
+      background: #FFFFFF;
+      color: var(--ink-soft);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+
+    .preset-chip:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    .preset-chip.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #FFFDF9;
+    }
+
+    .picker-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+
+    .picker-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      padding: 4px 6px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: #FAF8F4;
+      transition: border-color 0.14s ease, background 0.14s ease;
+    }
+
+    .picker-row.has-val {
+      background: #FFFFFF;
+      border-color: rgba(120, 112, 100, 0.42);
+    }
+
+    .picker-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .picker-ctrl {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .picker-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: #FFFFFF;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .picker-btn:hover { border-color: var(--ink); background: #F4F0E8; }
+
+    .picker-val {
+      min-width: 15px;
+      text-align: center;
+      font-size: 11.5px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+    }
+
+    .draft-tip-box {
+      font-size: 11.5px;
+      color: var(--ink-soft);
+      background: #F4F8FB;
+      border: 1px dashed rgba(91, 174, 219, 0.55);
+      border-radius: 10px;
+      padding: 8px 10px;
+      line-height: 1.5;
+    }
+
+    .draft-tip-box b { color: var(--ink); }
+
+    .clever-switch-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+
+    .clever-switch {
+      border: 1.5px solid var(--border);
+      background: #FFFFFF;
+      color: var(--ink-soft);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 8px;
+      border-radius: 9px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      transition: all 0.14s ease;
+      text-align: left;
+    }
+
+    .clever-switch:hover { border-color: var(--ink-muted); color: var(--ink); }
+
+    .clever-switch.active {
+      border-color: var(--gold);
+      background: #FFF7E0;
+      color: #7D4B06;
+      box-shadow: 0 2px 8px rgba(229, 164, 53, 0.18);
+    }
+
+    .clever-switch-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 4px;
+      border: 1.5px solid var(--border-strong);
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+    }
+
+    .clever-switch.active .clever-switch-dot {
+      background: var(--gold);
+      border-color: #C9861A;
+      color: #FFFFFF;
+    }
+
+    .cand-item-body {
+      display: flex;
+      gap: 9px;
+      align-items: flex-start;
+    }
+
+    .cand-thumb {
+      width: 84px;
+      height: 64px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #E7E1D6;
+      flex-shrink: 0;
+      display: block;
+    }
+
+    .cand-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+
+    /* 12x12 关卡库槽位管理样式 */
+    .lib-head-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .lib-chap-select {
+      flex: 1;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: #FFFFFF;
+      color: var(--ink);
+      padding: 5px 7px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .lib-slot-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+
+    .lib-slot-btn {
+      border: 1.5px solid var(--border);
+      background: #FAF8F4;
+      color: var(--ink-soft);
+      border-radius: 9px;
+      padding: 5px 3px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      transition: all 0.14s ease;
+    }
+
+    .lib-slot-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+    .lib-slot-btn.filled {
+      background: #FFFBF0;
+      border-color: rgba(229, 164, 53, 0.55);
+      color: var(--ink);
+    }
+
+    .lib-slot-btn.empty {
+      border-style: dashed;
+      opacity: 0.72;
+    }
+
+    .lib-slot-btn.active {
+      border-style: solid;
+      border-color: var(--ink);
+      background: var(--ink);
+      color: #FFFDF9;
+      box-shadow: 0 3px 10px rgba(44, 48, 58, 0.22);
+    }
+
+    .lib-slot-code { font-size: 11.5px; font-weight: 800; line-height: 1.2; }
+    .lib-slot-meta { font-size: 9.5px; opacity: 0.78; line-height: 1.1; }
+
+    .lib-status-bar {
+      font-size: 11px;
+      color: var(--ink-soft);
+      background: rgba(156, 146, 132, 0.10);
+      border-radius: 8px;
+      padding: 5px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .lib-status-bar.bound {
+      background: var(--jade-bg);
+      color: #246A4E;
+    }
+
+    .lib-dirty-dot {
+      color: var(--danger);
+      font-weight: 800;
+    }
+
+    @media (max-width: 1060px) {
+      .app-shell { height: auto; }
+      .workspace { grid-template-columns: 1fr; overflow: visible; }
+      .panel-left, .panel-right { border: none; border-bottom: 1px solid var(--border); }
+      .stage-center { min-height: 440px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">光</div>
+        <div class="brand-info">
+          <h1>光影推箱 · 关卡工坊 5.0</h1>
+          <span>自由点菜元件池 · 8 项必触发巧思筛选 · 缩略图相面 & 草图进化</span>
+        </div>
+      </div>
+
+      <div class="mode-switch" role="tablist">
+        <button class="mode-btn active" id="btnModeEdit">✏️ 编辑画布</button>
+        <button class="mode-btn" id="btnModePlay">▶️ 实机试玩</button>
+      </div>
+
+      <div class="topbar-right">
+        <button class="btn btn-jade" id="btnTopSaveSlot" title="保存当前画布到所选章节槽位 (Ctrl+S)">💾 存槽位</button>
+        <button class="btn" id="btnTopExportLevelsJs" title="导出完整的 core/levels.js 文件">📦 导出 levels.js</button>
+        <button class="btn" id="btnOpenPcgTab">🎲 定制造图 5.0</button>
+        <button class="btn btn-gold" id="btnRunBFS">🔍 BFS 光学纯净验关</button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <!-- 左侧：12卷关卡库、画笔、尺寸工具与模板 -->
+      <aside class="side-panel panel-left">
+        <section class="card">
+          <div class="card-head">
+            <span>🗂️ 12 卷关卡库 (levels.js)</span>
+            <small id="libTotalStat">0 / 144</small>
+          </div>
+          <div class="lib-head-row">
+            <select class="lib-chap-select" id="libChapSelect"></select>
+            <button class="btn" id="btnBindLevelsFile" style="padding:5px 8px; font-size:11px;" title="Chrome/Edge 绑定本地 core/levels.js 后按 Ctrl+S 直接覆写">🔗 绑定文件</button>
+          </div>
+          <div class="lib-slot-grid" id="libSlotGrid"></div>
+          <div class="lib-status-bar" id="libStatusBar">
+            <span id="libCurSlotText">当前槽位：1-1</span>
+            <span id="libDirtyBadge" class="lib-dirty-dot" style="display:none;">● 未导出</span>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-jade" id="btnSaveSlot">💾 保存到槽位</button>
+            <button class="btn btn-ink" id="btnExportLevelsJs">📦 导出 levels.js</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="btnClearSlot" style="font-size:11px; color:var(--danger);">🗑️ 清空当前槽位</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <span>统一元件画笔</span>
+            <small>左键涂抹 · 右键擦除</small>
+          </div>
+          <div class="brush-grid" id="allBrushGrid"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <span>画布结构修剪</span>
+            <small>5~12 × 5~10</small>
+          </div>
+          <div class="row-2">
+            <div class="field">
+              <label for="inCols">列数 (宽)</label>
+              <input class="input" id="inCols" type="number" min="5" max="12" value="8" />
+            </div>
+            <div class="field">
+              <label for="inRows">行数 (高)</label>
+              <input class="input" id="inRows" type="number" min="5" max="10" value="6" />
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="btnPruneGrid" title="填死冗余空地并剥离外围多余厚墙">✂️ 剪枝废格与厚墙</button>
+            <button class="btn" id="btnAddBorder">🧱 四周补墙</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="btnClearGrid">🧹 清空内部</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <span>精选标杆模板</span>
+            <small>一键载入打分</small>
+          </div>
+          <div class="template-grid" id="templateGrid"></div>
+        </section>
+      </aside>
+
+      <!-- 中间：所见即所得 2D 建筑光影舞台 -->
+      <main class="stage-center">
+        <div class="stage-topbar">
+          <div class="stage-status">
+            <span class="pill-tag" id="modeTag">编辑模式 · 实时光路</span>
+            <span id="stageLevelTitle">1-4 过河拆桥</span>
+            <span class="coord-readout" id="stageInfo">步数 0</span>
+          </div>
+          <div class="btn-row" id="playActionBar" style="display:none; flex:0;">
+            <button class="btn" id="btnUndo" title="悔棋 (Z)">↩ 悔棋</button>
+            <button class="btn" id="btnRestart" title="重来 (R)">↻ 重来</button>
+          </div>
+        </div>
+
+        <div class="stage-canvas-wrap" id="canvasWrap">
+          <canvas id="editorCanvas"></canvas>
+        </div>
+
+        <div class="stage-footer" id="stageFooter">
+          编辑提示：左键涂抹 / 拖拽连续绘制，右键快速擦除；光路与冰水状态会实时联动更新
+        </div>
+      </main>
+
+      <!-- 右侧：优雅度验关报告 + 智能造图 5.0 + JSON 导出 -->
+      <aside class="side-panel panel-right">
+        <div class="right-tabs">
+          <button class="right-tab-btn active" id="tabBtnVerify">🔍 光学验关</button>
+          <button class="right-tab-btn" id="tabBtnPcg">🎲 定制造图 5.0</button>
+        </div>
+
+        <!-- Tab 1：BFS 验关与 JSON -->
+        <div id="tabPaneVerify" style="display:flex; flex-direction:column; gap:12px;">
+          <section class="card">
+            <div class="card-head">
+              <span>BFS 光学纯净验关报告</span>
+              <small>上限 80,000 状态</small>
+            </div>
+            <div class="solver-box" id="solverBox">
+              <div class="solver-headline">
+                <span id="solverHeadline">尚未验关</span>
+                <span id="solverTime" style="font-size:11px; color:var(--ink-muted);"></span>
+              </div>
+              <div class="solver-metrics" id="solverMetrics">
+                点击顶部「🔍 BFS 光学纯净验关」，严格校验每面透镜是否真正折射光线、是否存在镜子双位复用、以及冗余厚墙与无用道具。
+              </div>
+              <div class="cheese-alert" id="cheeseAlert" style="display:none;"></div>
+              <div class="path-preview" id="pathPreview" style="display:none;"></div>
+            </div>
+            <div class="btn-row" id="demoControlRow" style="display:none;">
+              <button class="btn btn-jade" id="btnPlayDemo">▶️ 播放最优解</button>
+              <button class="btn" id="btnStepDemo">⏭ 单步演示</button>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head">
+              <span>关卡元信息</span>
+              <small>实时同步到 levels.js / JSON</small>
+            </div>
+            <div class="row-2">
+              <div class="field">
+                <label for="inCode">关卡编号 (code)</label>
+                <input class="input" id="inCode" type="text" placeholder="如 1-1" />
+              </div>
+              <div class="field">
+                <label for="inTitle">备注标题</label>
+                <input class="input" id="inTitle" type="text" placeholder="例如：初见光影" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="inHint">本关思路提示</label>
+              <textarea class="textarea" id="inHint" rows="2" placeholder="输入简短的通关思路提示..."></textarea>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head">
+              <span>关卡 JSON 导出 / 导入</span>
+              <small>兼容正式版直接导入</small>
+            </div>
+            <pre class="json-pre" id="jsonOut"></pre>
+            <div class="btn-row">
+              <button class="btn btn-ink" id="btnCopyJson">📋 复制 JSON</button>
+              <button class="btn" id="btnDownloadJson">💾 下载</button>
+              <button class="btn" id="btnImportJson">📥 导入</button>
+            </div>
+          </section>
+        </div>
+
+        <!-- Tab 2：定制造图 5.0 -->
+        <div id="tabPanePcg" style="display:none; flex-direction:column; gap:12px;">
+          <section class="card">
+            <div class="card-head">
+              <span>🎲 定制造图 5.0</span>
+              <small>点菜元件 · 定向筛选巧思</small>
+            </div>
+
+            <div class="pcg-source-switch">
+              <button class="pcg-source-btn active" id="pcgModeScratch">🌱 从零点菜生成</button>
+              <button class="pcg-source-btn" id="pcgModeDraft">🔧 微调当前草图</button>
+            </div>
+
+            <div id="pcgScratchPanel" style="display:flex; flex-direction:column; gap:9px;">
+              <div class="field">
+                <label>快捷套用章节配置（点选后仍可自由增减）</label>
+                <div class="preset-chips" id="pcgPresetChips"></div>
+              </div>
+
+              <div class="field">
+                <label>自由点菜元件数量</label>
+                <div class="picker-grid" id="elemPickerGrid"></div>
+              </div>
+
+              <div class="row-2">
+                <div class="field">
+                  <label for="pcgCols">生成列数 (5~10)</label>
+                  <input class="input" id="pcgCols" type="number" min="5" max="10" value="7" />
+                </div>
+                <div class="field">
+                  <label for="pcgRows">生成行数 (5~8)</label>
+                  <input class="input" id="pcgRows" type="number" min="5" max="8" value="6" />
+                </div>
+              </div>
+            </div>
+
+            <div id="pcgDraftTip" class="draft-tip-box" style="display:none;">
+              <b>🔧 草图微调进化模式：</b>将保留你当前画布的元件清单与大致骨架，自动尝试微调内墙、道具站位与朝向，帮你把半成品草图抛光成<b>无逃课、命中下方巧思开关</b>的精品图！
+            </div>
+
+            <div class="row-2">
+              <div class="field">
+                <label for="pcgMinSteps">最少步数</label>
+                <input class="input" id="pcgMinSteps" type="number" min="4" max="30" value="8" />
+              </div>
+              <div class="field">
+                <label for="pcgMaxSteps">最多步数（防冗长）</label>
+                <input class="input" id="pcgMaxSteps" type="number" min="6" max="40" value="18" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label>✨ 必触发巧思开关（可多选，勾选即作为硬筛选门槛）</label>
+              <div class="clever-switch-grid" id="cleverSwitchGrid"></div>
+            </div>
+
+            <div class="field">
+              <label for="pcgBudget">进化轮次</label>
+              <select class="input" id="pcgBudget">
+                <option value="220">快速探索（220 轮 · ~2s）</option>
+                <option value="450" selected>标准炼图（450 轮 · ~4s）</option>
+                <option value="800">深度炼丹（800 轮 · ~7s）</option>
+              </select>
+            </div>
+
+            <div class="pcg-checks">
+              <label><input type="checkbox" id="pcgAutoPrune" checked /> ✂️ 剪枝废格与厚墙</label>
+              <label><input type="checkbox" id="pcgRequireMirror" checked /> 🪞 禁透镜当障碍物</label>
+              <label><input type="checkbox" id="pcgUniqueMech" checked /> 🧬 光学套路去重</label>
+            </div>
+
+            <div class="btn-row">
+              <button class="btn btn-gold" id="btnStartPcg">✨ 开始定制造图</button>
+              <button class="btn" id="btnStopPcg" style="display:none; flex:0;">⏹ 停止</button>
+            </div>
+            <div class="pcg-progress-wrap" id="pcgProgressWrap">
+              <div class="pcg-bar-track"><div class="pcg-bar-fill" id="pcgBarFill"></div></div>
+              <div class="pcg-stat">
+                <span id="pcgStatText">正在进化筛选...</span>
+                <span id="pcgStatPct">0%</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head">
+              <span>Top 5 候选图（实时缩略图）</span>
+              <small>看图相面 · 点击载入</small>
+            </div>
+            <div class="cand-list" id="pcgCandList">
+              <div style="font-size:11.5px; color:var(--ink-soft); line-height:1.5;">
+                在上方自由点选本关元件与<b>必触发巧思开关</b>（例如勾选 <code>⚡ 占格压制</code> 或 <code>🪞 双位折光</code>），算法将采用双层爬山进化，并直接展示<b>实时迷你棋盘缩略图</b>方便你一眼挑出雅观神图。
+              </div>
+            </div>
+          </section>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- 导入 JSON 弹窗 -->
+  <div class="modal-backdrop" id="importModal">
+    <div class="modal-card">
+      <h3>📥 导入关卡 JSON</h3>
+      <textarea class="textarea" id="importArea" rows="10" placeholder='粘贴包含 "map" 字符串数组的 JSON...'></textarea>
+      <div class="err-msg" id="importErr"></div>
+      <div class="btn-row">
+        <button class="btn" id="btnCancelImport">取消</button>
+        <button class="btn btn-ink" id="btnConfirmImport">载入画布</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="./core/engine.js"></script>
+  <script src="./core/levels.js"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      if (!window.LumenBoxEngine || !window.LUMENBOX_DATA) {
+        alert("未加载到 core/engine.js 或 core/levels.js，请确认目录结构包含 core/ 文件夹。");
+        return;
+      }
+
+      /* =====================================================================
+         MODULE 1: 共享物理与验关引擎（来自 ./core/engine.js）
+         ===================================================================== */
+      const GameEngine = window.LumenBoxEngine;
+      const DATA = window.LUMENBOX_DATA;
+
+      /* =====================================================================
+         MODULE 1.5: LevelGenerator（定制造图 5.0 — 自由点菜元件池 & 草图微调进化）
+         ===================================================================== */
+      const LevelGenerator = (function () {
+        const PRESETS = [
+          {
+            id: "ch1_ice_basic",
+            label: "❄️ 卷一·纯冰",
+            rows: 5, cols: 7, minSteps: 8, maxSteps: 16,
+            counts: { S: 1, L: 0, M: 0, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2, wall: 3 },
+            clever: ["body_shadow"]
+          },
+          {
+            id: "ch1_lantern",
+            label: "🏮 纯提灯",
+            rows: 5, cols: 7, minSteps: 8, maxSteps: 16,
+            counts: { S: 0, L: 1, M: 0, SP: 0, B: 0, C: 1, F: 0, I: 1, V: 0, X: 1, wall: 3 },
+            clever: ["ping_pong"]
+          },
+          {
+            id: "mirror_dual",
+            label: "🪞 双位折光",
+            rows: 6, cols: 7, minSteps: 10, maxSteps: 20,
+            counts: { S: 1, L: 0, M: 1, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2, wall: 3 },
+            clever: ["mirror_dual"]
+          },
+          {
+            id: "ch2_amber",
+            label: "🟧 卷二·纯珀",
+            rows: 5, cols: 7, minSteps: 8, maxSteps: 17,
+            counts: { S: 1, L: 0, M: 1, SP: 0, B: 1, C: 0, F: 1, I: 0, V: 1, X: 2, wall: 3 },
+            clever: ["interleaved"]
+          },
+          {
+            id: "ch3_fusion",
+            label: "✨ 冰珀交响",
+            rows: 6, cols: 7, minSteps: 9, maxSteps: 19,
+            counts: { S: 1, L: 0, M: 1, SP: 0, B: 0, C: 1, F: 1, I: 0, V: 0, X: 2, wall: 3 },
+            clever: ["swap"]
+          },
+          {
+            id: "ch4_suppress",
+            label: "⚡ 占格压制",
+            rows: 6, cols: 7, minSteps: 9, maxSteps: 19,
+            counts: { S: 1, L: 0, M: 0, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2, wall: 3 },
+            clever: ["suppression"]
+          }
+        ];
+
+        const randInt = n => Math.floor(Math.random() * n);
+        const pick = arr => arr[randInt(arr.length)];
+
+        function shuffle(arr) {
+          for (let i = arr.length - 1; i > 0; i--) {
+            const j = randInt(i + 1);
+            const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+          }
+          return arr;
+        }
+
+        function isConnected(grid) {
+          const rows = grid.length, cols = grid[0].length;
+          let start = null, total = 0;
+          for (let r = 1; r < rows - 1; r++) {
+            for (let c = 1; c < cols - 1; c++) {
+              if (grid[r][c] !== "#" && grid[r][c] !== "S") {
+                total++;
+                if (!start) start = [r, c];
+              }
+            }
+          }
+          if (!start) return false;
+          const seen = new Set([`${start[0]},${start[1]}`]);
+          const q = [start];
+          let head = 0;
+          const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+          while (head < q.length) {
+            const [r, c] = q[head++];
+            for (let d = 0; d < 4; d++) {
+              const nr = r + dirs[d][0], nc = c + dirs[d][1];
+              if (nr <= 0 || nr >= rows - 1 || nc <= 0 || nc >= cols - 1) continue;
+              if (grid[nr][nc] === "#" || grid[nr][nc] === "S") continue;
+              const k = `${nr},${nc}`;
+              if (!seen.has(k)) { seen.add(k); q.push([nr, nc]); }
+            }
+          }
+          return seen.size === total;
+        }
+
+        function hasBlockedSun(grid) {
+          const rows = grid.length, cols = grid[0].length;
+          const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              if (grid[r][c] !== "S") continue;
+              let open = false;
+              for (let d = 0; d < 4; d++) {
+                const nr = r + dirs[d][0], nc = c + dirs[d][1];
+                if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] !== "#" && grid[nr][nc] !== "S") {
+                  open = true; break;
+                }
+              }
+              if (!open) return true;
+            }
+          }
+          return false;
+        }
+
+        function createRandomGridFromConfig(cfg) {
+          const rows = Math.max(5, Math.min(8, Number(cfg.rows) || 6));
+          const cols = Math.max(5, Math.min(10, Number(cfg.cols) || 7));
+          const cts = cfg.counts || {};
+          const items = [];
+          const pushN = (n, fn) => { for (let i = 0; i < (n || 0); i++) items.push(fn()); };
+          pushN(cts.L, () => "L");
+          pushN(cts.M, () => pick(["\\", "/"]));
+          pushN(cts.SP, () => pick(["^", "v", "<", ">"]));
+          pushN(cts.B, () => "B");
+          pushN(cts.C, () => "C");
+          pushN(cts.F, () => "F");
+          pushN(cts.I, () => "I");
+          pushN(cts.V, () => "V");
+          pushN(cts.X, () => "X");
+
+          const grid = Array.from({ length: rows }, (_, r) =>
+            Array.from({ length: cols }, (_, c) =>
+              (r === 0 || c === 0 || r === rows - 1 || c === cols - 1) ? "#" : "."
+            )
+          );
+
+          const borderSpots = [];
+          for (let c = 1; c < cols - 1; c++) {
+            borderSpots.push([0, c, 1, c]);
+            borderSpots.push([rows - 1, c, rows - 2, c]);
+          }
+          for (let r = 1; r < rows - 1; r++) {
+            borderSpots.push([r, 0, r, 1]);
+            borderSpots.push([r, cols - 1, r, cols - 2]);
+          }
+          shuffle(borderSpots);
+          const sunMouths = new Set();
+          const sunCount = Math.min(cts.S || 0, borderSpots.length);
+          for (let i = 0; i < sunCount; i++) {
+            const [sr, sc, mr, mc] = borderSpots[i];
+            grid[sr][sc] = "S";
+            sunMouths.add(`${mr},${mc}`);
+          }
+
+          const inner = [];
+          for (let r = 1; r < rows - 1; r++) {
+            for (let c = 1; c < cols - 1; c++) {
+              if (!sunMouths.has(`${r},${c}`)) inner.push([r, c]);
+            }
+          }
+          shuffle(inner);
+
+          const targetWalls = Math.max(0, cts.wall || 0);
+          let placedWalls = 0;
+          for (let i = 0; i < inner.length && placedWalls < targetWalls; i++) {
+            const [r, c] = inner[i];
+            grid[r][c] = "#";
+            if (isConnected(grid)) placedWalls++;
+            else grid[r][c] = ".";
+          }
+
+          const empties = [];
+          for (let r = 1; r < rows - 1; r++) {
+            for (let c = 1; c < cols - 1; c++) {
+              if (grid[r][c] === ".") empties.push([r, c]);
+            }
+          }
+          shuffle(empties);
+          if (empties.length < items.length + 2) return null;
+
+          const pPos = empties.pop();
+          grid[pPos[0]][pPos[1]] = "P";
+          for (let i = 0; i < items.length; i++) {
+            const pos = empties.pop();
+            grid[pos[0]][pos[1]] = items[i];
+          }
+          return grid;
+        }
+
+        function mutateGrid(grid, stepsCount = 1) {
+          const rows = grid.length, cols = grid[0].length;
+          const next = grid.map(r => r.slice());
+
+          for (let k = 0; k < stepsCount; k++) {
+            const empties = [], movables = [], innerWalls = [], borderSuns = [], borderWalls = [];
+
+            for (let r = 0; r < rows; r++) {
+              for (let c = 0; c < cols; c++) {
+                const isBorder = r === 0 || r === rows - 1 || c === 0 || c === cols - 1;
+                const isCorner = (r === 0 || r === rows - 1) && (c === 0 || c === cols - 1);
+                const ch = next[r][c];
+                if (isBorder) {
+                  if (!isCorner) {
+                    if (ch === "S") borderSuns.push([r, c]);
+                    else if (ch === "#") borderWalls.push([r, c]);
+                  }
+                } else {
+                  if (ch === ".") empties.push([r, c]);
+                  else if (ch === "#") innerWalls.push([r, c]);
+                  else movables.push([r, c, ch]);
+                }
+              }
+            }
+
+            const op = Math.random();
+            if (op < 0.46 && movables.length && empties.length) {
+              const [r1, c1, ch] = pick(movables);
+              const [r2, c2] = pick(empties);
+              next[r1][c1] = ".";
+              next[r2][c2] = ch;
+            } else if (op < 0.68 && empties.length > 3) {
+              const [r, c] = pick(empties);
+              next[r][c] = "#";
+              if (!isConnected(next) || hasBlockedSun(next)) next[r][c] = ".";
+            } else if (op < 0.82 && innerWalls.length > 0) {
+              const [r, c] = pick(innerWalls);
+              next[r][c] = ".";
+            } else if (op < 0.92 && borderSuns.length && borderWalls.length) {
+              const [sr, sc] = pick(borderSuns);
+              const [wr, wc] = pick(borderWalls);
+              next[sr][sc] = "#";
+              next[wr][wc] = "S";
+              if (hasBlockedSun(next)) { next[wr][wc] = "#"; next[sr][sc] = "S"; }
+            } else {
+              const rotables = movables.filter(m => m[2] === "\\" || m[2] === "/" || GameEngine.SPOT_DIRS[m[2]]);
+              if (rotables.length) {
+                const [r, c, ch] = pick(rotables);
+                if (ch === "\\" || ch === "/") next[r][c] = ch === "\\" ? "/" : "\\";
+                else next[r][c] = pick(["^", "v", "<", ">"]);
+              } else if (movables.length && empties.length) {
+                const [r1, c1, ch] = pick(movables);
+                const [r2, c2] = pick(empties);
+                next[r1][c1] = ".";
+                next[r2][c2] = ch;
+              }
+            }
+          }
+          return next;
+        }
+
+        // ★ 剥离外围毫无意义的“双层死墙”（保留必要的一圈围墙或太阳嵌墙）
+        function stripOuterDeadWalls(grid) {
+          let g = grid.map(r => r.slice());
+          let stripped = 0;
+          const isRowAllHash = r => g[r].every(ch => ch === "#");
+          const isColAllHash = c => g.every(row => row[c] === "#");
+
+          while (g.length > 5 && isRowAllHash(0) && isRowAllHash(1)) { g.shift(); stripped++; }
+          while (g.length > 5 && isRowAllHash(g.length - 1) && isRowAllHash(g.length - 2)) { g.pop(); stripped++; }
+          while (g[0].length > 5 && isColAllHash(0) && isColAllHash(1)) { g.forEach(row => row.shift()); stripped++; }
+          while (g[0].length > 5 && isColAllHash(g[0].length - 1) && isColAllHash(g[0].length - 2)) { g.forEach(row => row.pop()); stripped++; }
+          return { grid: g, stripped };
+        }
+
+        function pruneGrid(grid, origSolve) {
+          if (!origSolve || origSolve.status !== "solved" || !origSolve.metrics || !origSolve.metrics.activeCells) {
+            return { grid, res: origSolve, prunedCount: 0 };
+          }
+          const rows = grid.length, cols = grid[0].length;
+          let curGrid = grid.map(r => r.slice());
+          let curSolve = origSolve;
+          let prunedCount = 0;
+
+          const countAdjWalls = (g, r, c) => {
+            let n = 0;
+            if (g[r - 1][c] === "#" || g[r - 1][c] === "S") n++;
+            if (g[r + 1][c] === "#" || g[r + 1][c] === "S") n++;
+            if (g[r][c - 1] === "#" || g[r][c - 1] === "S") n++;
+            if (g[r][c + 1] === "#" || g[r][c + 1] === "S") n++;
+            return n;
+          };
+
+          for (let pass = 0; pass < 2; pass++) {
+            const touched = curSolve.metrics.activeCells;
+            const candidates = [];
+            for (let r = 1; r < rows - 1; r++) {
+              for (let c = 1; c < cols - 1; c++) {
+                if (curGrid[r][c] === "." && !touched.has(`${r},${c}`)) {
+                  candidates.push([r, c, countAdjWalls(curGrid, r, c)]);
+                }
+              }
+            }
+            if (!candidates.length) break;
+            candidates.sort((a, b) => b[2] - a[2]);
+
+            let changedInPass = false;
+            for (let i = 0; i < candidates.length; i++) {
+              const [r, c] = candidates[i];
+              if (curGrid[r][c] !== ".") continue;
+
+              curGrid[r][c] = "#";
+              if (hasBlockedSun(curGrid) || !isConnected(curGrid)) {
+                curGrid[r][c] = ".";
+                continue;
+              }
+
+              const testRes = GameEngine.solveBFS(curGrid.map(row => row.join("")), 14000);
+              const noNewCheese = testRes.status === "solved"
+                && testRes.steps >= curSolve.steps
+                && testRes.cheeseWarnings.length <= curSolve.cheeseWarnings.length;
+
+              if (noNewCheese) {
+                curSolve = testRes;
+                prunedCount++;
+                changedInPass = true;
+              } else {
+                curGrid[r][c] = ".";
+              }
+            }
+            if (!changedInPass) break;
+          }
+
+          const strippedRes = stripOuterDeadWalls(curGrid);
+          if (strippedRes.stripped > 0) {
+            curGrid = strippedRes.grid;
+            prunedCount += strippedRes.stripped;
+            curSolve = GameEngine.solveBFS(curGrid.map(row => row.join("")), 14000);
+          }
+
+          return { grid: curGrid, res: curSolve, prunedCount };
+        }
+
+        return { PRESETS, createRandomGridFromConfig, mutateGrid, stripOuterDeadWalls, pruneGrid };
+      })();
+
+      /* =====================================================================
+         MODULE 2: Assets2D（2D 建筑光影渲染模块 · 物理对称终版同步）
+         ===================================================================== */
+      const Assets2D = (function () {
+        const CFG = {
+          islandShadow: "rgba(44, 52, 68, 0.18)",
+          islandSide: "#CFC8BC",
+          islandMid: "#D8D1C5",
+          islandTop: "#E7E1D6",
+          floorA: 0xEAE6DE,
+          floorB: 0xE5E0D6,
+          floorLit: 0xFFF3D1,
+          floorShadow: 0xD9DCE3,
+          floorGrid: "rgba(155, 146, 132, 0.16)",
+          wallBase: "#EFECE6",
+          wallAlt: "#EAE6DF",
+          wallHi: "#FAF8F4",
+          wallLow: "#D9D2C5",
+          wallRight: "#E0DAD0",
+          seamColor: "rgba(156, 146, 132, 1)",
+          shadowRgb: "42, 48, 62",
+          beamOuterRgb: "255, 212, 104",
+          beamCoreRgb: "255, 250, 224",
+          wallSeam: 0.36,
+          shadowLen: 0.17,
+          boxScale: 0.72,
+          toolRadius: 0.31
+        };
+
+        function roundRect(ctx, x, y, w, h, r) {
+          const rr = Math.min(r, w / 2, h / 2);
+          ctx.beginPath();
+          ctx.moveTo(x + rr, y);
+          ctx.arcTo(x + w, y, x + w, y + h, rr);
+          ctx.arcTo(x + w, y + h, x, y + h, rr);
+          ctx.arcTo(x, y + h, x, y, rr);
+          ctx.arcTo(x, y, x + w, y, rr);
+          ctx.closePath();
+        }
+
+        function lerpHex(hexA, hexB, t) {
+          const r1 = (hexA >> 16) & 255, g1 = (hexA >> 8) & 255, b1 = hexA & 255;
+          const r2 = (hexB >> 16) & 255, g2 = (hexB >> 8) & 255, b2 = hexB & 255;
+          return `rgb(${Math.round(r1 + (r2 - r1) * t)},${Math.round(g1 + (g2 - g1) * t)},${Math.round(b1 + (b2 - b1) * t)})`;
+        }
+
+        function castShadowRect(ctx, x, y, w, h, r, len, alpha = 0.15) {
+          if (len <= 0.5) return;
+          ctx.save();
+          ctx.fillStyle = `rgba(${CFG.shadowRgb}, ${alpha})`;
+          for (let i = 1; i <= 6; i++) {
+            const f = i / 6;
+            ctx.globalAlpha = Math.pow(1 - f * 0.72, 1.35) * 0.34;
+            roundRect(ctx, x + len * f, y + len * f, w + f * 1.4, h + f * 1.4, r + f * 1.2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        function castShadowCircle(ctx, cx, cy, rad, len, alpha = 0.16) {
+          if (len <= 0.5) return;
+          ctx.save();
+          ctx.fillStyle = `rgba(${CFG.shadowRgb}, ${alpha})`;
+          for (let i = 1; i <= 6; i++) {
+            const f = i / 6;
+            ctx.globalAlpha = Math.pow(1 - f * 0.72, 1.35) * 0.36;
+            ctx.beginPath();
+            ctx.arc(cx + len * f, cy + len * f, rad + f * 1.4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        function drawIslandBase(ctx, bx, by, bw, bh, ts) {
+          const pad = Math.round(ts * 0.12), thick = Math.round(ts * 0.22), r = Math.round(ts * 0.16);
+          ctx.save();
+          ctx.shadowColor = CFG.islandShadow;
+          ctx.shadowBlur = 28; ctx.shadowOffsetX = 10; ctx.shadowOffsetY = 18;
+          roundRect(ctx, bx - pad, by - pad + thick, bw + pad * 2, bh + pad * 2, r);
+          ctx.fillStyle = CFG.islandSide; ctx.fill();
+          ctx.restore();
+
+          roundRect(ctx, bx - pad, by - pad + thick * 0.55, bw + pad * 2, bh + pad * 2, r);
+          ctx.fillStyle = CFG.islandMid; ctx.fill();
+
+          roundRect(ctx, bx - pad, by - pad, bw + pad * 2, bh + pad * 2, r);
+          ctx.fillStyle = CFG.islandTop; ctx.fill();
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.72)"; ctx.lineWidth = 1.4; ctx.stroke();
+        }
+
+        function drawLockGoldSeam(ctx, ox, oy, size, r, elapsed) {
+          const pulse = 0.5 + 0.5 * Math.sin((elapsed || 0) * 2.6);
+          ctx.save();
+          ctx.shadowColor = "rgba(240, 178, 54, 0.82)";
+          ctx.shadowBlur = 9;
+          roundRect(ctx, ox - 0.8, oy - 0.8, size + 1.6, size + 1.6, r + 0.5);
+          ctx.strokeStyle = `rgba(244, 186, 68, ${0.78 + pulse * 0.18})`;
+          ctx.lineWidth = 2.3; ctx.stroke();
+          ctx.shadowBlur = 0;
+          roundRect(ctx, ox + 1.2, oy + 1.2, size - 2.4, size - 2.4, Math.max(2, r - 1));
+          ctx.strokeStyle = "rgba(255, 248, 214, 0.65)"; ctx.lineWidth = 1; ctx.stroke();
+          ctx.restore();
+        }
+
+        function drawWall(ctx, x, y, ts, r, c, walls, rows, cols) {
+          ctx.fillStyle = (r + c) % 2 === 0 ? CFG.wallBase : CFG.wallAlt;
+          ctx.fillRect(x - 0.4, y - 0.4, ts + 0.8, ts + 0.8);
+
+          const topExp = r === 0 || !walls[r - 1][c];
+          const leftExp = c === 0 || !walls[r][c - 1];
+          const botExp = r === rows - 1 || !walls[r + 1][c];
+          const rightExp = c === cols - 1 || !walls[r][c + 1];
+
+          ctx.save();
+          ctx.strokeStyle = CFG.seamColor;
+          ctx.globalAlpha = CFG.wallSeam * 0.45;
+          ctx.lineWidth = 1;
+          if (!topExp) { ctx.beginPath(); ctx.moveTo(x + 2, y + 0.5); ctx.lineTo(x + ts - 2, y + 0.5); ctx.stroke(); }
+          if (!leftExp) { ctx.beginPath(); ctx.moveTo(x + 0.5, y + 2); ctx.lineTo(x + 0.5, y + ts - 2); ctx.stroke(); }
+          ctx.restore();
+
+          const trim = Math.max(2, ts * 0.055);
+          if (topExp) { ctx.fillStyle = CFG.wallHi; ctx.fillRect(x, y, ts, trim); }
+          if (leftExp) { ctx.fillStyle = CFG.wallHi; ctx.globalAlpha = 0.72; ctx.fillRect(x, y, trim, ts); ctx.globalAlpha = 1; }
+          if (botExp) { ctx.fillStyle = CFG.wallLow; ctx.fillRect(x, y + ts - trim * 1.3, ts, trim * 1.3); }
+          if (rightExp) { ctx.fillStyle = CFG.wallRight; ctx.fillRect(x + ts - trim, y, trim, ts); }
+        }
+
+        function drawGoal(ctx, x, y, ts, lock, elapsed) {
+          const cx = x + ts / 2, cy = y + ts / 2, slotSize = ts * CFG.boxScale;
+          const ox = cx - slotSize / 2, oy = cy - slotSize / 2, r = ts * 0.13;
+          const breathe = 0.5 + 0.5 * Math.sin(elapsed * 2.1);
+
+          ctx.save();
+          roundRect(ctx, ox + 0.8, oy + 0.8, slotSize, slotSize, r);
+          ctx.strokeStyle = "rgba(255, 253, 249, 0.82)"; ctx.lineWidth = 1.4; ctx.stroke();
+
+          const basinG = ctx.createLinearGradient(ox, oy, ox + slotSize, oy + slotSize);
+          basinG.addColorStop(0, "rgba(136, 130, 120, 0.44)");
+          basinG.addColorStop(0.55, "rgba(176, 170, 160, 0.28)");
+          basinG.addColorStop(1, "rgba(228, 223, 214, 0.40)");
+          roundRect(ctx, ox, oy, slotSize, slotSize, r);
+          ctx.fillStyle = basinG; ctx.fill();
+
+          ctx.save();
+          roundRect(ctx, ox, oy, slotSize, slotSize, r);
+          ctx.clip();
+          const shDepth = Math.max(5, slotSize * 0.24);
+          const topSh = ctx.createLinearGradient(ox, oy, ox, oy + shDepth);
+          topSh.addColorStop(0, "rgba(42, 48, 62, 0.34)"); topSh.addColorStop(1, "rgba(42, 48, 62, 0)");
+          ctx.fillStyle = topSh; ctx.fillRect(ox, oy, slotSize, shDepth);
+
+          const leftSh = ctx.createLinearGradient(ox, oy, ox + shDepth, oy);
+          leftSh.addColorStop(0, "rgba(42, 48, 62, 0.28)"); leftSh.addColorStop(1, "rgba(42, 48, 62, 0)");
+          ctx.fillStyle = leftSh; ctx.fillRect(ox, oy, shDepth, slotSize);
+          ctx.restore();
+
+          if (lock < 0.9) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, slotSize * (0.21 + breathe * 0.015), 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(182, 142, 68, ${(1 - lock) * (0.42 + breathe * 0.22)})`;
+            ctx.lineWidth = 1.5; ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, Math.max(2, slotSize * 0.05), 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(182, 142, 68, ${(1 - lock) * (0.56 + breathe * 0.24)})`;
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        function drawAnchoredDashedSharpRect(ctx, x, y, size, cornerColor, dashColor, fillColor) {
+          const stub = size * 0.17;
+          ctx.save();
+          if (fillColor) { ctx.fillStyle = fillColor; ctx.fillRect(x, y, size, size); }
+          ctx.strokeStyle = dashColor;
+          ctx.lineWidth = 1.25;
+          ctx.setLineDash([4, 3.5]);
+          ctx.beginPath();
+          ctx.moveTo(x + stub, y); ctx.lineTo(x + size - stub, y);
+          ctx.moveTo(x + size, y + stub); ctx.lineTo(x + size, y + size - stub);
+          ctx.moveTo(x + size - stub, y + size); ctx.lineTo(x + stub, y + size);
+          ctx.moveTo(x, y + size - stub); ctx.lineTo(x, y + stub);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          ctx.strokeStyle = cornerColor;
+          ctx.lineWidth = 1.8;
+          ctx.lineCap = "round";
+          ctx.lineJoin = "miter";
+          [
+            [x, y, 1, 1], [x + size, y, -1, 1],
+            [x + size, y + size, -1, -1], [x, y + size, 1, -1]
+          ].forEach(([cx0, cy0, dx, dy]) => {
+            ctx.beginPath();
+            ctx.moveTo(cx0 + dx * stub, cy0);
+            ctx.lineTo(cx0, cy0);
+            ctx.lineTo(cx0, cy0 + dy * stub);
+            ctx.stroke();
+          });
+          ctx.restore();
+        }
+
+        function drawAnchoredDashedRoundRect(ctx, x, y, size, r, cornerColor, dashColor, fillColor) {
+          const stub = Math.max(3, size * 0.055);
+          const leg = r + stub;
+          ctx.save();
+          if (fillColor) { roundRect(ctx, x, y, size, size, r); ctx.fillStyle = fillColor; ctx.fill(); }
+          ctx.strokeStyle = dashColor;
+          ctx.lineWidth = 1.25;
+          ctx.setLineDash([3.5, 3]);
+          ctx.beginPath();
+          ctx.moveTo(x + leg + 2, y); ctx.lineTo(x + size - leg - 2, y);
+          ctx.moveTo(x + size, y + leg + 2); ctx.lineTo(x + size, y + size - leg - 2);
+          ctx.moveTo(x + size - leg - 2, y + size); ctx.lineTo(x + leg + 2, y + size);
+          ctx.moveTo(x, y + size - leg - 2); ctx.lineTo(x, y + leg + 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          ctx.strokeStyle = cornerColor;
+          ctx.lineWidth = 1.9;
+          ctx.lineCap = "round";
+          ctx.beginPath(); ctx.moveTo(x, y + leg); ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r); ctx.lineTo(x + leg, y); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(x + size - leg, y); ctx.lineTo(x + size - r, y); ctx.arcTo(x + size, y, x + size, y + r, r); ctx.lineTo(x + size, y + leg); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(x + size, y + size - leg); ctx.lineTo(x + size, y + size - r); ctx.arcTo(x + size, y + size, x + size - r, y + size, r); ctx.lineTo(x + size - leg, y + size); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(x + leg, y + size); ctx.lineTo(x + r, y + size); ctx.arcTo(x, y + size, x, y + size - r, r); ctx.lineTo(x, y + size - leg); ctx.stroke();
+          ctx.restore();
+        }
+
+        function drawIceWallPool(ctx, x, y, ts, isSuppressed, elapsed, seed = 1) {
+          const cx = x + ts / 2, cy = y + ts / 2;
+          const breathe = 0.5 + 0.5 * Math.sin(elapsed * 3.4);
+
+          if (isSuppressed) {
+            const size = ts * 0.88 + breathe * 1.4;
+            const ox = cx - size / 2, oy = cy - size / 2;
+            ctx.save();
+            ctx.fillStyle = `rgba(88, 186, 238, ${0.12 + 0.10 * breathe})`;
+            ctx.fillRect(ox + 1.2, oy + 1.2, size - 2.4, size - 2.4);
+            ctx.shadowColor = "rgba(42, 152, 218, 0.45)";
+            ctx.shadowBlur = 2 + 5 * breathe;
+            ctx.strokeStyle = `rgba(38, 146, 212, ${0.66 + 0.34 * breathe})`;
+            ctx.lineWidth = 1.9;
+            ctx.strokeRect(ox + 1.2, oy + 1.2, size - 2.4, size - 2.4);
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = `rgba(242, 252, 255, ${0.46 + 0.36 * breathe})`;
+            ctx.lineWidth = 0.9;
+            ctx.strokeRect(ox + 3, oy + 3, size - 6, size - 6);
+            ctx.restore();
+            return;
+          }
+
+          const maxR = ts * 0.455;
+          ctx.save();
+          const g = ctx.createRadialGradient(cx - maxR * 0.2, cy - maxR * 0.2, 2, cx, cy, maxR);
+          g.addColorStop(0, "rgba(182, 232, 255, 0.72)");
+          g.addColorStop(0.65, "rgba(116, 196, 234, 0.48)");
+          g.addColorStop(1, "rgba(86, 168, 210, 0.26)");
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(cx, cy, maxR, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = "rgba(76, 170, 220, 0.48)";
+          ctx.lineWidth = 1.2; ctx.stroke();
+
+          const rip = (elapsed * 0.48 + seed * 0.37) % 1;
+          ctx.strokeStyle = `rgba(255, 255, 255, ${(1 - rip) * 0.62})`;
+          ctx.lineWidth = 1.15;
+          ctx.beginPath(); ctx.arc(cx, cy, maxR * (0.24 + rip * 0.68), 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
+        }
+
+        function drawAmberWallDormant(ctx, x, y, ts, isSuppressed, elapsed) {
+          const cx = x + ts / 2, cy = y + ts / 2;
+          const breathe = 0.5 + 0.5 * Math.sin(elapsed * 3.4);
+
+          if (isSuppressed) {
+            const size = ts * 0.88 + breathe * 1.4;
+            const ox = cx - size / 2, oy = cy - size / 2;
+            ctx.save();
+            ctx.fillStyle = `rgba(224, 152, 28, ${0.12 + 0.10 * breathe})`;
+            ctx.fillRect(ox + 1.2, oy + 1.2, size - 2.4, size - 2.4);
+            ctx.shadowColor = "rgba(218, 138, 18, 0.45)";
+            ctx.shadowBlur = 2 + 5 * breathe;
+            ctx.strokeStyle = `rgba(206, 128, 16, ${0.66 + 0.34 * breathe})`;
+            ctx.lineWidth = 1.9;
+            ctx.strokeRect(ox + 1.2, oy + 1.2, size - 2.4, size - 2.4);
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = `rgba(255, 250, 224, ${0.44 + 0.34 * breathe})`;
+            ctx.lineWidth = 0.9;
+            ctx.strokeRect(ox + 3, oy + 3, size - 6, size - 6);
+            ctx.restore();
+            return;
+          }
+
+          const size = ts * 0.88;
+          const ox = cx - size / 2, oy = cy - size / 2;
+          drawAnchoredDashedSharpRect(
+            ctx, ox + 1.2, oy + 1.2, size - 2.4,
+            "rgba(198, 132, 22, 0.80)", "rgba(196, 138, 36, 0.48)", "rgba(218, 166, 66, 0.07)"
+          );
+        }
+
+        function drawDormantBoxPad(ctx, x, y, ts, kind, isSuppressed, elapsed, seed = 6, underRoundTool = false) {
+          const cx = x + ts / 2, cy = y + ts / 2;
+          const breathe = 0.5 + 0.5 * Math.sin(elapsed * 3.4);
+          const baseSize = ts * CFG.boxScale;
+          const r = ts * 0.135;
+
+          if (kind === "C") {
+            if (isSuppressed) {
+              const boxSize = baseSize + breathe * 1.4;
+              const ox = cx - boxSize / 2, oy = cy - boxSize / 2;
+              ctx.save();
+              roundRect(ctx, ox, oy, boxSize, boxSize, r);
+              ctx.fillStyle = `rgba(92, 192, 244, ${0.20 + 0.13 * breathe})`;
+              ctx.fill();
+              ctx.shadowColor = "rgba(42, 152, 218, 0.48)";
+              ctx.shadowBlur = 2 + 5.5 * breathe;
+              ctx.strokeStyle = `rgba(38, 146, 212, ${0.70 + 0.30 * breathe})`;
+              ctx.lineWidth = 1.9; ctx.stroke();
+              ctx.shadowBlur = 0;
+              roundRect(ctx, ox + 1.6, oy + 1.6, boxSize - 3.2, boxSize - 3.2, Math.max(3, r - 1.2));
+              ctx.strokeStyle = `rgba(246, 253, 255, ${0.48 + 0.36 * breathe})`;
+              ctx.lineWidth = 0.9; ctx.stroke();
+              ctx.restore();
+            } else {
+              const maxR = ts * 0.375;
+              ctx.save();
+              const g = ctx.createRadialGradient(cx - maxR * 0.18, cy - maxR * 0.18, 1.5, cx, cy, maxR);
+              g.addColorStop(0, "rgba(212, 244, 255, 0.90)");
+              g.addColorStop(0.65, "rgba(130, 210, 246, 0.72)");
+              g.addColorStop(1, "rgba(88, 182, 228, 0.48)");
+              ctx.fillStyle = g;
+              ctx.beginPath(); ctx.arc(cx, cy, maxR, 0, Math.PI * 2); ctx.fill();
+              ctx.strokeStyle = "rgba(255, 255, 255, 0.94)"; ctx.lineWidth = 1.45;
+              ctx.beginPath(); ctx.arc(cx, cy, maxR - 0.5, 0, Math.PI * 2); ctx.stroke();
+              const rip = (elapsed * 0.55 + seed * 0.37) % 1;
+              ctx.strokeStyle = `rgba(255, 255, 255, ${(1 - rip) * 0.72})`; ctx.lineWidth = 1.15;
+              ctx.beginPath(); ctx.arc(cx, cy, maxR * (0.22 + rip * 0.68), 0, Math.PI * 2); ctx.stroke();
+              ctx.restore();
+            }
+            return;
+          }
+
+          if (isSuppressed) {
+            const boxSize = baseSize + breathe * 1.4;
+            const ox = cx - boxSize / 2, oy = cy - boxSize / 2;
+            ctx.save();
+            roundRect(ctx, ox, oy, boxSize, boxSize, r);
+            ctx.fillStyle = `rgba(232, 162, 34, ${0.19 + 0.13 * breathe})`;
+            ctx.fill();
+            ctx.shadowColor = "rgba(218, 138, 18, 0.48)";
+            ctx.shadowBlur = 2 + 5.5 * breathe;
+            ctx.strokeStyle = `rgba(204, 126, 14, ${0.70 + 0.30 * breathe})`;
+            ctx.lineWidth = 1.9; ctx.stroke();
+            ctx.shadowBlur = 0;
+            roundRect(ctx, ox + 1.6, oy + 1.6, boxSize - 3.2, boxSize - 3.2, Math.max(3, r - 1.2));
+            ctx.strokeStyle = `rgba(255, 248, 216, ${0.46 + 0.34 * breathe})`;
+            ctx.lineWidth = 0.9; ctx.stroke();
+            ctx.restore();
+          } else {
+            const ox = cx - baseSize / 2, oy = cy - baseSize / 2;
+            drawAnchoredDashedRoundRect(
+              ctx, ox, oy, baseSize, r,
+              "rgba(204, 132, 18, 0.88)", "rgba(198, 138, 32, 0.54)", "rgba(228, 168, 46, 0.13)"
+            );
+            if (!underRoundTool) {
+              ctx.beginPath(); ctx.arc(cx, cy, ts * 0.055, 0, Math.PI * 2);
+              ctx.fillStyle = "rgba(216, 154, 38, 0.56)"; ctx.fill();
+            }
+          }
+        }
+
+        function drawSnowflakeMotif(ctx, cx, cy, r, color, lineW) {
+          ctx.save();
+          ctx.strokeStyle = color; ctx.lineWidth = lineW; ctx.lineCap = "round";
+          const branchR = r * 0.62, tick = r * 0.28;
+          for (let i = 0; i < 6; i++) {
+            const a = (Math.PI * i) / 3 - Math.PI / 2, cos = Math.cos(a), sin = Math.sin(a);
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + cos * r, cy + sin * r);
+            const bx = cx + cos * branchR, by = cy + sin * branchR;
+            ctx.moveTo(bx + Math.cos(a - 0.78) * tick, by + Math.sin(a - 0.78) * tick);
+            ctx.lineTo(bx, by);
+            ctx.lineTo(bx + Math.cos(a + 0.78) * tick, by + Math.sin(a + 0.78) * tick);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        function drawR1Shell(ctx, ox, oy, size, r, isAmber) {
+          const cx = ox + size / 2, cy = oy + size / 2;
+          const baseG = ctx.createRadialGradient(cx - size * 0.18, cy - size * 0.20, size * 0.06, cx, cy, size * 0.78);
+          if (isAmber) {
+            baseG.addColorStop(0, "#FFF0B0"); baseG.addColorStop(0.45, "#F2B23E");
+            baseG.addColorStop(0.84, "#C77412"); baseG.addColorStop(1, "#9E5308");
+          } else {
+            baseG.addColorStop(0, "#D6F4FF"); baseG.addColorStop(0.45, "#74CBF4");
+            baseG.addColorStop(0.84, "#3B99D2"); baseG.addColorStop(1, "#2A7EB5");
+          }
+          roundRect(ctx, ox, oy, size, size, r);
+          ctx.fillStyle = baseG; ctx.fill();
+
+          ctx.save(); roundRect(ctx, ox, oy, size, size, r); ctx.clip();
+          const caustic = ctx.createRadialGradient(cx + size * 0.12, oy + size * 0.92, 1, cx + size * 0.08, oy + size * 0.88, size * 0.56);
+          if (isAmber) {
+            caustic.addColorStop(0, "rgba(255, 244, 186, 0.78)");
+            caustic.addColorStop(0.55, "rgba(255, 210, 102, 0.24)");
+            caustic.addColorStop(1, "rgba(255, 210, 102, 0)");
+          } else {
+            caustic.addColorStop(0, "rgba(218, 250, 255, 0.72)");
+            caustic.addColorStop(0.55, "rgba(156, 232, 255, 0.22)");
+            caustic.addColorStop(1, "rgba(156, 232, 255, 0)");
+          }
+          ctx.fillStyle = caustic; ctx.fillRect(ox, oy, size, size);
+
+          const dome = ctx.createLinearGradient(ox, oy, ox, oy + size * 0.46);
+          dome.addColorStop(0, isAmber ? "rgba(255, 253, 236, 0.56)" : "rgba(255, 255, 255, 0.62)");
+          dome.addColorStop(0.65, isAmber ? "rgba(255, 246, 204, 0.12)" : "rgba(255, 255, 255, 0.12)");
+          dome.addColorStop(1, "rgba(255, 255, 255, 0)");
+          ctx.fillStyle = dome;
+          ctx.beginPath();
+          ctx.moveTo(ox, oy); ctx.lineTo(ox + size, oy); ctx.lineTo(ox + size, oy + size * 0.30);
+          ctx.quadraticCurveTo(cx, oy + size * 0.48, ox, oy + size * 0.30);
+          ctx.closePath(); ctx.fill();
+
+          roundRect(ctx, ox + 1.5, oy + 1.5, size - 3, size - 3, Math.max(3, r - 1));
+          ctx.strokeStyle = isAmber ? "rgba(255, 244, 198, 0.46)" : "rgba(232, 250, 255, 0.52)";
+          ctx.lineWidth = Math.max(2.6, size * 0.075); ctx.stroke();
+          ctx.restore();
+        }
+
+        function drawIceWall(ctx, x, y, ts, sealedF = false) {
+          const size = ts * 0.84, ox = x + (ts - size) / 2, oy = y + (ts - size) / 2;
+          const cx = ox + size / 2, cy = oy + size / 2;
+          castShadowRect(ctx, ox, oy, size, size, 2, ts * CFG.shadowLen * 0.85, 0.16);
+          ctx.save();
+          ctx.globalAlpha = 0.95;
+          const tri = (x1, y1, x2, y2, fill) => {
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.closePath();
+            ctx.fillStyle = fill; ctx.fill();
+          };
+          const x0 = ox, y0 = oy, x1 = ox + size, y1 = oy + size;
+          tri(x0, y0, x1, y0, "#D4F3FF"); tri(x0, y0, x0, y1, "#A6E2FC");
+          tri(x1, y0, x1, y1, "#6CC3EE"); tri(x0, y1, x1, y1, "#4CA6D9");
+
+          const crown = size * 0.54, crX = cx - crown / 2, crY = cy - crown / 2;
+          ctx.fillStyle = "rgba(136, 212, 246, 0.65)";
+          ctx.fillRect(crX, crY, crown, crown);
+
+          if (sealedF) {
+            const fSz = crown * 0.64, fR = Math.max(2.5, fSz * 0.24);
+            const fx = cx - fSz / 2, fy = cy - fSz / 2;
+            const fg = ctx.createRadialGradient(cx - fSz * 0.16, cy - fSz * 0.18, 1, cx, cy, fSz * 0.78);
+            fg.addColorStop(0, "#FFF2B8"); fg.addColorStop(0.52, "#F0B03A"); fg.addColorStop(1, "#BA6B0E");
+            roundRect(ctx, fx, fy, fSz, fSz, fR);
+            ctx.fillStyle = fg; ctx.fill();
+            ctx.strokeStyle = "rgba(255, 250, 224, 0.88)"; ctx.lineWidth = 1.05; ctx.stroke();
+          }
+
+          const glassG = ctx.createLinearGradient(crX, crY, crX + crown, crY + crown);
+          glassG.addColorStop(0, "rgba(255, 255, 255, 0.52)");
+          glassG.addColorStop(0.48, "rgba(218, 246, 255, 0.16)");
+          glassG.addColorStop(1, "rgba(124, 202, 242, 0.28)");
+          ctx.fillStyle = glassG; ctx.fillRect(crX, crY, crown, crown);
+
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.78)"; ctx.lineWidth = 1.1;
+          ctx.beginPath();
+          ctx.moveTo(x0, y0); ctx.lineTo(crX, crY); ctx.moveTo(x1, y0); ctx.lineTo(crX + crown, crY);
+          ctx.moveTo(x0, y1); ctx.lineTo(crX, crY + crown); ctx.moveTo(x1, y1); ctx.lineTo(crX + crown, crY + crown);
+          ctx.stroke();
+          ctx.strokeRect(crX + 0.5, crY + 0.5, crown - 1, crown - 1);
+          ctx.strokeRect(x0 + 0.5, y0 + 0.5, size - 1, size - 1);
+          ctx.restore();
+        }
+
+        function drawAmberWall(ctx, x, y, ts, sealedC = false) {
+          const size = ts * 0.84, ox = x + (ts - size) / 2, oy = y + (ts - size) / 2;
+          const cx = ox + size / 2, cy = oy + size / 2;
+          castShadowRect(ctx, ox, oy, size, size, 2, ts * CFG.shadowLen * 0.85, 0.16);
+          ctx.save();
+          ctx.globalAlpha = 0.96;
+          const tri = (x1, y1, x2, y2, fill) => {
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.closePath();
+            ctx.fillStyle = fill; ctx.fill();
+          };
+          const x0 = ox, y0 = oy, x1 = ox + size, y1 = oy + size;
+          tri(x0, y0, x1, y0, "#FFF0B5"); tri(x0, y0, x0, y1, "#F7C95E");
+          tri(x1, y0, x1, y1, "#DB982A"); tri(x0, y1, x1, y1, "#B87418");
+
+          const crown = size * 0.54, crX = cx - crown / 2, crY = cy - crown / 2;
+          ctx.fillStyle = "rgba(222, 152, 34, 0.68)";
+          ctx.fillRect(crX, crY, crown, crown);
+
+          if (sealedC) {
+            const halo = ctx.createRadialGradient(cx, cy, 1, cx, cy, crown * 0.44);
+            halo.addColorStop(0, "rgba(182, 236, 255, 0.65)");
+            halo.addColorStop(1, "rgba(92, 186, 236, 0)");
+            ctx.fillStyle = halo;
+            ctx.beginPath(); ctx.arc(cx, cy, crown * 0.44, 0, Math.PI * 2); ctx.fill();
+            drawSnowflakeMotif(ctx, cx, cy, crown * 0.36, "#E6F9FF", Math.max(1.3, ts * 0.025));
+          }
+
+          const glassG = ctx.createLinearGradient(crX, crY, crX + crown, crY + crown);
+          glassG.addColorStop(0, "rgba(255, 253, 240, 0.48)");
+          glassG.addColorStop(0.5, "rgba(255, 224, 134, 0.14)");
+          glassG.addColorStop(1, "rgba(196, 128, 22, 0.25)");
+          ctx.fillStyle = glassG; ctx.fillRect(crX, crY, crown, crown);
+
+          ctx.strokeStyle = "rgba(255, 250, 224, 0.80)"; ctx.lineWidth = 1.1;
+          ctx.beginPath();
+          ctx.moveTo(x0, y0); ctx.lineTo(crX, crY); ctx.moveTo(x1, y0); ctx.lineTo(crX + crown, crY);
+          ctx.moveTo(x0, y1); ctx.lineTo(crX, crY + crown); ctx.moveTo(x1, y1); ctx.lineTo(crX + crown, crY + crown);
+          ctx.stroke();
+          ctx.strokeRect(crX + 0.5, crY + 0.5, crown - 1, crown - 1);
+          ctx.strokeRect(x0 + 0.5, y0 + 0.5, size - 1, size - 1);
+          ctx.restore();
+        }
+
+        function drawWoodBox(ctx, x, y, ts, onGoal, elapsed, underKind = null, underSup = false) {
+          const size = ts * CFG.boxScale, ox = x + (ts - size) / 2, oy = y + (ts - size) / 2, r = ts * 0.14;
+          const cx = ox + size / 2, cy = oy + size / 2;
+          if (!onGoal) castShadowRect(ctx, ox, oy, size, size, r, ts * CFG.shadowLen * 0.7, 0.17);
+
+          ctx.save();
+          const outerG = ctx.createLinearGradient(ox, oy, ox + size, oy + size);
+          outerG.addColorStop(0, "#E6BE91"); outerG.addColorStop(0.52, "#CC945C"); outerG.addColorStop(1, "#A66E3A");
+          roundRect(ctx, ox, oy, size, size, r);
+          ctx.fillStyle = outerG; ctx.fill();
+
+          ctx.save(); roundRect(ctx, ox, oy, size, size, r); ctx.clip();
+          const rimHi = ctx.createLinearGradient(ox, oy, ox, oy + size * 0.24);
+          rimHi.addColorStop(0, "rgba(255, 248, 234, 0.34)"); rimHi.addColorStop(1, "rgba(255, 248, 234, 0)");
+          ctx.fillStyle = rimHi; ctx.fillRect(ox, oy, size, size * 0.24);
+          ctx.restore();
+
+          const inset = size * 0.165;
+          const ix = ox + inset, iy = oy + inset, isz = size - inset * 2, ir = Math.max(4, r * 0.62);
+          const panelG = ctx.createLinearGradient(ix, iy, ix + isz, iy + isz);
+          panelG.addColorStop(0, "#B87E48"); panelG.addColorStop(0.45, "#C9915A"); panelG.addColorStop(1, "#DDA976");
+          roundRect(ctx, ix, iy, isz, isz, ir);
+          ctx.fillStyle = panelG; ctx.fill();
+
+          ctx.save(); roundRect(ctx, ix, iy, isz, isz, ir); ctx.clip();
+          const innerSh = ctx.createLinearGradient(ix, iy, ix + isz * 0.42, iy + isz * 0.42);
+          innerSh.addColorStop(0, "rgba(86, 48, 16, 0.22)"); innerSh.addColorStop(1, "rgba(86, 48, 16, 0)");
+          ctx.fillStyle = innerSh; ctx.fillRect(ix, iy, isz, isz);
+          ctx.fillStyle = "rgba(96, 54, 18, 0.055)";
+          ctx.fillRect(ix, iy + isz * 0.34, isz, isz * 0.32);
+          ctx.strokeStyle = onGoal ? "rgba(255, 236, 168, 0.42)" : "rgba(92, 52, 18, 0.17)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(ix, iy + isz * 0.34); ctx.lineTo(ix + isz, iy + isz * 0.34);
+          ctx.moveTo(ix, iy + isz * 0.66); ctx.lineTo(ix + isz, iy + isz * 0.66);
+          ctx.stroke(); ctx.restore();
+
+          const breathe = 0.65 + 0.35 * Math.sin((elapsed || 0) * 2.8);
+          roundRect(ctx, ix + 0.6, iy + 0.6, isz, isz, ir);
+          ctx.strokeStyle = "rgba(255, 244, 224, 0.34)"; ctx.lineWidth = 1; ctx.stroke();
+
+          roundRect(ctx, ix, iy, isz, isz, ir);
+          if (underKind === "C") {
+            ctx.strokeStyle = underSup ? `rgba(148, 226, 255, ${0.72 + 0.26 * breathe})` : "rgba(156, 224, 255, 0.72)";
+            ctx.lineWidth = underSup ? 1.65 : 1.3;
+          } else if (underKind === "F") {
+            ctx.strokeStyle = underSup ? `rgba(255, 218, 108, ${0.76 + 0.22 * breathe})` : "rgba(255, 214, 104, 0.72)";
+            ctx.lineWidth = underSup ? 1.65 : 1.3;
+          } else {
+            ctx.strokeStyle = onGoal ? "rgba(255, 232, 152, 0.56)" : "rgba(94, 54, 18, 0.28)";
+            ctx.lineWidth = 1.1;
+          }
+          ctx.stroke();
+
+          if (underKind === "C") {
+            const halo = ctx.createRadialGradient(cx, cy, 1, cx, cy, isz * 0.44);
+            halo.addColorStop(0, `rgba(176, 236, 255, ${underSup ? 0.38 + 0.16 * breathe : 0.32})`);
+            halo.addColorStop(1, "rgba(116, 206, 248, 0)");
+            ctx.fillStyle = halo;
+            ctx.beginPath(); ctx.arc(cx, cy, isz * 0.44, 0, Math.PI * 2); ctx.fill();
+            drawSnowflakeMotif(ctx, cx, cy, isz * 0.32, "rgba(232, 250, 255, 0.96)", Math.max(1.35, ts * 0.023));
+          } else if (underKind === "F") {
+            const fSz = isz * 0.48, fR = Math.max(3, fSz * 0.26);
+            const fx = cx - fSz / 2, fy = cy - fSz / 2;
+            const halo = ctx.createRadialGradient(cx, cy, 1, cx, cy, isz * 0.46);
+            halo.addColorStop(0, `rgba(255, 224, 128, ${underSup ? 0.44 + 0.16 * breathe : 0.34})`);
+            halo.addColorStop(1, "rgba(244, 182, 54, 0)");
+            ctx.fillStyle = halo;
+            ctx.beginPath(); ctx.arc(cx, cy, isz * 0.46, 0, Math.PI * 2); ctx.fill();
+            const fg = ctx.createRadialGradient(cx - fSz * 0.16, cy - fSz * 0.18, 1, cx, cy, fSz * 0.78);
+            fg.addColorStop(0, "#FFF6C8"); fg.addColorStop(0.55, "#F2B640"); fg.addColorStop(1, "#C27210");
+            roundRect(ctx, fx, fy, fSz, fSz, fR);
+            ctx.fillStyle = fg; ctx.fill();
+            ctx.strokeStyle = "rgba(255, 252, 232, 0.88)"; ctx.lineWidth = 1.05; ctx.stroke();
+          }
+
+          roundRect(ctx, ox, oy, size, size, r);
+          ctx.strokeStyle = "rgba(255, 244, 228, 0.48)"; ctx.lineWidth = 1.2; ctx.stroke();
+          ctx.restore();
+          if (onGoal) drawLockGoldSeam(ctx, ox, oy, size, r, elapsed);
+        }
+
+        function drawIceBox(ctx, x, y, ts, onGoal, elapsed, hasUnderAmber = false) {
+          const cx = x + ts / 2, cy = y + ts / 2, size = ts * CFG.boxScale;
+          const ox = cx - size / 2, oy = cy - size / 2, r = ts * 0.14;
+          if (!onGoal) castShadowRect(ctx, ox, oy, size, size, r, ts * CFG.shadowLen * 0.7, 0.16);
+          ctx.save();
+          drawR1Shell(ctx, ox, oy, size, r, false);
+          if (hasUnderAmber) {
+            const breathe = 0.72 + 0.28 * Math.sin((elapsed || 0) * 2.5);
+            const warmHalo = ctx.createRadialGradient(cx, cy, 1, cx, cy, size * 0.38);
+            warmHalo.addColorStop(0, `rgba(255, 226, 128, ${0.46 * breathe})`);
+            warmHalo.addColorStop(0.6, `rgba(244, 182, 54, ${0.16 * breathe})`);
+            warmHalo.addColorStop(1, "rgba(244, 182, 54, 0)");
+            ctx.fillStyle = warmHalo;
+            ctx.beginPath(); ctx.arc(cx, cy, size * 0.38, 0, Math.PI * 2); ctx.fill();
+            ctx.save();
+            ctx.shadowColor = "rgba(224, 142, 18, 0.72)"; ctx.shadowBlur = 5;
+            drawSnowflakeMotif(ctx, cx, cy, size * 0.28, "#FFE38A", Math.max(1.65, ts * 0.030));
+            ctx.restore();
+          } else {
+            drawSnowflakeMotif(ctx, cx, cy, size * 0.27, "rgba(255, 255, 255, 0.95)", Math.max(1.4, ts * 0.025));
+          }
+          roundRect(ctx, ox, oy, size, size, r);
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.88)"; ctx.lineWidth = 1.25; ctx.stroke();
+          ctx.restore();
+          if (onGoal) drawLockGoldSeam(ctx, ox, oy, size, r, elapsed);
+        }
+
+        function drawAmberBox(ctx, x, y, ts, onGoal, elapsed, hasUnderIce = false) {
+          const cx = x + ts / 2, cy = y + ts / 2, size = ts * CFG.boxScale;
+          const ox = cx - size / 2, oy = cy - size / 2, r = ts * 0.14;
+          if (!onGoal) castShadowRect(ctx, ox, oy, size, size, r, ts * CFG.shadowLen * 0.7, 0.16);
+          ctx.save();
+          drawR1Shell(ctx, ox, oy, size, r, true);
+          if (hasUnderIce) {
+            const iceHalo = ctx.createRadialGradient(cx, cy, 1, cx, cy, size * 0.36);
+            iceHalo.addColorStop(0, "rgba(212, 246, 255, 0.54)");
+            iceHalo.addColorStop(0.6, "rgba(116, 206, 248, 0.18)");
+            iceHalo.addColorStop(1, "rgba(116, 206, 248, 0)");
+            ctx.fillStyle = iceHalo;
+            ctx.beginPath(); ctx.arc(cx, cy, size * 0.36, 0, Math.PI * 2); ctx.fill();
+            ctx.save();
+            ctx.shadowColor = "rgba(44, 146, 206, 0.55)"; ctx.shadowBlur = 4;
+            drawSnowflakeMotif(ctx, cx, cy, size * 0.27, "#EAF9FF", Math.max(1.5, ts * 0.027));
+            ctx.restore();
+          } else {
+            const innerGlow = ctx.createRadialGradient(cx, cy, 1, cx, cy, size * 0.34);
+            innerGlow.addColorStop(0, "rgba(255, 250, 224, 0.34)");
+            innerGlow.addColorStop(1, "rgba(255, 230, 150, 0)");
+            ctx.fillStyle = innerGlow;
+            ctx.beginPath(); ctx.arc(cx, cy, size * 0.34, 0, Math.PI * 2); ctx.fill();
+          }
+          roundRect(ctx, ox, oy, size, size, r);
+          ctx.strokeStyle = "rgba(255, 248, 218, 0.84)"; ctx.lineWidth = 1.25; ctx.stroke();
+          ctx.restore();
+          if (onGoal) drawLockGoldSeam(ctx, ox, oy, size, r, elapsed);
+        }
+
+        function drawSunTower(ctx, x, y, ts, elapsed, r = 0, c = 0, wallMask = null, rows = 0, cols = 0, isEmbedded = true) {
+          const cx = x + ts / 2, cy = y + ts / 2, pulse = 1 + Math.sin(elapsed * 2.5) * 0.04;
+          ctx.save();
+          if (isEmbedded && wallMask) {
+            drawWall(ctx, x, y, ts, r, c, wallMask, rows, cols);
+          } else {
+            const pad = ts * 0.06, sz = ts - pad * 2, rad = ts * 0.14;
+            const groundAura = ctx.createRadialGradient(cx, cy, sz * 0.25, cx, cy, ts * 0.66);
+            groundAura.addColorStop(0, "rgba(255, 224, 132, 0.36)");
+            groundAura.addColorStop(0.65, "rgba(248, 204, 96, 0.12)");
+            groundAura.addColorStop(1, "rgba(248, 204, 96, 0)");
+            ctx.fillStyle = groundAura;
+            ctx.beginPath(); ctx.arc(cx, cy, ts * 0.66, 0, Math.PI * 2); ctx.fill();
+
+            roundRect(ctx, x + pad, y + pad, sz, sz, rad);
+            const stG = ctx.createLinearGradient(x, y, x + ts, y + ts);
+            stG.addColorStop(0, CFG.wallHi); stG.addColorStop(0.55, CFG.wallBase); stG.addColorStop(1, CFG.wallRight);
+            ctx.fillStyle = stG; ctx.fill();
+            ctx.strokeStyle = "rgba(232, 194, 112, 0.55)"; ctx.lineWidth = 1.25; ctx.stroke();
+          }
+
+          const s = ts * (isEmbedded ? 0.90 : 0.88);
+          const wash = ctx.createRadialGradient(cx, cy, 2, cx, cy, s * 0.54);
+          wash.addColorStop(0, "rgba(255, 238, 174, 0.56)");
+          wash.addColorStop(0.55, "rgba(245, 196, 82, 0.16)");
+          wash.addColorStop(1, "rgba(245, 196, 82, 0)");
+          ctx.fillStyle = wash;
+          ctx.beginPath(); ctx.arc(cx, cy, s * 0.54, 0, Math.PI * 2); ctx.fill();
+
+          const glow = ctx.createRadialGradient(cx, cy, 1.5, cx, cy, s * 0.62 * pulse);
+          glow.addColorStop(0, "rgba(255, 232, 146, 0.86)");
+          glow.addColorStop(0.55, "rgba(236, 178, 62, 0.24)");
+          glow.addColorStop(1, "rgba(236, 178, 62, 0)");
+          ctx.fillStyle = glow;
+          ctx.beginPath(); ctx.arc(cx, cy, s * 0.62 * pulse, 0, Math.PI * 2); ctx.fill();
+
+          ctx.save();
+          ctx.translate(cx, cy); ctx.rotate(elapsed * 0.7);
+          ctx.strokeStyle = "#DF9F32"; ctx.lineWidth = Math.max(1.5, s * 0.036);
+          ctx.beginPath(); ctx.arc(0, 0, s * 0.31, 0, Math.PI * 2); ctx.stroke();
+          ctx.fillStyle = "#E8A838";
+          const dotR = Math.max(1.4, s * 0.036);
+          for (let i = 0; i < 8; i++) {
+            const a = (Math.PI * 2 * i) / 8;
+            ctx.beginPath(); ctx.arc(Math.cos(a) * s * 0.37, Math.sin(a) * s * 0.37, dotR, 0, Math.PI * 2); ctx.fill();
+          }
+          ctx.restore();
+
+          const orbR = s * 0.21;
+          const orbGrad = ctx.createRadialGradient(cx - 1.5, cy - 1.5, 1, cx, cy, orbR);
+          orbGrad.addColorStop(0, "#FFFFFF"); orbGrad.addColorStop(0.65, "#FFF2BA"); orbGrad.addColorStop(1, "#E8A838");
+          ctx.fillStyle = orbGrad;
+          ctx.beginPath(); ctx.arc(cx, cy, orbR * pulse, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+        }
+
+        function drawLantern(ctx, x, y, ts, elapsed) {
+          const cx = x + ts / 2, cy = y + ts / 2, baseR = ts * CFG.toolRadius, pulse = 1 + Math.sin(elapsed * 3) * 0.05;
+          castShadowCircle(ctx, cx, cy, baseR, ts * CFG.shadowLen * 0.68, 0.16);
+          const halo = ctx.createRadialGradient(cx, cy, 2, cx, cy, ts * 0.54 * pulse);
+          halo.addColorStop(0, "rgba(255, 232, 140, 0.68)"); halo.addColorStop(1, "rgba(255, 210, 96, 0)");
+          ctx.fillStyle = halo;
+          ctx.beginPath(); ctx.arc(cx, cy, ts * 0.54 * pulse, 0, Math.PI * 2); ctx.fill();
+
+          const stoneG = ctx.createLinearGradient(cx - baseR, cy - baseR, cx + baseR, cy + baseR);
+          stoneG.addColorStop(0, "#FCFBF8"); stoneG.addColorStop(0.6, "#EAE4DA"); stoneG.addColorStop(1, "#D5CEC0");
+          ctx.beginPath(); ctx.arc(cx, cy, baseR, 0, Math.PI * 2);
+          ctx.fillStyle = stoneG; ctx.fill();
+          ctx.strokeStyle = "rgba(176, 168, 154, 0.7)"; ctx.lineWidth = 1.2; ctx.stroke();
+
+          ctx.beginPath(); ctx.arc(cx, cy, baseR * 0.76, 0, Math.PI * 2);
+          ctx.strokeStyle = "#DDA23C"; ctx.lineWidth = 1.7; ctx.stroke();
+
+          const coreGrad = ctx.createRadialGradient(cx - 1.5, cy - 1.5, 1, cx, cy, baseR * 0.5);
+          coreGrad.addColorStop(0, "#FFFFFF"); coreGrad.addColorStop(0.65, "#FFF2B8"); coreGrad.addColorStop(1, "#E8A838");
+          ctx.fillStyle = coreGrad;
+          ctx.beginPath(); ctx.arc(cx, cy, baseR * 0.5 * pulse, 0, Math.PI * 2); ctx.fill();
+        }
+
+        function drawSpotlight(ctx, x, y, ts, kind, elapsed) {
+          const cx = x + ts / 2, cy = y + ts / 2, baseR = ts * CFG.toolRadius;
+          const ang = { ">": 0, "v": Math.PI / 2, "<": Math.PI, "^": -Math.PI / 2 }[kind] || 0;
+          const pulse = 1 + Math.sin((elapsed || 0) * 2.6) * 0.04;
+          castShadowCircle(ctx, cx, cy, baseR, ts * CFG.shadowLen * 0.68, 0.17);
+
+          ctx.save();
+          ctx.translate(cx, cy); ctx.rotate(ang);
+          const cone = ctx.createRadialGradient(baseR * 0.35, 0, 2, baseR * 0.75, 0, ts * 0.44 * pulse);
+          cone.addColorStop(0, "rgba(255, 232, 138, 0.74)");
+          cone.addColorStop(0.6, "rgba(255, 214, 102, 0.20)");
+          cone.addColorStop(1, "rgba(255, 214, 102, 0)");
+          ctx.fillStyle = cone;
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, ts * 0.44 * pulse, -0.52, 0.52); ctx.closePath(); ctx.fill();
+
+          const shellG = ctx.createLinearGradient(-baseR, -baseR, baseR * 0.4, baseR);
+          shellG.addColorStop(0, "#FCFBF8"); shellG.addColorStop(0.55, "#EAE4DA"); shellG.addColorStop(1, "#CFC7B8");
+          ctx.beginPath(); ctx.arc(0, 0, baseR, 0, Math.PI * 2);
+          ctx.fillStyle = shellG; ctx.fill();
+          ctx.strokeStyle = "rgba(176, 168, 154, 0.72)"; ctx.lineWidth = 1.2; ctx.stroke();
+
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, baseR * 0.94, -0.56, 0.56); ctx.closePath();
+          const cavityG = ctx.createLinearGradient(0, -baseR * 0.45, baseR, baseR * 0.45);
+          cavityG.addColorStop(0, "#FFF7D4"); cavityG.addColorStop(0.55, "#F2C052"); cavityG.addColorStop(1, "#DC9A2D");
+          ctx.fillStyle = cavityG; ctx.fill();
+
+          ctx.beginPath(); ctx.arc(0, 0, baseR * 0.75, 0.82, Math.PI * 2 - 0.82);
+          ctx.strokeStyle = "rgba(214, 162, 68, 0.78)"; ctx.lineWidth = 1.7; ctx.lineCap = "round"; ctx.stroke();
+
+          const orbX = baseR * 0.24, orbR = baseR * 0.36 * pulse;
+          const orbG = ctx.createRadialGradient(orbX - 1.5, -1.5, 1, orbX, 0, orbR);
+          orbG.addColorStop(0, "#FFFFFF"); orbG.addColorStop(0.62, "#FFF2B5"); orbG.addColorStop(1, "#E5A032");
+          ctx.beginPath(); ctx.arc(orbX, 0, orbR, 0, Math.PI * 2); ctx.fillStyle = orbG; ctx.fill();
+          ctx.restore();
+        }
+
+        function drawMirror(ctx, x, y, ts, kind, isHit) {
+          const cx = x + ts / 2, cy = y + ts / 2, baseR = ts * CFG.toolRadius;
+          castShadowCircle(ctx, cx, cy, baseR, ts * CFG.shadowLen * 0.68, 0.16);
+          const stoneG = ctx.createLinearGradient(cx - baseR, cy - baseR, cx + baseR, cy + baseR);
+          stoneG.addColorStop(0, "#FCFBF8"); stoneG.addColorStop(0.6, "#EAE4DA"); stoneG.addColorStop(1, "#D5CEC0");
+          ctx.beginPath(); ctx.arc(cx, cy, baseR, 0, Math.PI * 2);
+          ctx.fillStyle = stoneG; ctx.fill();
+          ctx.strokeStyle = isHit ? "#E8A838" : "rgba(176, 168, 154, 0.7)";
+          ctx.lineWidth = isHit ? 1.9 : 1.2; ctx.stroke();
+
+          const len = baseR * 0.66;
+          const x1 = kind === "\\" ? cx - len : cx + len, y1 = cy - len;
+          const x2 = kind === "\\" ? cx + len : cx - len, y2 = cy + len;
+          ctx.save();
+          ctx.lineCap = "round";
+          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+          ctx.strokeStyle = "#DDA23C"; ctx.lineWidth = Math.max(5.2, baseR * 0.34); ctx.stroke();
+          if (isHit) { ctx.shadowColor = "rgba(185, 242, 255, 0.92)"; ctx.shadowBlur = 8; }
+          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+          ctx.strokeStyle = isHit ? "#FFFFFF" : "#A6E2FC"; ctx.lineWidth = Math.max(2.6, baseR * 0.17); ctx.stroke();
+          ctx.restore();
+        }
+
+        function drawBeams(ctx, bx, by, ts, beams, elapsed = 0) {
+          if (!beams || !beams.length) return;
+          const breath = 1 + Math.sin(elapsed * 1.45) * 0.075;
+          const outerA = 0.32 * breath;
+          const coreA = 0.42 * breath;
+          const halfOuter = ts * 0.26;
+          const halfCore = ts * 0.072;
+
+          ctx.save();
+          beams.forEach(b => {
+            const x1 = bx + (b.c1 + 0.5) * ts, y1 = by + (b.r1 + 0.5) * ts;
+            const x2 = bx + (b.c2 + 0.5) * ts, y2 = by + (b.r2 + 0.5) * ts;
+            const dx = x2 - x1, dy = y2 - y1;
+            const len = Math.hypot(dx, dy);
+            if (len < 1) return;
+
+            ctx.save();
+            ctx.translate(x1, y1);
+            ctx.rotate(Math.atan2(dy, dx));
+
+            const og = ctx.createLinearGradient(0, -halfOuter, 0, halfOuter);
+            og.addColorStop(0, `rgba(${CFG.beamOuterRgb}, 0)`);
+            og.addColorStop(0.28, `rgba(${CFG.beamOuterRgb}, ${outerA * 0.58})`);
+            og.addColorStop(0.5, `rgba(${CFG.beamOuterRgb}, ${outerA})`);
+            og.addColorStop(0.72, `rgba(${CFG.beamOuterRgb}, ${outerA * 0.58})`);
+            og.addColorStop(1, `rgba(${CFG.beamOuterRgb}, 0)`);
+
+            const cg = ctx.createLinearGradient(0, -halfCore, 0, halfCore);
+            cg.addColorStop(0, `rgba(${CFG.beamCoreRgb}, 0)`);
+            cg.addColorStop(0.5, `rgba(${CFG.beamCoreRgb}, ${coreA})`);
+            cg.addColorStop(1, `rgba(${CFG.beamCoreRgb}, 0)`);
+
+            const needsFeather = b.endType === "blocker" || b.endType === "edge";
+            if (!needsFeather) {
+              ctx.fillStyle = og; ctx.fillRect(0, -halfOuter, len, halfOuter * 2);
+              ctx.fillStyle = cg; ctx.fillRect(0, -halfCore, len, halfCore * 2);
+            } else {
+              const tipLen = Math.min(len, ts * (b.endType === "edge" ? 0.44 : 0.28));
+              const bodyEnd = b.endType === "edge" ? Math.max(0, len - tipLen) : Math.max(0, len - tipLen * 0.52);
+              if (bodyEnd > 0.5) {
+                ctx.fillStyle = og; ctx.fillRect(0, -halfOuter, bodyEnd, halfOuter * 2);
+                ctx.fillStyle = cg; ctx.fillRect(0, -halfCore, bodyEnd, halfCore * 2);
+              }
+              const steps = 6, sliceW = tipLen / steps;
+              for (let s = 0; s < steps; s++) {
+                const a = Math.pow(1 - (s + 0.5) / steps, 1.45);
+                const sx = bodyEnd + s * sliceW;
+                ctx.globalAlpha = a;
+                ctx.fillStyle = og; ctx.fillRect(sx, -halfOuter, sliceW + 0.6, halfOuter * 2);
+                ctx.fillStyle = cg; ctx.fillRect(sx, -halfCore, sliceW + 0.6, halfCore * 2);
+              }
+              ctx.globalAlpha = 1;
+            }
+            ctx.restore();
+          });
+          ctx.restore();
+        }
+
+        function drawOcclusionShadows(ctx, bx, by, ts, blockers) {
+          if (!blockers || !blockers.length) return;
+          ctx.save();
+          blockers.forEach(b => {
+            const cx = bx + (b.c + 0.5) * ts, cy = by + (b.r + 0.5) * ts;
+            const baseLen = ts * 0.9;
+            const halfW = ts * (b.kind === "V" ? 0.37 : b.kind === "P" ? 0.25 : 0.31);
+            const baseAlpha = 0.16;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(Math.atan2(b.dr, b.dc));
+            [
+              { wS: halfW * 0.84, wE: halfW * 1.18, len: baseLen * 0.76, a: baseAlpha * 0.62 },
+              { wS: halfW * 0.96, wE: halfW * 1.38, len: baseLen * 0.92, a: baseAlpha * 0.36 },
+              { wS: halfW * 1.08, wE: halfW * 1.56, len: baseLen * 1.06, a: baseAlpha * 0.18 }
+            ].forEach(l => {
+              const g = ctx.createLinearGradient(0, 0, l.len, 0);
+              g.addColorStop(0, `rgba(${CFG.shadowRgb}, ${l.a})`);
+              g.addColorStop(0.55, `rgba(${CFG.shadowRgb}, ${l.a * 0.42})`);
+              g.addColorStop(1, `rgba(${CFG.shadowRgb}, 0)`);
+              ctx.fillStyle = g;
+              ctx.beginPath();
+              ctx.moveTo(0, -l.wS);
+              ctx.lineTo(l.len, -l.wE);
+              ctx.quadraticCurveTo(l.len + ts * 0.08, 0, l.len, l.wE);
+              ctx.lineTo(0, l.wS);
+              ctx.closePath();
+              ctx.fill();
+            });
+            ctx.restore();
+          });
+          ctx.restore();
+        }
+
+        function drawLitRims(ctx, bx, by, ts, blockers) {
+          if (!blockers || !blockers.length) return;
+          ctx.save();
+          blockers.forEach(b => {
+            const cx = bx + (b.c + 0.5) * ts, cy = by + (b.r + 0.5) * ts;
+            const half = b.kind === "P" ? ts * 0.27
+              : (b.kind === "L" || GameEngine.SPOT_DIRS[b.kind]) ? ts * CFG.toolRadius
+              : (b.kind === "V" ? ts * 0.40 : ts * CFG.boxScale * 0.48);
+            const ex = cx - b.dc * half, ey = cy - b.dr * half;
+            const ang = Math.atan2(b.dr, b.dc);
+
+            ctx.save();
+            ctx.translate(ex, ey);
+            ctx.rotate(ang);
+            ctx.scale(ts * 0.13, half * 0.82);
+            const g = ctx.createRadialGradient(0, 0, 0.05, 0, 0, 1);
+            g.addColorStop(0, "rgba(255, 246, 206, 0.26)");
+            g.addColorStop(0.55, "rgba(255, 224, 134, 0.10)");
+            g.addColorStop(1, "rgba(255, 224, 134, 0)");
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(0, 0, 1, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+          });
+          ctx.restore();
+        }
+
+        function drawHero(ctx, x, y, ts, dir, elapsed = 0) {
+          const cx = x + ts / 2, cy = y + ts / 2;
+          const breathe = 1 + Math.sin(elapsed * 2.25) * 0.022;
+          castShadowCircle(ctx, cx, cy, ts * 0.28, ts * CFG.shadowLen * 0.65, 0.18);
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.scale(breathe, breathe);
+          ctx.beginPath(); ctx.arc(0, 0, ts * 0.28, 0, Math.PI * 2);
+          ctx.fillStyle = "#FCFBF8"; ctx.fill();
+          ctx.strokeStyle = "#DED7CA"; ctx.lineWidth = 1.4; ctx.stroke();
+          ctx.beginPath(); ctx.arc(0, 0, ts * 0.21, 0, Math.PI * 2);
+          ctx.fillStyle = "#D96552"; ctx.fill();
+
+          const headGrad = ctx.createRadialGradient(-2, -2, 1, 0, 0, ts * 0.17);
+          headGrad.addColorStop(0, "#FFFFFF"); headGrad.addColorStop(1, "#EDE7DC");
+          ctx.fillStyle = headGrad;
+          ctx.beginPath(); ctx.arc(0, 0, ts * 0.17, 0, Math.PI * 2); ctx.fill();
+
+          const gaze = { up: [0, -ts * 0.08], down: [0, ts * 0.08], left: [-ts * 0.08, 0], right: [ts * 0.08, 0] }[dir] || [ts * 0.08, 0];
+          const perp = (dir === "up" || dir === "down") ? [[-ts * 0.055, 0], [ts * 0.055, 0]] : [[0, -ts * 0.055], [0, ts * 0.055]];
+          ctx.fillStyle = "#262932";
+          perp.forEach(([px, py]) => {
+            ctx.beginPath(); ctx.arc(gaze[0] + px, gaze[1] + py, Math.max(1.8, ts * 0.032), 0, Math.PI * 2); ctx.fill();
+          });
+          ctx.restore();
+        }
+
+        function renderBoard(ctx, bx, by, ts, staticMap, dyn, lightRes, elapsed, hoverCell) {
+          const { rows, cols, walls, suns, iceWalls, treeWalls, goals } = staticMap;
+          const { lit, beams, hitMirrors, blockers } = lightRes;
+          const bw = cols * ts, bh = rows * ts;
+
+          drawIslandBase(ctx, bx, by, bw, bh, ts);
+
+          const isSunEmbedded = (r, c) => (
+            (r > 0 && walls[r - 1][c]) ||
+            (r < rows - 1 && walls[r + 1][c]) ||
+            (c > 0 && walls[r][c - 1]) ||
+            (c < cols - 1 && walls[r][c + 1])
+          );
+          const wallMask = walls.map((row, r) => row.map((v, c) => v || suns.some(s => s.r === r && s.c === c && isSunEmbedded(r, c))));
+
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              const x = bx + c * ts, y = by + r * ts;
+              const baseHex = (r + c) % 2 === 0 ? CFG.floorA : CFG.floorB;
+              ctx.fillStyle = wallMask[r][c]
+                ? CFG.wallBase
+                : (lit[r][c] ? lerpHex(baseHex, CFG.floorLit, 0.56) : lerpHex(CFG.floorShadow, baseHex, 0.42));
+              ctx.fillRect(x, y, ts, ts);
+              if (!wallMask[r][c]) {
+                ctx.strokeStyle = CFG.floorGrid; ctx.lineWidth = 1;
+                ctx.strokeRect(x + 0.5, y + 0.5, ts - 1, ts - 1);
+              }
+            }
+          }
+
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              if (wallMask[r][c]) {
+                castShadowRect(ctx, bx + c * ts, by + r * ts, ts, ts, 2, ts * CFG.shadowLen, 0.15);
+              }
+            }
+          }
+
+          goals.forEach(g => {
+            const e = GameEngine.solidEntityAt(dyn, lit, g.r, g.c);
+            const locked = Boolean(e && GameEngine.TARGET_BOXES.has(e.kind));
+            drawGoal(ctx, bx + g.c * ts, by + g.r * ts, ts, locked ? 1 : 0, elapsed);
+          });
+
+          iceWalls.forEach((w, idx) => {
+            const sup = GameEngine.isTerrainSuppressed(dyn, lit, w.r, w.c);
+            const solid = !lit[w.r][w.c] && !sup;
+            if (!solid) drawIceWallPool(ctx, bx + w.c * ts, by + w.r * ts, ts, !lit[w.r][w.c] && sup, elapsed, idx);
+          });
+          treeWalls.forEach(w => {
+            const sup = GameEngine.isTerrainSuppressed(dyn, lit, w.r, w.c);
+            const solid = lit[w.r][w.c] && !sup;
+            if (!solid) drawAmberWallDormant(ctx, bx + w.c * ts, by + w.r * ts, ts, lit[w.r][w.c] && sup, elapsed);
+          });
+
+          dyn.entities.forEach(e => {
+            if (GameEngine.isEntitySolid(dyn, lit, e)) return;
+            if (e.kind !== "C" && e.kind !== "F") return;
+            const hasSolidBoxOnTop = dyn.entities.some(o =>
+              o.id !== e.id && o.r === e.r && o.c === e.c &&
+              (o.kind === "B" || o.kind === "C" || o.kind === "F") &&
+              GameEngine.isEntitySolid(dyn, lit, o)
+            );
+            const sealedByIce = e.kind === "F" && iceWalls.some(w =>
+              w.r === e.r && w.c === e.c && !lit[w.r][w.c] && !GameEngine.isTerrainSuppressed(dyn, lit, w.r, w.c)
+            );
+            const sealedByAmber = e.kind === "C" && treeWalls.some(w =>
+              w.r === e.r && w.c === e.c && lit[w.r][w.c] && !GameEngine.isTerrainSuppressed(dyn, lit, w.r, w.c)
+            );
+            if (hasSolidBoxOnTop || sealedByIce || sealedByAmber) return;
+
+            const underRoundTool = dyn.entities.some(o =>
+              o.id !== e.id && o.r === e.r && o.c === e.c &&
+              (o.kind === "L" || o.kind === "\\" || o.kind === "/" || Boolean(GameEngine.SPOT_DIRS[o.kind]))
+            );
+            const isSup = (e.kind === "C" && !lit[e.r][e.c]) || (e.kind === "F" && lit[e.r][e.c]);
+            drawDormantBoxPad(ctx, bx + e.c * ts, by + e.r * ts, ts, e.kind, isSup, elapsed, e.id, underRoundTool);
+          });
+
+          drawBeams(ctx, bx, by, ts, beams, elapsed);
+          drawOcclusionShadows(ctx, bx, by, ts, blockers);
+
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              if (walls[r][c]) drawWall(ctx, bx + c * ts, by + r * ts, ts, r, c, wallMask, rows, cols);
+            }
+          }
+          suns.forEach(s => drawSunTower(ctx, bx + s.c * ts, by + s.r * ts, ts, elapsed, s.r, s.c, wallMask, rows, cols, isSunEmbedded(s.r, s.c)));
+
+          iceWalls.forEach(w => {
+            const solid = !lit[w.r][w.c] && !GameEngine.isTerrainSuppressed(dyn, lit, w.r, w.c);
+            if (solid) {
+              const sealedF = dyn.entities.some(e => e.r === w.r && e.c === w.c && e.kind === "F");
+              drawIceWall(ctx, bx + w.c * ts, by + w.r * ts, ts, sealedF);
+            }
+          });
+          treeWalls.forEach(w => {
+            const solid = lit[w.r][w.c] && !GameEngine.isTerrainSuppressed(dyn, lit, w.r, w.c);
+            if (solid) {
+              const sealedC = dyn.entities.some(e => e.r === w.r && e.c === w.c && e.kind === "C");
+              drawAmberWall(ctx, bx + w.c * ts, by + w.r * ts, ts, sealedC);
+            }
+          });
+
+          dyn.entities.forEach(e => {
+            if (!GameEngine.isEntitySolid(dyn, lit, e)) return;
+            const x = bx + e.c * ts, y = by + e.r * ts;
+            const onGoal = goals.some(g => g.r === e.r && g.c === e.c);
+            const underBox = dyn.entities.find(o => o.id !== e.id && o.r === e.r && o.c === e.c && (o.kind === "C" || o.kind === "F"));
+            const isUnderSup = Boolean(underBox && ((underBox.kind === "C" && !lit[e.r][e.c]) || (underBox.kind === "F" && lit[e.r][e.c])));
+
+            if (e.kind === "B") drawWoodBox(ctx, x, y, ts, onGoal, elapsed, underBox ? underBox.kind : null, isUnderSup);
+            else if (e.kind === "C") drawIceBox(ctx, x, y, ts, onGoal, elapsed, Boolean(underBox && underBox.kind === "F"));
+            else if (e.kind === "F") drawAmberBox(ctx, x, y, ts, onGoal, elapsed, Boolean(underBox && underBox.kind === "C"));
+            else if (e.kind === "L") drawLantern(ctx, x, y, ts, elapsed);
+            else if (GameEngine.SPOT_DIRS[e.kind]) drawSpotlight(ctx, x, y, ts, e.kind, elapsed);
+            else if (e.kind === "\\" || e.kind === "/") drawMirror(ctx, x, y, ts, e.kind, hitMirrors && hitMirrors.has(e.id));
+          });
+
+          if (dyn.player) drawHero(ctx, bx + dyn.player.c * ts, by + dyn.player.r * ts, ts, dyn.player.dir, elapsed);
+          drawLitRims(ctx, bx, by, ts, blockers);
+
+          if (hoverCell) {
+            ctx.save();
+            ctx.strokeStyle = "rgba(44, 48, 58, 0.72)";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(bx + hoverCell.c * ts + 1, by + hoverCell.r * ts + 1, ts - 2, ts - 2);
+            ctx.restore();
+          }
+        }
+
+        // 候选列表迷你棋盘实时缩略图（零性能负担，一眼相面）
+        function renderMiniThumbnail(canvasEl, mapRows) {
+          const w = 84, h = 64;
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          canvasEl.width = w * dpr;
+          canvasEl.height = h * dpr;
+          const cctx = canvasEl.getContext("2d");
+          cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          cctx.clearRect(0, 0, w, h);
+
+          const parsed = GameEngine.parseMap(mapRows);
+          const { staticMap, dynState } = parsed;
+          const { lit, beams } = GameEngine.computeLighting(staticMap, dynState, true);
+          const { rows, cols, walls, suns, iceWalls, treeWalls, goals } = staticMap;
+
+          const ts = Math.floor(Math.min((w - 8) / cols, (h - 8) / rows));
+          const ox = Math.round((w - cols * ts) / 2);
+          const oy = Math.round((h - rows * ts) / 2);
+
+          cctx.fillStyle = "#DDD6C9";
+          cctx.fillRect(0, 0, w, h);
+
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              const x = ox + c * ts, y = oy + r * ts;
+              if (walls[r][c]) {
+                cctx.fillStyle = "#B8B0A2";
+              } else if (suns.some(s => s.r === r && s.c === c)) {
+                cctx.fillStyle = "#E8A838";
+              } else {
+                cctx.fillStyle = lit[r][c] ? "#FFF3CE" : "#E4E0D8";
+              }
+              cctx.fillRect(x, y, ts, ts);
+            }
+          }
+
+          // 光束
+          if (beams && beams.length) {
+            cctx.strokeStyle = "rgba(245, 194, 72, 0.58)";
+            cctx.lineWidth = Math.max(1.8, ts * 0.34);
+            cctx.lineCap = "round";
+            beams.forEach(b => {
+              cctx.beginPath();
+              cctx.moveTo(ox + (b.c1 + 0.5) * ts, oy + (b.r1 + 0.5) * ts);
+              cctx.lineTo(ox + (b.c2 + 0.5) * ts, oy + (b.r2 + 0.5) * ts);
+              cctx.stroke();
+            });
+          }
+
+          // 终点
+          goals.forEach(g => {
+            cctx.strokeStyle = "#C98D26";
+            cctx.lineWidth = 1.1;
+            cctx.strokeRect(ox + g.c * ts + ts * 0.2, oy + g.r * ts + ts * 0.2, ts * 0.6, ts * 0.6);
+          });
+
+          // 冰墙与琥珀墙
+          iceWalls.forEach(iw => {
+            cctx.fillStyle = lit[iw.r][iw.c] ? "rgba(116, 198, 240, 0.45)" : "#56B4E8";
+            cctx.fillRect(ox + iw.c * ts + 0.8, oy + iw.r * ts + 0.8, ts - 1.6, ts - 1.6);
+          });
+          treeWalls.forEach(tw => {
+            cctx.fillStyle = lit[tw.r][tw.c] ? "#E6A22E" : "rgba(220, 158, 42, 0.28)";
+            cctx.fillRect(ox + tw.c * ts + 0.8, oy + tw.r * ts + 0.8, ts - 1.6, ts - 1.6);
+          });
+
+          // 动态实体
+          dynState.entities.forEach(e => {
+            const cx = ox + (e.c + 0.5) * ts, cy = oy + (e.r + 0.5) * ts;
+            if (e.kind === "B") {
+              cctx.fillStyle = "#B87A42";
+              cctx.fillRect(ox + e.c * ts + ts * 0.16, oy + e.r * ts + ts * 0.16, ts * 0.68, ts * 0.68);
+            } else if (e.kind === "C") {
+              cctx.fillStyle = lit[e.r][e.c] ? "rgba(124, 210, 248, 0.55)" : "#3C9ED6";
+              cctx.fillRect(ox + e.c * ts + ts * 0.16, oy + e.r * ts + ts * 0.16, ts * 0.68, ts * 0.68);
+            } else if (e.kind === "F") {
+              cctx.fillStyle = lit[e.r][e.c] ? "#EDA92E" : "rgba(232, 168, 48, 0.35)";
+              cctx.fillRect(ox + e.c * ts + ts * 0.16, oy + e.r * ts + ts * 0.16, ts * 0.68, ts * 0.68);
+            } else if (e.kind === "\\" || e.kind === "/") {
+              cctx.strokeStyle = "#3E88BA";
+              cctx.lineWidth = 1.6;
+              const d = ts * 0.32;
+              cctx.beginPath();
+              if (e.kind === "\\") { cctx.moveTo(cx - d, cy - d); cctx.lineTo(cx + d, cy + d); }
+              else { cctx.moveTo(cx + d, cy - d); cctx.lineTo(cx - d, cy + d); }
+              cctx.stroke();
+            } else {
+              cctx.fillStyle = "#F0B840";
+              cctx.beginPath(); cctx.arc(cx, cy, ts * 0.3, 0, Math.PI * 2); cctx.fill();
+            }
+          });
+
+          // 主角
+          if (dynState.player) {
+            cctx.fillStyle = "#D96552";
+            cctx.beginPath();
+            cctx.arc(ox + (dynState.player.c + 0.5) * ts, oy + (dynState.player.r + 0.5) * ts, Math.max(2, ts * 0.28), 0, Math.PI * 2);
+            cctx.fill();
+          }
+        }
+
+        return { renderBoard, renderMiniThumbnail };
+      })();
+
+      /* =====================================================================
+         MODULE 3: 画笔与精选标杆模板
+         ===================================================================== */
+      const ALL_BRUSHES = [
+        { ch: ".", name: "石板空地", bg: "#EAE6DE", fg: "#6C7280", sym: "·" },
+        { ch: "#", name: "暖白石墙", bg: "#DFD9CE", fg: "#2C303A", sym: "#" },
+        { ch: "P", name: "主角(唯一)", bg: "#D96552", fg: "#FFFDF9", sym: "P" },
+        { ch: "X", name: "终点嵌槽", bg: "#E6F5EE", fg: "#2B7356", sym: "◇" },
+        { ch: "B", name: "雪松木箱", bg: "#CE935B", fg: "#FFFDF9", sym: "B" },
+        { ch: "C", name: "霜雪方箱", bg: "#C4EEFF", fg: "#2E78A8", sym: "❄" },
+        { ch: "F", name: "暖珀光箱", bg: "#F0B648", fg: "#FFFDF5", sym: "F" },
+        { ch: "I", name: "多棱冰墙", bg: "#8ED8F8", fg: "#1C4F6E", sym: "I" },
+        { ch: "V", name: "多棱琥珀墙", bg: "#E8AE44", fg: "#FFFDF5", sym: "V" },
+        { ch: "S", name: "固定太阳", bg: "#F5C65A", fg: "#2C2412", sym: "☀" },
+        { ch: "L", name: "可推太阳灯", bg: "#5B4A38", fg: "#FFE694", sym: "L" },
+        { ch: "\\", name: "折光镜 \\", bg: "#6E5A44", fg: "#C8F0FF", sym: "\\" },
+        { ch: "/", name: "折光镜 /", bg: "#6E5A44", fg: "#C8F0FF", sym: "/" },
+        { ch: ">", name: "单向射灯 →", bg: "#5B5043", fg: "#FFF0A8", sym: "→" },
+        { ch: "<", name: "单向射灯 ←", bg: "#5B5043", fg: "#FFF0A8", sym: "←" },
+        { ch: "^", name: "单向射灯 ↑", bg: "#5B5043", fg: "#FFF0A8", sym: "↑" },
+        { ch: "v", name: "单向射灯 ↓", bg: "#5B5043", fg: "#FFF0A8", sym: "↓" }
+      ];
+
+      const TEMPLATES = [
+        {
+          label: "🪞 镜子双位复用",
+          title: "1-4 过河拆桥（透镜双用）",
+          hint: "先推折光镜到第 5 列融冰送木箱，再右推一格熄光护送雪箱。",
+          map: [
+            "#########",
+            "#S..\\..##",
+            "#P....#.#",
+            "#.B..I.X#",
+            "#..C...X#",
+            "#########"
+          ]
+        },
+        {
+          label: "❄️ 卷一·纯冰范本",
+          title: "卷一·一物两用",
+          hint: "唯一木箱先去光束站岗挡光送雪箱，再撤下来进右上终点。",
+          map: [
+            "####S###",
+            "#......#",
+            "#.B..X.#",
+            "#.##.###",
+            "#P.C..X#",
+            "########"
+          ]
+        },
+        {
+          label: "🟧 卷二·纯珀范本",
+          title: "卷二·暖珀归虚",
+          hint: "走入太阳光束用身体挡光，让暖珀箱虚化并穿身绕后推出终点。",
+          map: [
+            "########",
+            "#..#####",
+            "#S.X.F.#",
+            "#P.#####",
+            "########"
+          ]
+        },
+        {
+          label: "✨ 卷三·冰珀互换",
+          title: "卷三·冰珀换魂（C+F）",
+          hint: "先把提灯左推一格让雪箱凝结、暖珀归虚，把雪箱推过暖珀送入右槽，再用提灯护送暖珀入左槽。",
+          map: [
+            "########",
+            "#..LP..#",
+            "#.....##",
+            "#X.CF.X#",
+            "#S######"
+          ]
+        },
+        {
+          label: "✨ 重-2 琥珀封雪",
+          title: "重-2 琥珀封雪（V+C）",
+          hint: "先右推折光镜让暖珀墙归虚，把雪箱推进暖珀格，再左推折光镜让暖珀墙封存雪箱，最后送雪箱入槽。",
+          map: [
+            "########",
+            "#S..\\..#",
+            "#P.....#",
+            "#.C.V.X#",
+            "########"
+          ]
+        },
+        {
+          label: "✨ 重-3 木箱压雪",
+          title: "重-3 木箱压雪（B+C）",
+          hint: "把木箱下推压在融化的雪箱上，再右推挡住太阳冻住雪箱，送雪箱进下槽后把木箱推进右上终点。",
+          map: [
+            "########",
+            "#P...#.#",
+            "#...B#X#",
+            "#...C..S",
+            "#..X#..#",
+            "########"
+          ]
+        },
+        {
+          label: "🎯 卷五·射灯双面",
+          title: "卷五·射灯双面",
+          hint: "先推暖珀箱入终点，再右推射灯：背影挡日冻雪、前光照亮暖珀。",
+          map: [
+            "#########",
+            "#.......#",
+            "#...S.F.#",
+            "#P.>..X.#",
+            "#.###.###",
+            "#...C.X.#",
+            "#########"
+          ]
+        },
+        {
+          label: "⚡ 占格凌空凝冰",
+          title: "1-6 凌空凝冰（C+I）",
+          hint: "先让雪箱滑入融水冰墙格，再用木箱挡光使雪箱凌空结冰。",
+          map: [
+            "#########",
+            "#....S#.#",
+            "#P.B.X#.#",
+            "#..C.I.X#",
+            "#....##.#",
+            "#########"
+          ]
+        }
+      ];
+
+      /* =====================================================================
+         MODULE 4: 编辑器状态与交互控制
+         ===================================================================== */
+      const app = {
+        mode: "edit",
+        brush: "#",
+        code: "1-1",
+        title: "1-1",
+        hint: "先把太阳灯向右推一格融化寒冰墙，再把木箱推进终点凹槽。",
+        rows: 6,
+        cols: 9,
+        grid: [],
+        hoverCell: null,
+        isPainting: false,
+        paintErase: false,
+        playStatic: null,
+        playDyn: null,
+        playLight: null,
+        playHistory: [],
+        playSteps: 0,
+        playWon: false,
+        lastSolve: null,
+        demoTimer: null,
+        demoStepIdx: 0,
+        viewW: 600,
+        viewH: 480,
+        ts: 60,
+        bx: 0,
+        by: 0
+      };
+
+      const canvas = document.getElementById("editorCanvas");
+      const ctx = canvas.getContext("2d");
+      const canvasWrap = document.getElementById("canvasWrap");
+
+      let toastTimer = null;
+      function showToast(msg) {
+        clearTimeout(toastTimer);
+        const el = document.getElementById("toast");
+        el.textContent = msg;
+        el.classList.add("show");
+        toastTimer = setTimeout(() => el.classList.remove("show"), 2300);
+      }
+
+      function buildBrushGrid(containerId, list) {
+        const box = document.getElementById(containerId);
+        box.innerHTML = "";
+        list.forEach(item => {
+          const btn = document.createElement("button");
+          btn.className = "brush-btn" + (item.ch === app.brush ? " selected" : "");
+          btn.dataset.ch = item.ch;
+          btn.innerHTML = `
+            <span class="brush-icon" style="background:${item.bg};color:${item.fg};">${item.sym}</span>
+            <span class="brush-meta">
+              <span class="brush-name">${item.name}</span>
+              <span class="brush-char">'${item.ch}'</span>
+            </span>
+          `;
+          btn.addEventListener("click", () => {
+            app.brush = item.ch;
+            if (app.mode !== "edit") switchMode("edit");
+            document.querySelectorAll(".brush-btn").forEach(b => b.classList.toggle("selected", b.dataset.ch === app.brush));
+          });
+          box.appendChild(btn);
+        });
+      }
+
+      function buildTemplates() {
+        const box = document.getElementById("templateGrid");
+        box.innerHTML = "";
+        TEMPLATES.forEach(tpl => {
+          const btn = document.createElement("button");
+          btn.className = "btn";
+          btn.textContent = tpl.label;
+          btn.addEventListener("click", () => {
+            loadLevelData(tpl);
+            runSolver();
+            showToast(`已载入模板：${tpl.title}`);
+          });
+          box.appendChild(btn);
+        });
+      }
+
+      function loadLevelData(data) {
+        stopDemo();
+        app.code = data.code || app.code || `${libState.chapter}-${libState.slot}`;
+        app.title = data.title || data.code || "未命名关卡";
+        app.hint = data.hint || data.clearTitle || data.quote || "观察光路与占格压制关系。";
+        const rows = Math.max(5, Math.min(10, data.map.length));
+        const cols = Math.max(5, Math.min(12, data.map[0].length));
+        app.rows = rows;
+        app.cols = cols;
+        app.grid = [];
+        for (let r = 0; r < rows; r++) {
+          const line = data.map[r] || "";
+          const row = [];
+          for (let c = 0; c < cols; c++) row.push(line[c] || ".");
+          app.grid.push(row);
+        }
+
+        document.getElementById("inCols").value = cols;
+        document.getElementById("inRows").value = rows;
+        document.getElementById("inCode").value = app.code;
+        document.getElementById("inTitle").value = app.title;
+        document.getElementById("inHint").value = app.hint;
+
+        invalidateSolver();
+        if (app.mode === "play") initPlaySession();
+        resizeCanvas();
+        syncOutputs();
+      }
+
+      function resizeGrid(newRows, newCols) {
+        stopDemo();
+        const rMax = Math.max(5, Math.min(10, newRows));
+        const cMax = Math.max(5, Math.min(12, newCols));
+        const next = [];
+        for (let r = 0; r < rMax; r++) {
+          const row = [];
+          for (let c = 0; c < cMax; c++) row.push(app.grid[r] && app.grid[r][c] ? app.grid[r][c] : ".");
+          next.push(row);
+        }
+        app.rows = rMax;
+        app.cols = cMax;
+        app.grid = next;
+        document.getElementById("inRows").value = rMax;
+        document.getElementById("inCols").value = cMax;
+        if (app.mode === "play") switchMode("edit");
+        invalidateSolver();
+        resizeCanvas();
+        syncOutputs();
+      }
+
+      function getGridStrings() { return app.grid.map(r => r.join("")); }
+
+      function syncOutputs() {
+        document.getElementById("stageLevelTitle").textContent = app.code === app.title ? app.code : `${app.code} · ${app.title}`;
+        const payload = {
+          code: app.code,
+          chapter: libState.chapter,
+          slot: libState.slot,
+          title: app.title,
+          hint: app.hint,
+          optimalSteps: app.lastSolve && app.lastSolve.status === "solved" ? app.lastSolve.steps : null,
+          eleganceScore: app.lastSolve && app.lastSolve.metrics ? app.lastSolve.metrics.score : null,
+          map: getGridStrings()
+        };
+        document.getElementById("jsonOut").textContent = JSON.stringify(payload, null, 2);
+      }
+
+      function initPlaySession() {
+        stopDemo();
+        const parsed = GameEngine.parseMap(getGridStrings());
+        if (!parsed.dynState.player) {
+          showToast("地图中没有主角「P」，请先放置主角！");
+          switchMode("edit");
+          return false;
+        }
+        app.playStatic = parsed.staticMap;
+        app.playDyn = parsed.dynState;
+        app.playLight = GameEngine.computeLighting(app.playStatic, app.playDyn, true);
+        app.playHistory = [];
+        app.playSteps = 0;
+        app.playWon = GameEngine.isWon(app.playStatic, app.playDyn, app.playLight.lit);
+        updateStageHeader();
+        return true;
+      }
+
+      function playMove(dr, dc, dir) {
+        if (app.mode !== "play" || app.playWon) return false;
+        const res = GameEngine.stepState(app.playStatic, app.playDyn, app.playLight.lit, dr, dc, dir);
+        if (!res) return false;
+        app.playHistory.push({ dyn: GameEngine.cloneDyn(app.playDyn), steps: app.playSteps });
+        app.playDyn = res.dyn;
+        app.playLight = GameEngine.computeLighting(app.playStatic, app.playDyn, true);
+        app.playSteps++;
+        app.playWon = GameEngine.isWon(app.playStatic, app.playDyn, app.playLight.lit);
+        updateStageHeader();
+        if (app.playWon) showToast(`🎉 通关成功！共用 ${app.playSteps} 步`);
+        return true;
+      }
+
+      function playUndo() {
+        if (app.mode !== "play" || app.playHistory.length === 0) return;
+        stopDemo();
+        const prev = app.playHistory.pop();
+        app.playDyn = prev.dyn;
+        app.playSteps = prev.steps;
+        app.playLight = GameEngine.computeLighting(app.playStatic, app.playDyn, true);
+        app.playWon = false;
+        updateStageHeader();
+      }
+
+      function switchMode(mode) {
+        stopDemo();
+        app.mode = mode;
+        const isPlay = mode === "play";
+        if (isPlay && !initPlaySession()) return;
+        document.getElementById("btnModeEdit").classList.toggle("active", !isPlay);
+        document.getElementById("btnModePlay").classList.toggle("play-active", isPlay);
+        document.getElementById("playActionBar").style.display = isPlay ? "flex" : "none";
+        document.getElementById("stageFooter").textContent = isPlay
+          ? "试玩提示：WASD / 方向键 或 滑动棋盘移动 · Z 悔棋 · R 重来"
+          : "编辑提示：左键涂抹 / 拖拽连续绘制，右键快速擦除；光路与冰水状态会实时联动更新";
+        app.hoverCell = null;
+        updateStageHeader();
+      }
+
+      function updateStageHeader() {
+        const tag = document.getElementById("modeTag");
+        const info = document.getElementById("stageInfo");
+        if (app.mode === "edit") {
+          tag.className = "pill-tag";
+          tag.textContent = "编辑模式 · 实时光路";
+          info.textContent = app.hoverCell ? `格 (${app.hoverCell.r}, ${app.hoverCell.c})` : `${app.cols}×${app.rows}`;
+        } else {
+          tag.className = app.demoTimer ? "pill-tag demo" : "pill-tag play";
+          tag.textContent = app.demoTimer ? "自动演示最优解" : (app.playWon ? "🎉 已通关" : "实机试玩");
+          info.textContent = `步数 ${app.playSteps}`;
+          document.getElementById("btnUndo").disabled = app.playHistory.length === 0;
+        }
+      }
+
+      function invalidateSolver() {
+        stopDemo();
+        app.lastSolve = null;
+        const box = document.getElementById("solverBox");
+        box.className = "solver-box";
+        document.getElementById("solverHeadline").textContent = "地图已变更，待验关";
+        document.getElementById("solverTime").textContent = "";
+        document.getElementById("solverMetrics").textContent = "点击顶部「🔍 BFS 光学纯净验关」重新检测透镜折射纯洁度、冗余外墙与优雅度得分。";
+        document.getElementById("cheeseAlert").style.display = "none";
+        document.getElementById("pathPreview").style.display = "none";
+        document.getElementById("demoControlRow").style.display = "none";
+      }
+
+      function renderTagsHtml(highlights) {
+        if (!highlights || !highlights.length) return "";
+        return `<div class="clever-tags">${highlights.map(h => `<span class="clever-tag ${h.cls || ""}">${h.text}</span>`).join("")}</div>`;
+      }
+
+      function runSolver() {
+        stopDemo();
+        const res = GameEngine.solveBFS(getGridStrings(), 80000);
+        app.lastSolve = res;
+
+        const box = document.getElementById("solverBox");
+        const head = document.getElementById("solverHeadline");
+        const timeEl = document.getElementById("solverTime");
+        const metrics = document.getElementById("solverMetrics");
+        const cheese = document.getElementById("cheeseAlert");
+        const pathEl = document.getElementById("pathPreview");
+        const demoRow = document.getElementById("demoControlRow");
+
+        timeEl.textContent = `${res.ms} ms`;
+        cheese.style.display = "none";
+        pathEl.style.display = "none";
+        demoRow.style.display = "none";
+
+        if (res.status === "invalid") {
+          box.className = "solver-box fail";
+          head.textContent = "⚠️ 地图不完整";
+          metrics.textContent = res.reason;
+        } else if (res.status === "unsolvable") {
+          box.className = "solver-box fail";
+          head.textContent = "❌ 判定无解";
+          metrics.innerHTML = `<span>已穷举全部 <b>${res.explored.toLocaleString()}</b> 个可达状态，无法达成所有终点。</span>`;
+        } else if (res.status === "timeout") {
+          box.className = "solver-box warn";
+          head.textContent = "⏳ 超过搜索上限";
+          metrics.innerHTML = `<span>已探索 <b>${res.explored.toLocaleString()}</b> 个状态仍未找到解，建议缩小空地或补墙。</span>`;
+        } else {
+          const m = res.metrics;
+          box.className = res.cheeseWarnings.length ? "solver-box warn" : "solver-box ok";
+          head.textContent = `✅ 100% 有解 · 最优 ${res.steps} 步`;
+          metrics.innerHTML = `
+            <div class="diff-header">
+              <span>光学优雅度：<b>${m.score} / 100</b></span>
+              <span class="grade-pill grade-${m.grade}">${m.label}</span>
+            </div>
+            ${renderTagsHtml(m.highlights)}
+            <div class="diff-grid">
+              <div class="diff-cell"><span>巧思复用</span><b>${m.cleverScore} / 35</b></div>
+              <div class="diff-cell"><span>空间紧凑</span><b>${m.compactScore} / 25</b></div>
+              <div class="diff-cell"><span>思维深度</span><b>${m.depthScore} / 25</b></div>
+              <div class="diff-cell"><span>纯净度</span><b>${m.purityScore} / 15</b></div>
+            </div>
+            <div style="font-size:11px; color:var(--ink-soft);">
+              空地 <b>${m.floorCount}</b> 格（废格 ${m.wasteFloors} · 冗余厚墙 ${m.redundantWallLayers}）· 探索 <b>${res.explored.toLocaleString()}</b> 态
+            </div>
+            <div class="cand-flow">🧬 套路：${m.mechanicFlow}</div>
+          `;
+          if (res.cheeseWarnings.length) {
+            cheese.style.display = "block";
+            cheese.textContent = "⚠️ 结构/光学审计告警：" + res.cheeseWarnings.join("；") + "。";
+          }
+          if (res.path.length > 0) {
+            pathEl.style.display = "block";
+            pathEl.textContent = res.path.map(mv => mv.sym).join(" ");
+            demoRow.style.display = "flex";
+            document.getElementById("btnPlayDemo").textContent = "▶️ 播放最优解";
+          }
+        }
+        syncOutputs();
+      }
+
+      function stopDemo() {
+        if (app.demoTimer) {
+          clearInterval(app.demoTimer);
+          app.demoTimer = null;
+          document.getElementById("btnPlayDemo").textContent = "▶️ 播放最优解";
+          updateStageHeader();
+        }
+      }
+
+      function togglePlayDemo() {
+        if (!app.lastSolve || app.lastSolve.status !== "solved" || !app.lastSolve.path.length) return;
+        if (app.demoTimer) { stopDemo(); return; }
+        switchMode("play");
+        app.demoStepIdx = 0;
+        document.getElementById("btnPlayDemo").textContent = "⏸ 暂停演示";
+        updateStageHeader();
+        app.demoTimer = setInterval(() => {
+          if (app.demoStepIdx >= app.lastSolve.path.length) { stopDemo(); return; }
+          const mv = app.lastSolve.path[app.demoStepIdx++];
+          playMove(mv.dr, mv.dc, mv.dir);
+          if (app.demoStepIdx >= app.lastSolve.path.length) stopDemo();
+        }, 230);
+      }
+
+      function stepDemoOnce() {
+        if (!app.lastSolve || app.lastSolve.status !== "solved" || !app.lastSolve.path.length) return;
+        stopDemo();
+        if (app.mode !== "play" || app.playWon || app.playSteps !== app.demoStepIdx) {
+          switchMode("play");
+          app.demoStepIdx = 0;
+        }
+        if (app.demoStepIdx < app.lastSolve.path.length) {
+          const mv = app.lastSolve.path[app.demoStepIdx++];
+          playMove(mv.dr, mv.dc, mv.dir);
+        }
+      }
+
+      /* =====================================================================
+         定制造图 5.0 调度器（点菜元件池 + 8 项必触发巧思 + 双层爬山进化 + 缩略图）
+         ===================================================================== */
+      function switchRightTab(tab) {
+        const isPcg = tab === "pcg";
+        document.getElementById("tabBtnVerify").classList.toggle("active", !isPcg);
+        document.getElementById("tabBtnPcg").classList.toggle("active", isPcg);
+        document.getElementById("tabPaneVerify").style.display = isPcg ? "none" : "flex";
+        document.getElementById("tabPanePcg").style.display = isPcg ? "flex" : "none";
+      }
+
+      const ELEM_PICKER_META = [
+        { key: "S", label: "☀ 太阳", max: 3 },
+        { key: "L", label: "🏮 提灯", max: 2 },
+        { key: "M", label: "🪞 折光镜", max: 2 },
+        { key: "SP", label: "🎯 射灯", max: 2 },
+        { key: "B", label: "📦 木箱", max: 3 },
+        { key: "C", label: "❄️ 雪箱", max: 3 },
+        { key: "F", label: "🟧 暖珀箱", max: 3 },
+        { key: "I", label: "🧊 冰墙", max: 3 },
+        { key: "V", label: "🟨 珀墙", max: 3 },
+        { key: "X", label: "◇ 终点", max: 4 },
+        { key: "wall", label: "🧱 内墙", max: 8 }
+      ];
+
+      const CLEVER_SWITCHES = [
+        { id: "mirror_dual", label: "🪞 双位折光", check: m => m.mirrorDualRefractCount > 0 },
+        { id: "suppression", label: "⚡ 占格压制", check: m => m.suppressionCount > 0 },
+        { id: "body_shadow", label: "👤 自身成荫", check: m => m.bodyShadowFlips > 0 },
+        { id: "ping_pong", label: "🌗 状态拉扯", check: m => m.pingPongFlips > 0 },
+        { id: "interleaved", label: "🔁 交错复用", check: m => m.interleavedReuses > 0 },
+        { id: "hands_free", label: "✋ 空手终结", check: m => Boolean(m.handsFreeVictory) },
+        { id: "unseat", label: "🔄 退槽借位", check: m => m.goalUnseats > 0 },
+        { id: "swap", label: "✨ 冰珀互换", check: m => m.swapCount > 0 }
+      ];
+
+      const pcgState = {
+        running: false,
+        timer: null,
+        sourceMode: "scratch", // "scratch" | "draft"
+        activePresetId: "mirror_dual",
+        counts: { S: 1, L: 0, M: 1, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2, wall: 3 },
+        cleverSelected: new Set(["mirror_dual"]),
+        candidates: [],
+        activeSig: null
+      };
+
+      function renderElemPickerUI() {
+        const root = document.getElementById("elemPickerGrid");
+        root.innerHTML = "";
+        ELEM_PICKER_META.forEach(item => {
+          const val = pcgState.counts[item.key] || 0;
+          const row = document.createElement("div");
+          row.className = "picker-row" + (val > 0 ? " has-val" : "");
+          row.innerHTML = `
+            <span class="picker-label">${item.label}</span>
+            <span class="picker-ctrl">
+              <button class="picker-btn" data-act="dec" type="button">−</button>
+              <span class="picker-val">${val}</span>
+              <button class="picker-btn" data-act="inc" type="button">+</button>
+            </span>
+          `;
+          row.querySelector('[data-act="dec"]').addEventListener("click", () => {
+            pcgState.counts[item.key] = Math.max(0, (pcgState.counts[item.key] || 0) - 1);
+            pcgState.activePresetId = null;
+            renderPresetChipsUI();
+            renderElemPickerUI();
+          });
+          row.querySelector('[data-act="inc"]').addEventListener("click", () => {
+            pcgState.counts[item.key] = Math.min(item.max, (pcgState.counts[item.key] || 0) + 1);
+            pcgState.activePresetId = null;
+            renderPresetChipsUI();
+            renderElemPickerUI();
+          });
+          root.appendChild(row);
+        });
+      }
+
+      function renderPresetChipsUI() {
+        const root = document.getElementById("pcgPresetChips");
+        root.innerHTML = "";
+        LevelGenerator.PRESETS.forEach(p => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "preset-chip" + (pcgState.activePresetId === p.id ? " active" : "");
+          btn.textContent = p.label;
+          btn.addEventListener("click", () => {
+            pcgState.activePresetId = p.id;
+            pcgState.counts = Object.assign({}, p.counts);
+            pcgState.cleverSelected = new Set(p.clever || []);
+            document.getElementById("pcgCols").value = p.cols;
+            document.getElementById("pcgRows").value = p.rows;
+            document.getElementById("pcgMinSteps").value = p.minSteps;
+            document.getElementById("pcgMaxSteps").value = p.maxSteps;
+            renderPresetChipsUI();
+            renderElemPickerUI();
+            renderCleverSwitchesUI();
+          });
+          root.appendChild(btn);
+        });
+      }
+
+      function renderCleverSwitchesUI() {
+        const root = document.getElementById("cleverSwitchGrid");
+        root.innerHTML = "";
+        CLEVER_SWITCHES.forEach(sw => {
+          const on = pcgState.cleverSelected.has(sw.id);
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "clever-switch" + (on ? " active" : "");
+          btn.innerHTML = `<span>${sw.label}</span><span class="clever-switch-dot">${on ? "✓" : ""}</span>`;
+          btn.addEventListener("click", () => {
+            if (pcgState.cleverSelected.has(sw.id)) pcgState.cleverSelected.delete(sw.id);
+            else pcgState.cleverSelected.add(sw.id);
+            renderCleverSwitchesUI();
+          });
+          root.appendChild(btn);
+        });
+      }
+
+      function setPcgSourceMode(mode) {
+        pcgState.sourceMode = mode;
+        const isDraft = mode === "draft";
+        document.getElementById("pcgModeScratch").classList.toggle("active", !isDraft);
+        document.getElementById("pcgModeDraft").classList.toggle("active", isDraft);
+        document.getElementById("pcgScratchPanel").style.display = isDraft ? "none" : "flex";
+        document.getElementById("pcgDraftTip").style.display = isDraft ? "block" : "none";
+      }
+
+      function initPcg5UI() {
+        renderPresetChipsUI();
+        renderElemPickerUI();
+        renderCleverSwitchesUI();
+        setPcgSourceMode("scratch");
+      }
+
+      function renderPcgCandidates(emptyMsg) {
+        const list = document.getElementById("pcgCandList");
+        if (!pcgState.candidates.length) {
+          list.innerHTML = `<div style="font-size:11.5px; color:var(--ink-soft); line-height:1.5;">${emptyMsg || "暂未筛出同时满足全部已选巧思开关与步数区间的地图，可增加进化轮次、放宽步数区间或减少勾选巧思数重试。"}</div>`;
+          return;
+        }
+        list.innerHTML = "";
+        pcgState.candidates.forEach((c, idx) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "cand-item" + (pcgState.activeSig === c.sig ? " active" : "");
+          const m = c.res.metrics;
+          const pruneTag = c.prunedCount > 0 ? ` · 剪枝 -${c.prunedCount}` : "";
+          const exactTag = c.exactMatch ? "" : ` <span style="color:#B45B18;">(近命中)</span>`;
+          btn.innerHTML = `
+            <div class="cand-top">
+              <span>#${idx + 1} ${c.recipeName} · ${m.score} 分${exactTag}</span>
+              <span class="grade-pill grade-${m.grade}">${m.label}</span>
+            </div>
+            <div class="cand-item-body">
+              <canvas class="cand-thumb"></canvas>
+              <div class="cand-info">
+                ${renderTagsHtml(m.highlights)}
+                <div class="cand-sub">
+                  <span>最优 <b>${c.res.steps}</b> 步</span>
+                  <span>空地 <b>${m.floorCount}</b> 格${pruneTag}</span>
+                </div>
+                <div class="cand-flow">🧬 ${m.mechanicFlow}</div>
+              </div>
+            </div>
+          `;
+          const thumbCanvas = btn.querySelector("canvas.cand-thumb");
+          Assets2D.renderMiniThumbnail(thumbCanvas, c.mapRows);
+
+          btn.addEventListener("click", () => {
+            pcgState.activeSig = c.sig;
+            renderPcgCandidates();
+            loadLevelData({
+              code: app.code || `${libState.chapter}-${libState.slot}`,
+              title: `${c.recipeName}·#${idx + 1}`,
+              hint: `参考思路：${m.mechanicFlow}。`,
+              map: c.mapRows
+            });
+            runSolver();
+            showToast(`已载入候选 #${idx + 1}（优雅度 ${m.score} 分 / 最优 ${c.res.steps} 步）`);
+          });
+          list.appendChild(btn);
+        });
+      }
+
+      function stopPcg() {
+        pcgState.running = false;
+        if (pcgState.timer) { clearTimeout(pcgState.timer); pcgState.timer = null; }
+        document.getElementById("btnStartPcg").disabled = false;
+        document.getElementById("btnStartPcg").textContent = "✨ 开始定制造图";
+        document.getElementById("btnStopPcg").style.display = "none";
+      }
+
+      function validatePcgConfig(cts, rows, cols, reqSwitches) {
+        const boxCnt = (cts.B || 0) + (cts.C || 0) + (cts.F || 0);
+        const goalCnt = cts.X || 0;
+        const lightCnt = (cts.S || 0) + (cts.L || 0) + (cts.SP || 0);
+        const varCnt = (cts.C || 0) + (cts.F || 0) + (cts.I || 0) + (cts.V || 0);
+
+        if (goalCnt < 1) return "请至少放置 1 个终点「◇」";
+        if (boxCnt < goalCnt) return `目标箱数量(${boxCnt})不能少于终点数量(${goalCnt})`;
+        if (lightCnt < 1 && varCnt > 0) return "已放冰/珀元件，请至少放置 1 个光源（太阳/提灯/射灯）";
+
+        if (reqSwitches.has("mirror_dual") && (cts.M || 0) < 1) return "勾选了「🪞 双位折光」，请至少点选 1 面折光镜";
+        if (reqSwitches.has("swap") && ((cts.C || 0) < 1 || (cts.F || 0) < 1)) return "勾选了「✨ 冰珀互换」，需同时包含雪箱与暖珀箱";
+        if (reqSwitches.has("suppression") && varCnt < 1) return "勾选了「⚡ 占格压制」，需至少包含 1 个冰/珀墙或箱";
+
+        if (pcgState.sourceMode === "scratch") {
+          const innerSpace = (rows - 2) * (cols - 2);
+          const needed = (cts.L || 0) + (cts.M || 0) + (cts.SP || 0) + boxCnt + (cts.I || 0) + (cts.V || 0) + goalCnt + (cts.wall || 0) + 2;
+          if (needed > innerSpace) return `当前 ${cols}×${rows} 内部仅 ${innerSpace} 格，放不下所选全部元件与内墙，请增大尺寸或减少元件`;
+        }
+        return null;
+      }
+
+      function countGridElements(grid) {
+        const cts = { S: 0, L: 0, M: 0, SP: 0, B: 0, C: 0, F: 0, I: 0, V: 0, X: 0, wall: 0 };
+        for (let r = 0; r < grid.length; r++) {
+          for (let c = 0; c < grid[0].length; c++) {
+            const ch = grid[r][c];
+            if (ch === "S") cts.S++;
+            else if (ch === "L") cts.L++;
+            else if (ch === "\\" || ch === "/") cts.M++;
+            else if (GameEngine.SPOT_DIRS[ch]) cts.SP++;
+            else if (ch === "B") cts.B++;
+            else if (ch === "C") cts.C++;
+            else if (ch === "F") cts.F++;
+            else if (ch === "I") cts.I++;
+            else if (ch === "V") cts.V++;
+            else if (ch === "X") cts.X++;
+          }
+        }
+        return cts;
+      }
+
+      function startPcg() {
+        if (pcgState.running) return;
+        const isDraft = pcgState.sourceMode === "draft";
+        const customCols = isDraft ? app.cols : Math.max(5, Math.min(10, Number(document.getElementById("pcgCols").value) || 7));
+        const customRows = isDraft ? app.rows : Math.max(5, Math.min(8, Number(document.getElementById("pcgRows").value) || 6));
+        const budget = Math.max(60, Number(document.getElementById("pcgBudget").value) || 450);
+        const minSteps = Math.max(3, Number(document.getElementById("pcgMinSteps").value) || 8);
+        const maxSteps = Math.max(minSteps + 1, Number(document.getElementById("pcgMaxSteps").value) || 18);
+        const useAutoPrune = document.getElementById("pcgAutoPrune").checked;
+        const requireMirror = document.getElementById("pcgRequireMirror").checked;
+        const useUniqueMech = document.getElementById("pcgUniqueMech").checked;
+        const reqSwitchList = CLEVER_SWITCHES.filter(sw => pcgState.cleverSelected.has(sw.id));
+
+        const activeCounts = isDraft ? countGridElements(app.grid) : Object.assign({}, pcgState.counts);
+        if (isDraft && !app.grid.some(row => row.includes("P"))) {
+          showToast("⚠️ 当前画布缺少主角「P」，无法微调进化");
+          return;
+        }
+        const errText = validatePcgConfig(activeCounts, customRows, customCols, pcgState.cleverSelected);
+        if (errText) {
+          showToast("⚠️ " + errText);
+          return;
+        }
+
+        const draftSeed = isDraft ? app.grid.map(r => r.slice()) : null;
+        const recipeLabel = isDraft
+          ? "草图进化"
+          : (LevelGenerator.PRESETS.find(p => p.id === pcgState.activePresetId)?.label.replace(/^[^\s]+\s/, "") || "定制配方");
+
+        pcgState.running = true;
+        pcgState.candidates = [];
+        pcgState.activeSig = null;
+
+        document.getElementById("btnStartPcg").disabled = true;
+        document.getElementById("btnStartPcg").textContent = "⏳ 正在定向炼图...";
+        document.getElementById("btnStopPcg").style.display = "inline-flex";
+        document.getElementById("pcgProgressWrap").classList.add("show");
+        document.getElementById("pcgBarFill").style.width = "0%";
+        document.getElementById("pcgStatPct").textContent = "0%";
+        document.getElementById("pcgStatText").textContent = `正在 ${customCols}×${customRows} 攀爬搜索...`;
+
+        const bestByKey = new Map();
+        const breedPool = []; // 双层进化池：即便只命中部分巧思，也能作为优质父代继续变异冲刺全命中！
+        const seenStruct = new Set();
+        let iter = 0, solvedCount = 0, exactHits = 0, totalPruned = 0;
+
+        function isOpticallyPure(res) {
+          if (!res || res.status !== "solved") return false;
+          if (res.redundantSuns && res.redundantSuns > 0) return false;
+          if (res.metrics.unusedItemCount > 0) return false;
+          if (requireMirror && res.metrics.mirrorAsObstacleCount > 0) return false;
+          return true;
+        }
+
+        function countCleverMatches(res) {
+          let hits = 0;
+          for (let i = 0; i < reqSwitchList.length; i++) {
+            if (reqSwitchList[i].check(res.metrics)) hits++;
+          }
+          return hits;
+        }
+
+        function evalFitness(res) {
+          const hits = countCleverMatches(res);
+          const inRange = res.steps >= minSteps && res.steps <= maxSteps;
+          const rangePenalty = inRange ? 0 : Math.min(25, Math.abs(res.steps - (res.steps < minSteps ? minSteps : maxSteps)) * 3);
+          return hits * 120 + (inRange ? 40 : 0) + res.metrics.score - rangePenalty;
+        }
+
+        function pushToBreedPool(grid, res) {
+          const fit = evalFitness(res);
+          breedPool.push({ grid, res, fit });
+          breedPool.sort((a, b) => b.fit - a.fit);
+          if (breedPool.length > 10) breedPool.length = 10;
+        }
+
+        function recordCandidate(rawGrid, rawRes) {
+          if (!isOpticallyPure(rawRes)) return;
+          const rawStruct = rawGrid.map(r => r.join("").replace("P", ".")).join("|");
+          if (seenStruct.has(rawStruct)) return;
+          seenStruct.add(rawStruct);
+
+          pushToBreedPool(rawGrid, rawRes);
+
+          const rawHits = countCleverMatches(rawRes);
+          const rawInRange = rawRes.steps >= minSteps && rawRes.steps <= maxSteps;
+          if (rawHits < reqSwitchList.length || !rawInRange) return;
+
+          const lowestScore = pcgState.candidates.length >= 5
+            ? pcgState.candidates[pcgState.candidates.length - 1].res.metrics.score
+            : 0;
+          const rawKey = useUniqueMech ? rawRes.metrics.mechanicSig : rawStruct;
+          const existing = bestByKey.get(rawKey);
+          if (existing && existing.res.metrics.score >= rawRes.metrics.score + 8) return;
+          if (!existing && pcgState.candidates.length >= 5 && rawRes.metrics.score < lowestScore - 8) return;
+
+          let finalGrid = rawGrid, finalRes = rawRes, prunedCount = 0;
+          if (useAutoPrune) {
+            const pruned = LevelGenerator.pruneGrid(rawGrid, rawRes);
+            finalGrid = pruned.grid;
+            finalRes = pruned.res;
+            prunedCount = pruned.prunedCount;
+            totalPruned += prunedCount;
+          }
+
+          if (!isOpticallyPure(finalRes)) return;
+          if (countCleverMatches(finalRes) < reqSwitchList.length) return;
+          if (finalRes.steps < minSteps || finalRes.steps > maxSteps) return;
+
+          exactHits++;
+          const mapRows = finalGrid.map(r => r.join(""));
+          const dedupKey = useUniqueMech
+            ? finalRes.metrics.mechanicSig
+            : mapRows.map(row => row.replace("P", ".")).join("|");
+
+          const prev = bestByKey.get(dedupKey);
+          if (prev && prev.res.metrics.score >= finalRes.metrics.score) return;
+
+          const entry = {
+            grid: finalGrid,
+            mapRows,
+            sig: dedupKey,
+            res: finalRes,
+            prunedCount,
+            exactMatch: true,
+            recipeName: `${finalGrid[0].length}×${finalGrid.length} ${recipeLabel}`
+          };
+          bestByKey.set(dedupKey, entry);
+
+          const idx = pcgState.candidates.findIndex(c => c.sig === dedupKey);
+          if (idx >= 0) pcgState.candidates[idx] = entry;
+          else pcgState.candidates.push(entry);
+
+          pcgState.candidates.sort((a, b) => b.res.metrics.score - a.res.metrics.score);
+          if (pcgState.candidates.length > 5) pcgState.candidates.length = 5;
+        }
+
+        // 若为草图进化模式，先把用户当前草图作为 0 号种子评估入池
+        if (isDraft && draftSeed) {
+          const seedRes = GameEngine.solveBFS(draftSeed.map(r => r.join("")), 14000);
+          if (seedRes.status === "solved") pushToBreedPool(draftSeed, seedRes);
+        }
+
+        function runChunk() {
+          if (!pcgState.running) return;
+          const chunkEnd = Math.min(budget, iter + 6);
+
+          while (iter < chunkEnd) {
+            iter++;
+            let grid;
+            if (isDraft) {
+              if (breedPool.length > 0 && Math.random() < 0.72) {
+                const parent = breedPool[Math.floor(Math.random() * Math.min(4, breedPool.length))];
+                grid = LevelGenerator.mutateGrid(parent.grid, Math.random() < 0.7 ? 1 : 2);
+              } else {
+                grid = LevelGenerator.mutateGrid(draftSeed, 1 + Math.floor(Math.random() * 2));
+              }
+            } else if (breedPool.length > 0 && Math.random() < 0.68) {
+              const parent = breedPool[Math.floor(Math.random() * Math.min(4, breedPool.length))];
+              grid = LevelGenerator.mutateGrid(parent.grid, Math.random() < 0.75 ? 1 : 2);
+            } else {
+              grid = LevelGenerator.createRandomGridFromConfig({ rows: customRows, cols: customCols, counts: activeCounts });
+            }
+            if (!grid) continue;
+
+            const rows = grid.map(r => r.join(""));
+            const res = GameEngine.solveBFS(rows, 14000);
+            if (res.status === "solved" && isOpticallyPure(res)) {
+              solvedCount++;
+              recordCandidate(grid, res);
+            }
+          }
+
+          const pct = Math.round((iter / budget) * 100);
+          document.getElementById("pcgBarFill").style.width = `${pct}%`;
+          document.getElementById("pcgStatPct").textContent = `${pct}%`;
+          document.getElementById("pcgStatText").textContent = `进化 ${iter}/${budget} · 纯净解 ${solvedCount} · 全命中 ${exactHits}`;
+          renderPcgCandidates(`正在爬山探索（已积累 ${breedPool.length} 个优质父代，等待全命中巧思开关）...`);
+
+          if (iter < budget) {
+            pcgState.timer = setTimeout(runChunk, 0);
+          } else {
+            stopPcg();
+            if (pcgState.candidates.length > 0) {
+              renderPcgCandidates();
+              showToast(`🎉 定制造图 5.0 完成！全命中 ${bestByKey.size} 种套路，共剪枝 ${totalPruned} 格`);
+            } else if (breedPool.length > 0) {
+              // 若极苛刻的多选组合未 100% 全命中，自动展示最接近的 Top 3 供用户微调
+              pcgState.candidates = breedPool.slice(0, 3).map((b, i) => ({
+                grid: b.grid,
+                mapRows: b.grid.map(r => r.join("")),
+                sig: `near_${i}_${b.res.metrics.mechanicSig}`,
+                res: b.res,
+                prunedCount: 0,
+                exactMatch: false,
+                recipeName: `${b.grid[0].length}×${b.grid.length} ${recipeLabel}`
+              }));
+              renderPcgCandidates();
+              showToast("未找到 100% 全命中图，已为你列出最接近的候选图（可载入后点「微调当前草图」继续进化）");
+            } else {
+              renderPcgCandidates();
+              showToast("暂未筛出满足条件的纯净解，可适当增加轮次或放宽步数区间");
+            }
+          }
+        }
+
+        pcgState.timer = setTimeout(runChunk, 10);
+      }
+
+      /* =====================================================================
+         Canvas 渲染与输入绑定
+         ===================================================================== */
+      function resizeCanvas() {
+        const rect = canvasWrap.getBoundingClientRect();
+        const w = Math.max(260, rect.width), h = Math.max(240, rect.height);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        app.viewW = w; app.viewH = h;
+        canvas.width = Math.floor(w * dpr); canvas.height = Math.floor(h * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const ts = Math.max(32, Math.min(74, Math.floor(Math.min((w - 56) / app.cols, (h - 56) / app.rows))));
+        app.ts = ts;
+        app.bx = Math.round((w - app.cols * ts) / 2);
+        app.by = Math.round((h - app.rows * ts) / 2);
+      }
+
+      function pointerToCell(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        const c = Math.floor((clientX - rect.left - app.bx) / app.ts);
+        const r = Math.floor((clientY - rect.top - app.by) / app.ts);
+        if (r < 0 || r >= app.rows || c < 0 || c >= app.cols) return null;
+        return { r, c };
+      }
+
+      function paintCell(r, c, ch) {
+        if (app.mode !== "edit") return;
+        if (ch === "P") {
+          for (let rr = 0; rr < app.rows; rr++) {
+            for (let cc = 0; cc < app.cols; cc++) {
+              if (app.grid[rr][cc] === "P") app.grid[rr][cc] = ".";
+            }
+          }
+        }
+        if (app.grid[r][c] === ch) return;
+        app.grid[r][c] = ch;
+        invalidateSolver();
+        syncOutputs();
+      }
+
+      let elapsed = 0, lastTs = performance.now();
+      function renderLoop(now) {
+        requestAnimationFrame(renderLoop);
+        const dt = Math.min(50, now - lastTs);
+        lastTs = now;
+        elapsed += dt * 0.001;
+        ctx.clearRect(0, 0, app.viewW, app.viewH);
+
+        if (app.mode === "edit") {
+          const parsed = GameEngine.parseMap(getGridStrings());
+          const lightRes = GameEngine.computeLighting(parsed.staticMap, parsed.dynState, true);
+          Assets2D.renderBoard(ctx, app.bx, app.by, app.ts, parsed.staticMap, parsed.dynState, lightRes, elapsed, app.hoverCell);
+        } else if (app.playStatic && app.playDyn) {
+          Assets2D.renderBoard(ctx, app.bx, app.by, app.ts, app.playStatic, app.playDyn, app.playLight, elapsed, null);
+        }
+      }
+
+      document.getElementById("btnModeEdit").addEventListener("click", () => switchMode("edit"));
+      document.getElementById("btnModePlay").addEventListener("click", () => switchMode("play"));
+      document.getElementById("btnRunBFS").addEventListener("click", () => { switchRightTab("verify"); runSolver(); });
+      document.getElementById("btnOpenPcgTab").addEventListener("click", () => switchRightTab("pcg"));
+      document.getElementById("tabBtnVerify").addEventListener("click", () => switchRightTab("verify"));
+      document.getElementById("tabBtnPcg").addEventListener("click", () => switchRightTab("pcg"));
+      document.getElementById("pcgModeScratch").addEventListener("click", () => setPcgSourceMode("scratch"));
+      document.getElementById("pcgModeDraft").addEventListener("click", () => setPcgSourceMode("draft"));
+      document.getElementById("btnStartPcg").addEventListener("click", startPcg);
+      document.getElementById("btnStopPcg").addEventListener("click", stopPcg);
+      document.getElementById("btnPlayDemo").addEventListener("click", togglePlayDemo);
+      document.getElementById("btnStepDemo").addEventListener("click", stepDemoOnce);
+      document.getElementById("btnUndo").addEventListener("click", playUndo);
+      document.getElementById("btnRestart").addEventListener("click", () => initPlaySession());
+
+
+      /* =====================================================================
+         12×12 关卡库管理（直接读取/编辑/导出 core/levels.js）
+         ===================================================================== */
+      const libState = {
+        chapter: 1,
+        slot: 1,
+        levels: DATA.levels.map(lv => ({
+          id: lv.id,
+          code: lv.code,
+          chapter: lv.chapter,
+          slot: lv.slot,
+          hint: lv.hint || "",
+          optimalSteps: typeof lv.optimalSteps === "number" ? lv.optimalSteps : null,
+          map: lv.map.slice()
+        })),
+        dirty: false,
+        fileHandle: null
+      };
+
+      function getSlotLevel(ch, sl) {
+        return libState.levels.find(l => l.chapter === ch && l.slot === sl) || null;
+      }
+
+      function computeLevelId(ch, sl, existing) {
+        if (existing && typeof existing.id === "number") return existing.id;
+        let cand = (ch - 1) * DATA.slotsPerChapter + sl;
+        while (libState.levels.some(l => l.id === cand)) cand++;
+        return cand;
+      }
+
+      function serializeLevelsJs() {
+        const sorted = libState.levels.slice().sort((a, b) => (a.chapter - b.chapter) || (a.slot - b.slot) || (a.id - b.id));
+        const chapMetaJson = JSON.stringify(DATA.chapters, null, 4)
+          .split("\n")
+          .map((line, i) => (i === 0 ? line : "  " + line))
+          .join("\n");
+
+        const levelBlocks = sorted.map(lv => {
+          const optLine = (typeof lv.optimalSteps === "number" && lv.optimalSteps > 0)
+            ? `      optimalSteps: ${lv.optimalSteps},\n`
+            : "";
+          const mapLines = lv.map.map(row => `        ${JSON.stringify(row)}`).join(",\n");
+          return [
+            "    {",
+            `      id: ${lv.id}, code: ${JSON.stringify(lv.code)}, chapter: ${lv.chapter}, slot: ${lv.slot},`,
+            `      hint: ${JSON.stringify(lv.hint || "")},`,
+            optLine ? optLine.slice(0, -1) : null,
+            "      map: [",
+            mapLines,
+            "      ]",
+            "    }"
+          ].filter(Boolean).join("\n");
+        }).join(",\n");
+
+        return [
+          "/**",
+          " * LumenBox Chapters & Levels Data (12 Chapters x 12 Slots = 144 Levels)",
+          " * Maintained by lumenbox_editor.html.",
+          " * Compatible with Browser (<script src=\"./core/levels.js\">) and CommonJS / Mini-Programs.",
+          " */",
+          "(function (root, factory) {",
+          '  if (typeof module === "object" && module.exports) {',
+          "    module.exports = factory();",
+          "  } else {",
+          "    root.LUMENBOX_DATA = factory();",
+          "  }",
+          '})(typeof globalThis !== "undefined" ? globalThis : (typeof window !== "undefined" ? window : this), function () {',
+          '  "use strict";',
+          "",
+          `  const CHAPTER_ORDER = ${JSON.stringify(DATA.chapterOrder)};`,
+          `  const SLOTS_PER_CHAPTER = ${DATA.slotsPerChapter};`,
+          "",
+          `  const CHAPTER_META = ${chapMetaJson};`,
+          "",
+          "  const LEVELS = [",
+          levelBlocks,
+          "  ];",
+          "",
+          "  return {",
+          `    version: ${DATA.version || 1},`,
+          "    chapterOrder: CHAPTER_ORDER,",
+          "    slotsPerChapter: SLOTS_PER_CHAPTER,",
+          "    chapters: CHAPTER_META,",
+          "    levels: LEVELS",
+          "  };",
+          "});",
+          ""
+        ].join("\n");
+      }
+
+      function renderLibraryUI() {
+        const totalCap = DATA.chapterOrder.length * DATA.slotsPerChapter;
+        document.getElementById("libTotalStat").textContent = `${libState.levels.length} / ${totalCap}`;
+
+        const sel = document.getElementById("libChapSelect");
+        sel.innerHTML = "";
+        DATA.chapterOrder.forEach(cNum => {
+          const meta = DATA.chapters[cNum];
+          const filledCnt = libState.levels.filter(l => l.chapter === cNum).length;
+          const opt = document.createElement("option");
+          opt.value = String(cNum);
+          opt.textContent = `${meta ? meta.title : "第" + cNum + "卷"} (${filledCnt}/${DATA.slotsPerChapter})`;
+          if (cNum === libState.chapter) opt.selected = true;
+          sel.appendChild(opt);
+        });
+
+        const gridEl = document.getElementById("libSlotGrid");
+        gridEl.innerHTML = "";
+        for (let s = 1; s <= DATA.slotsPerChapter; s++) {
+          const lv = getSlotLevel(libState.chapter, s);
+          const isAct = s === libState.slot;
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "lib-slot-btn " + (lv ? "filled" : "empty") + (isAct ? " active" : "");
+          const codeTxt = lv ? lv.code : `${libState.chapter}-${s}`;
+          const metaTxt = lv
+            ? (lv.optimalSteps ? `${lv.optimalSteps}步` : "待验")
+            : "空槽";
+          btn.innerHTML = `<span class="lib-slot-code">${codeTxt}</span><span class="lib-slot-meta">${metaTxt}</span>`;
+          btn.addEventListener("click", () => selectLibrarySlot(libState.chapter, s));
+          gridEl.appendChild(btn);
+        }
+
+        const curLv = getSlotLevel(libState.chapter, libState.slot);
+        const statusBar = document.getElementById("libStatusBar");
+        statusBar.classList.toggle("bound", Boolean(libState.fileHandle));
+        const bindTag = libState.fileHandle ? " · 已直连本地文件" : "";
+        document.getElementById("libCurSlotText").textContent = `当前：${curLv ? curLv.code : `${libState.chapter}-${libState.slot}`}${curLv ? "" : " (空槽)"}${bindTag}`;
+        document.getElementById("libDirtyBadge").style.display = libState.dirty ? "inline" : "none";
+        document.getElementById("btnClearSlot").disabled = !curLv;
+      }
+
+      function selectLibrarySlot(ch, sl) {
+        libState.chapter = ch;
+        libState.slot = sl;
+        const lv = getSlotLevel(ch, sl);
+        if (lv) {
+          loadLevelData({ code: lv.code, title: lv.code, hint: lv.hint, map: lv.map });
+          runSolver();
+          showToast(`已载入槽位 ${lv.code}`);
+        } else {
+          const code = `${ch}-${sl}`;
+          loadLevelData({
+            code,
+            title: code,
+            hint: "观察光路与占格压制关系。",
+            map: [
+              "#######",
+              "#P....#",
+              "#.....#",
+              "#....X#",
+              "#.....#",
+              "#######"
+            ]
+          });
+          showToast(`已切换至空槽 ${code}，可直接画图或用定制造图 5.0 生成`);
+        }
+        renderLibraryUI();
+      }
+
+      async function writeBoundLevelsFile(content) {
+        if (!libState.fileHandle) return false;
+        try {
+          const writable = await libState.fileHandle.createWritable();
+          await writable.write(content);
+          await writable.close();
+          return true;
+        } catch (err) {
+          showToast("直写本地文件失败，已转为下载导出：" + err.message);
+          libState.fileHandle = null;
+          renderLibraryUI();
+          return false;
+        }
+      }
+
+      function downloadLevelsJs(content) {
+        const blob = new Blob([content], { type: "application/javascript;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "levels.js";
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      async function saveCurrentToSlot() {
+        runSolver();
+        if (!app.lastSolve || app.lastSolve.status === "invalid") {
+          showToast("⚠️ 地图缺少主角 P 或终点 X，无法保存");
+          return;
+        }
+        const existing = getSlotLevel(libState.chapter, libState.slot);
+        const optSteps = app.lastSolve.status === "solved" ? app.lastSolve.steps : null;
+        const cleanCode = (document.getElementById("inCode").value || "").trim() || `${libState.chapter}-${libState.slot}`;
+        const entry = {
+          id: computeLevelId(libState.chapter, libState.slot, existing),
+          code: cleanCode,
+          chapter: libState.chapter,
+          slot: libState.slot,
+          hint: (document.getElementById("inHint").value || "").trim(),
+          optimalSteps: optSteps,
+          map: getGridStrings()
+        };
+        if (existing) {
+          const idx = libState.levels.indexOf(existing);
+          libState.levels[idx] = entry;
+        } else {
+          libState.levels.push(entry);
+        }
+        app.code = cleanCode;
+        libState.dirty = true;
+        syncOutputs();
+
+        if (libState.fileHandle) {
+          const ok = await writeBoundLevelsFile(serializeLevelsJs());
+          if (ok) {
+            libState.dirty = false;
+            renderLibraryUI();
+            showToast(`✅ 已保存 ${entry.code}（最优 ${optSteps ?? "?"} 步）并直接覆写本地 levels.js！`);
+            return;
+          }
+        }
+        renderLibraryUI();
+        showToast(`✅ 已暂存到槽位 ${entry.code}（最优 ${optSteps ?? "?"} 步），点「导出 levels.js」即可同步正式版`);
+      }
+
+      async function exportLevelsJsFile() {
+        const content = serializeLevelsJs();
+        if (libState.fileHandle) {
+          const ok = await writeBoundLevelsFile(content);
+          if (ok) {
+            libState.dirty = false;
+            renderLibraryUI();
+            showToast("✅ 已直接覆写本地 core/levels.js！刷新正式版即可生效");
+            return;
+          }
+        }
+        downloadLevelsJs(content);
+        libState.dirty = false;
+        renderLibraryUI();
+        showToast("📦 已导出 levels.js，覆盖到 core/levels.js 后刷新正式版即可");
+      }
+
+      async function bindLocalLevelsFile() {
+        if (!window.showOpenFilePicker) {
+          showToast("当前浏览器不支持直接覆写本地文件，请用 Chrome / Edge 或点「导出 levels.js」");
+          return;
+        }
+        try {
+          const [handle] = await window.showOpenFilePicker({
+            multiple: false,
+            types: [{ description: "LumenBox Levels JS", accept: { "text/javascript": [".js"] } }]
+          });
+          if (!handle) return;
+          libState.fileHandle = handle;
+          renderLibraryUI();
+          showToast(`🔗 已绑定 ${handle.name}！后续按 Ctrl+S 或点「保存到槽位」将自动覆写`);
+        } catch (err) {
+          if (err && err.name !== "AbortError") showToast("绑定取消或失败：" + err.message);
+        }
+      }
+
+      function clearCurrentSlot() {
+        const existing = getSlotLevel(libState.chapter, libState.slot);
+        if (!existing) return;
+        if (!confirm(`确定要清空槽位 ${existing.code} 吗？`)) return;
+        libState.levels = libState.levels.filter(l => l !== existing);
+        libState.dirty = true;
+        selectLibrarySlot(libState.chapter, libState.slot);
+        showToast(`🗑️ 已清空槽位 ${existing.code}`);
+      }
+
+      document.getElementById("libChapSelect").addEventListener("change", e => {
+        libState.chapter = Number(e.target.value);
+        libState.slot = 1;
+        selectLibrarySlot(libState.chapter, 1);
+      });
+      document.getElementById("btnSaveSlot").addEventListener("click", saveCurrentToSlot);
+      document.getElementById("btnTopSaveSlot").addEventListener("click", saveCurrentToSlot);
+      document.getElementById("btnExportLevelsJs").addEventListener("click", exportLevelsJsFile);
+      document.getElementById("btnTopExportLevelsJs").addEventListener("click", exportLevelsJsFile);
+      document.getElementById("btnBindLevelsFile").addEventListener("click", bindLocalLevelsFile);
+      document.getElementById("btnClearSlot").addEventListener("click", clearCurrentSlot);
+      document.getElementById("inCode").addEventListener("input", e => { app.code = e.target.value; syncOutputs(); });
+
+      document.getElementById("inCols").addEventListener("change", e => resizeGrid(app.rows, Number(e.target.value)));
+      document.getElementById("inRows").addEventListener("change", e => resizeGrid(Number(e.target.value), app.cols));
+      document.getElementById("inTitle").addEventListener("input", e => { app.title = e.target.value; syncOutputs(); });
+      document.getElementById("inHint").addEventListener("input", e => { app.hint = e.target.value; syncOutputs(); });
+
+      document.getElementById("btnAddBorder").addEventListener("click", () => {
+        if (app.mode !== "edit") switchMode("edit");
+        for (let r = 0; r < app.rows; r++) {
+          for (let c = 0; c < app.cols; c++) {
+            if (r === 0 || c === 0 || r === app.rows - 1 || c === app.cols - 1) app.grid[r][c] = "#";
+          }
+        }
+        invalidateSolver(); syncOutputs(); showToast("已生成四周石墙");
+      });
+
+      document.getElementById("btnClearGrid").addEventListener("click", () => {
+        if (app.mode !== "edit") switchMode("edit");
+        for (let r = 1; r < app.rows - 1; r++) {
+          for (let c = 1; c < app.cols - 1; c++) app.grid[r][c] = ".";
+        }
+        invalidateSolver(); syncOutputs(); showToast("已清空内部区域");
+      });
+
+      document.getElementById("btnPruneGrid").addEventListener("click", () => {
+        if (app.mode !== "edit") switchMode("edit");
+        const curSolve = GameEngine.solveBFS(getGridStrings(), 50000);
+        if (curSolve.status !== "solved") { showToast("当前地图无解或超时，无法剪枝"); return; }
+        const pruned = LevelGenerator.pruneGrid(app.grid, curSolve);
+        if (pruned.prunedCount === 0) { showToast("✨ 当前地图已经非常紧凑，没有可剪枝的废格或厚墙"); return; }
+        loadLevelData({ title: app.title, hint: app.hint, map: pruned.grid.map(r => r.join("")) });
+        runSolver();
+        showToast(`✂️ 已自动剪枝 ${pruned.prunedCount} 格废地/冗余厚墙！`);
+      });
+
+      canvas.addEventListener("contextmenu", e => e.preventDefault());
+      let swipeStart = null;
+
+      canvas.addEventListener("pointerdown", e => {
+        canvas.setPointerCapture(e.pointerId);
+        if (app.mode === "edit") {
+          const cell = pointerToCell(e.clientX, e.clientY);
+          app.isPainting = true;
+          app.paintErase = e.button === 2;
+          if (cell) paintCell(cell.r, cell.c, app.paintErase ? "." : app.brush);
+        } else {
+          swipeStart = { x: e.clientX, y: e.clientY };
+        }
+      });
+
+      canvas.addEventListener("pointermove", e => {
+        if (app.mode === "edit") {
+          const cell = pointerToCell(e.clientX, e.clientY);
+          app.hoverCell = cell;
+          updateStageHeader();
+          if (app.isPainting && cell) paintCell(cell.r, cell.c, app.paintErase ? "." : app.brush);
+        } else if (swipeStart && !app.playWon) {
+          const dx = e.clientX - swipeStart.x, dy = e.clientY - swipeStart.y;
+          if (Math.abs(dx) < 26 && Math.abs(dy) < 26) return;
+          stopDemo();
+          if (Math.abs(dx) > Math.abs(dy)) playMove(0, dx > 0 ? 1 : -1, dx > 0 ? "right" : "left");
+          else playMove(dy > 0 ? 1 : -1, 0, dy > 0 ? "down" : "up");
+          swipeStart = { x: e.clientX, y: e.clientY };
+        }
+      });
+
+      window.addEventListener("pointerup", () => { app.isPainting = false; swipeStart = null; });
+      canvas.addEventListener("pointerleave", () => { app.hoverCell = null; updateStageHeader(); });
+
+      window.addEventListener("keydown", e => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+          e.preventDefault();
+          saveCurrentToSlot();
+          return;
+        }
+        if (app.mode !== "play") return;
+        if (document.activeElement && ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+        const k = e.key.toLowerCase();
+        if (k === "arrowup" || k === "w") { e.preventDefault(); stopDemo(); playMove(-1, 0, "up"); }
+        else if (k === "arrowdown" || k === "s") { e.preventDefault(); stopDemo(); playMove(1, 0, "down"); }
+        else if (k === "arrowleft" || k === "a") { e.preventDefault(); stopDemo(); playMove(0, -1, "left"); }
+        else if (k === "arrowright" || k === "d") { e.preventDefault(); stopDemo(); playMove(0, 1, "right"); }
+        else if (k === "z") { e.preventDefault(); playUndo(); }
+        else if (k === "r") { e.preventDefault(); initPlaySession(); }
+      });
+
+      document.getElementById("btnCopyJson").addEventListener("click", () => {
+        const ta = document.createElement("textarea");
+        ta.value = document.getElementById("jsonOut").textContent;
+        ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); showToast("✅ JSON 已复制到剪贴板"); } catch (err) {}
+        document.body.removeChild(ta);
+      });
+
+      document.getElementById("btnDownloadJson").addEventListener("click", () => {
+        const blob = new Blob([document.getElementById("jsonOut").textContent], { type: "application/json;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${(app.title || "level").replace(/[\\/:*?"<>|\s]+/g, "_")}.json`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast("💾 已下载关卡 JSON");
+      });
+
+      const importModal = document.getElementById("importModal");
+      document.getElementById("btnImportJson").addEventListener("click", () => {
+        document.getElementById("importArea").value = "";
+        document.getElementById("importErr").style.display = "none";
+        importModal.classList.add("open");
+      });
+      document.getElementById("btnCancelImport").addEventListener("click", () => importModal.classList.remove("open"));
+      document.getElementById("btnConfirmImport").addEventListener("click", () => {
+        try {
+          const parsed = JSON.parse(document.getElementById("importArea").value.trim());
+          const rows = parsed.map || parsed.grid;
+          if (!Array.isArray(rows) || rows.length < 5) throw new Error("需要至少 5 行的 map 字符串数组");
+          loadLevelData({ title: parsed.title || parsed.code, hint: parsed.hint || parsed.clearTitle || parsed.quote, map: rows });
+          runSolver();
+          importModal.classList.remove("open");
+          showToast("📥 关卡导入成功");
+        } catch (err) {
+          const errEl = document.getElementById("importErr");
+          errEl.textContent = "解析失败：" + err.message;
+          errEl.style.display = "block";
+        }
+      });
+
+      window.addEventListener("resize", resizeCanvas);
+
+      window.onload = function () {
+        buildBrushGrid("allBrushGrid", ALL_BRUSHES);
+        buildTemplates();
+        initPcg5UI();
+        renderLibraryUI();
+        selectLibrarySlot(1, 1);
+        requestAnimationFrame(renderLoop);
+      };
+    })();
+  </script>
+</body>
+</html>
