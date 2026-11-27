@@ -1822,6 +1822,15 @@
       "use strict";
 
       /* =====================================================================
+         0. 测试放开开关（上线前改为 false 即可恢复逐关解锁；线上仍可用 ?test=1 临时解锁）
+         ===================================================================== */
+      const URL_TEST_UNLOCK = typeof location !== "undefined" && /[?&](test|unlock)=1/i.test(location.search);
+      const DEV_FLAGS = {
+        unlockAllLevels: true,   // true = 放开全部已收录关卡，随时跳关测试
+        unlockAllSkins: true     // true = 放开全部场景主题与角色皮肤，方便直接验收
+      };
+
+      /* =====================================================================
          1. 主题、角色、UI 矢量图标与十二卷章节数据
          ===================================================================== */
       const THEMES = [
@@ -3378,6 +3387,7 @@
 
       function isLevelUnlocked(lvl) {
         if (!lvl) return false;
+        if (DEV_FLAGS.unlockAllLevels || URL_TEST_UNLOCK) return true;
         const pos = LEVELS.indexOf(lvl);
         if (pos <= 1) return true;
         let maxCleared = -1;
@@ -4847,10 +4857,11 @@
 
       function renderThemesModal() {
         const { clearedMain, plat } = getProgressTotals();
+        const forceUnlockSkins = DEV_FLAGS.unlockAllSkins || URL_TEST_UNLOCK;
         const envGrid = document.getElementById("envSkinGrid");
         envGrid.innerHTML = "";
         THEMES.forEach(th => {
-          const unlocked = clearedMain >= th.reqCleared && plat >= th.reqPlat;
+          const unlocked = forceUnlockSkins || (clearedMain >= th.reqCleared && plat >= th.reqPlat);
           const card = document.createElement("div");
           card.className = "skin-card" + (progress.themeId === th.id ? " active" : "") + (!unlocked ? " locked" : "");
           card.innerHTML = `
@@ -4871,7 +4882,7 @@
         const heroGrid = document.getElementById("heroSkinGrid");
         heroGrid.innerHTML = "";
         HERO_SKINS.forEach(hs => {
-          const unlocked = clearedMain >= hs.reqCleared && plat >= hs.reqPlat;
+          const unlocked = forceUnlockSkins || (clearedMain >= hs.reqCleared && plat >= hs.reqPlat);
           const card = document.createElement("div");
           card.className = "skin-card" + (progress.heroId === hs.id ? " active" : "") + (!unlocked ? " locked" : "");
           card.innerHTML = `

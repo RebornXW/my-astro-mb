@@ -309,8 +309,142 @@
   /* =========================================================================
      Editor & PCG 5.0 Solvers (Optical Purity & Elegance Evaluation 4.0)
      ========================================================================= */
+  function minGoalDistance(staticMap, dyn) {
+    const goals = staticMap.goals;
+    if (!goals.length) return 0;
+    const boxes = [];
+    for (let i = 0; i < dyn.entities.length; i++) {
+      if (TARGET_BOXES.has(dyn.entities[i].kind)) boxes.push(dyn.entities[i]);
+    }
+    if (!boxes.length) return 0;
+    if (goals.length === 1) {
+      let best = 999;
+      for (let i = 0; i < boxes.length; i++) {
+        const d = Math.abs(boxes[i].r - goals[0].r) + Math.abs(boxes[i].c - goals[0].c);
+        if (d < best) best = d;
+      }
+      return best;
+    }
+    if (goals.length <= 3 && boxes.length <= 4) {
+      let best = 999;
+      const dfs = (gi, usedMask, acc) => {
+        if (acc >= best) return;
+        if (gi === goals.length) { best = acc; return; }
+        const g = goals[gi];
+        for (let bi = 0; bi < boxes.length; bi++) {
+          if (!(usedMask & (1 << bi))) {
+            dfs(gi + 1, usedMask | (1 << bi), acc + Math.abs(boxes[bi].r - g.r) + Math.abs(boxes[bi].c - g.c));
+          }
+        }
+      };
+      dfs(0, 0, 0);
+      return best;
+    }
+    const used = new Set();
+    let total = 0;
+    for (let gi = 0; gi < goals.length; gi++) {
+      let bestIdx = -1, bestD = 999;
+      for (let bi = 0; bi < boxes.length; bi++) {
+        if (used.has(bi)) continue;
+        const d = Math.abs(boxes[bi].r - goals[gi].r) + Math.abs(boxes[bi].c - goals[gi].c);
+        if (d < bestD) { bestD = d; bestIdx = bi; }
+      }
+      if (bestIdx >= 0) { used.add(bestIdx); total += bestD; }
+    }
+    return total;
+  }
+
+  function encodeEntitiesOnly(dyn) {
+    const parts = dyn.entities.map(e => `${e.kind}${e.r},${e.c}`);
+    parts.sort();
+    return parts.join(";");
+  }
+
+  function isQuicklyDeadlocked(staticMap, dyn) {
+    const res = solveFromState(staticMap, dyn, 2200, 5);
+    return !res.solved && !res.timedOut;
+  }
+
+  // 推箱级贪心直觉 AI：模拟普通玩家「优先把最近的目标箱往终点推 / 能入槽先入槽」的默认直觉
+  function simulateGreedyPlayer(staticMap, initDyn, maxTurns = 14) {
+    let curDyn = cloneDyn(initDyn);
+    let curLit = computeLighting(staticMap, curDyn, false).lit;
+    if (isWon(staticMap, curDyn, curLit)) return { status: "won", pushes: 0 };
+
+    const apparentH = (dyn, lit) => {
+      const lk = countLockedGoals(staticMap, dyn, lit);
+      const ds = minGoalDistance(staticMap, dyn);
+      let solidT = 0;
+      for (let i = 0; i < dyn.entities.length; i++) {
+        const e = dyn.entities[i];
+        if (TARGET_BOXES.has(e.kind) && isEntitySolid(dyn, lit, e)) solidT++;
+      }
+      return lk * 120 - ds * 14 + solidT * 3;
+    };
+
+    const visitedEntities = new Set([encodeEntitiesOnly(curDyn)]);
+    let pushes = 0;
+
+    for (let turn = 0; turn < maxTurns; turn++) {
+      // 纯步行 BFS 找出当前可达的所有「单次推箱动作」以及空手通关机会
+      const walkSeen = new Set([`${curDyn.player.r},${curDyn.player.c}`]);
+      const wq = [{ dyn: curDyn, lit: curLit, wd: 0 }];
+      let wHead = 0;
+      const pushCands = [];
+      let handsFreeWin = false;
+
+      while (wHead < wq.length && wq.length < 180) {
+        const node = wq[wHead++];
+        for (let d = 0; d < 4; d++) {
+          const mv = DIRS4[d];
+          const r = stepState(staticMap, node.dyn, node.lit, mv.dr, mv.dc, mv.dir);
+          if (!r) continue;
+          if (!r.pushed) {
+            if (isWon(staticMap, r.dyn, r.lit)) { handsFreeWin = true; break; }
+            const pk = `${r.dyn.player.r},${r.dyn.player.c}`;
+            if (!walkSeen.has(pk)) {
+              walkSeen.add(pk);
+              wq.push({ dyn: r.dyn, lit: r.lit, wd: node.wd + 1 });
+            }
+          } else {
+            const ek = encodeEntitiesOnly(r.dyn);
+            if (visitedEntities.has(ek)) continue;
+            const winNow = isWon(staticMap, r.dyn, r.lit);
+            const hVal = apparentH(r.dyn, r.lit);
+            const score = (winNow ? 10000 : hVal) - node.wd * 0.6 + (TARGET_BOXES.has(r.pushedKind) ? 2.0 : 0);
+            pushCands.push({ score, dyn: r.dyn, lit: r.lit, ek, winNow });
+          }
+        }
+        if (handsFreeWin) break;
+      }
+
+      if (handsFreeWin) return { status: "won", pushes };
+      if (!pushCands.length) {
+        return { status: isQuicklyDeadlocked(staticMap, curDyn) ? "trapped" : "stalled", pushes };
+      }
+
+      pushCands.sort((a, b) => b.score - a.score);
+      const best = pushCands[0];
+      const curH = apparentH(curDyn, curLit);
+
+      if (best.score >= curH - 12 || turn === 0) {
+        curDyn = best.dyn;
+        curLit = best.lit;
+        visitedEntities.add(best.ek);
+        pushes++;
+        if (best.winNow) return { status: "won", pushes };
+        if (isQuicklyDeadlocked(staticMap, curDyn)) return { status: "trapped", pushes };
+      } else {
+        return { status: "stalled", pushes };
+      }
+    }
+
+    return { status: isQuicklyDeadlocked(staticMap, curDyn) ? "trapped" : "stalled", pushes };
+  }
+
   function evaluateElegance(staticMap, initDyn, path, explored, externalWarnings, evalOpts = {}) {
     const openStyle = Boolean(evalOpts && evalOpts.openStyle);
+    const skipGreedy = Boolean(evalOpts && evalOpts.skipGreedy);
     const steps = path.length;
     let curDyn = cloneDyn(initDyn);
     let curLight = computeLighting(staticMap, curDyn, true);
@@ -320,29 +454,36 @@
     const timeline = [{ dyn: cloneDyn(curDyn), lit: curLit, lightObj: curLight }];
 
     const entityUsed = new Map();
-    initDyn.entities.forEach(e => entityUsed.set(e.id, false));
+    const entityRoles = new Map();
+    initDyn.entities.forEach(e => {
+      entityUsed.set(e.id, false);
+      entityRoles.set(e.id, new Set());
+    });
+    const addRole = (id, role) => {
+      if (entityRoles.has(id)) entityRoles.get(id).add(role);
+    };
 
     const snapshotPhases = (dyn, lit) => {
       const arr = [];
       for (let i = 0; i < staticMap.iceWalls.length; i++) {
         const w = staticMap.iceWalls[i];
-        arr.push({ key: `I_${i}`, tag: "I", r: w.r, c: w.c, solid: !lit[w.r][w.c] && !isTerrainSuppressed(dyn, lit, w.r, w.c) ? 1 : 0 });
+        arr.push({ key: `I_${i}`, tag: "I", id: -1, r: w.r, c: w.c, solid: !lit[w.r][w.c] && !isTerrainSuppressed(dyn, lit, w.r, w.c) ? 1 : 0 });
       }
       for (let i = 0; i < staticMap.treeWalls.length; i++) {
         const w = staticMap.treeWalls[i];
-        arr.push({ key: `V_${i}`, tag: "V", r: w.r, c: w.c, solid: lit[w.r][w.c] && !isTerrainSuppressed(dyn, lit, w.r, w.c) ? 1 : 0 });
+        arr.push({ key: `V_${i}`, tag: "V", id: -1, r: w.r, c: w.c, solid: lit[w.r][w.c] && !isTerrainSuppressed(dyn, lit, w.r, w.c) ? 1 : 0 });
       }
       for (let i = 0; i < dyn.entities.length; i++) {
         const e = dyn.entities[i];
         if (e.kind === "C" || e.kind === "F") {
-          arr.push({ key: `E_${e.id}`, tag: e.kind, r: e.r, c: e.c, solid: isEntitySolid(dyn, lit, e) ? 1 : 0 });
+          arr.push({ key: `E_${e.id}`, tag: e.kind, id: e.id, r: e.r, c: e.c, solid: isEntitySolid(dyn, lit, e) ? 1 : 0 });
         }
       }
       return arr;
     };
 
     const suppressedWallKeys = new Set();
-    const hasSuppression = (dyn, lit) => {
+    const hasTrueSuppression = (dyn, lit, justWalkedThroughAmber) => {
       let found = false;
       for (let i = 0; i < staticMap.iceWalls.length; i++) {
         const w = staticMap.iceWalls[i];
@@ -353,18 +494,51 @@
       }
       for (let i = 0; i < staticMap.treeWalls.length; i++) {
         const w = staticMap.treeWalls[i];
-        if (lit[w.r][w.c] && isTerrainSuppressed(dyn, lit, w.r, w.c)) {
-          suppressedWallKeys.add(`V_${i}`);
-          found = true;
+        if (lit[w.r][w.c]) {
+          const objOnV = dyn.entities.some(e => e.r === w.r && e.c === w.c && ((e.kind !== "C" && e.kind !== "F") || isEntitySolid(dyn, lit, e)));
+          const playerOnV = dyn.player && dyn.player.r === w.r && dyn.player.c === w.c;
+          if (objOnV || (playerOnV && !justWalkedThroughAmber)) {
+            suppressedWallKeys.add(`V_${i}`);
+            found = true;
+          }
         }
       }
       for (let i = 0; i < dyn.entities.length; i++) {
         const e = dyn.entities[i];
-        if (((e.kind === "C" && !lit[e.r][e.c]) || (e.kind === "F" && lit[e.r][e.c])) && isEntitySuppressed(dyn, e)) {
+        if (e.kind === "C" && !lit[e.r][e.c] && isEntitySuppressed(dyn, e)) {
           found = true;
+        } else if (e.kind === "F" && lit[e.r][e.c]) {
+          const objOnF = dyn.entities.some(o => {
+            if (o.id === e.id || o.r !== e.r || o.c !== e.c) return false;
+            const alwaysSolid = o.kind === "B" || o.kind === "L" || o.kind === "\\" || o.kind === "/" || Boolean(SPOT_DIRS[o.kind]);
+            return alwaysSolid || (o.kind === e.kind && o.id < e.id);
+          });
+          const playerOnF = dyn.player && dyn.player.r === e.r && dyn.player.c === e.c;
+          if (objOnF || (playerOnF && !justWalkedThroughAmber)) {
+            found = true;
+          }
         }
       }
       return found;
+    };
+
+    // 检查某帧中被光束击中的遮挡实体是否真正为后方光敏元件(I/V/C/F)撑起了阴影（捕获 1-5 木箱提前站岗撑伞）
+    const markShieldRoles = (dyn, lightObj) => {
+      if (!lightObj || !lightObj.blockers || !lightObj.blockers.length) return;
+      for (let bi = 0; bi < lightObj.blockers.length; bi++) {
+        const blk = lightObj.blockers[bi];
+        if (blk.kind === "P" || blk.kind === "V") continue;
+        const ent = dyn.entities.find(e => e.r === blk.r && e.c === blk.c && e.kind === blk.kind);
+        if (!ent) continue;
+        let rr = blk.r + blk.dr, cc = blk.c + blk.dc;
+        while (rr >= 0 && rr < staticMap.rows && cc >= 0 && cc < staticMap.cols && !staticMap.walls[rr][cc]) {
+          const hitReactive = staticMap.iceWalls.some(w => w.r === rr && w.c === cc) ||
+            staticMap.treeWalls.some(w => w.r === rr && w.c === cc) ||
+            dyn.entities.some(e => e.id !== ent.id && e.r === rr && e.c === cc && (e.kind === "C" || e.kind === "F"));
+          if (hitReactive) { addRole(ent.id, "optical"); break; }
+          rr += blk.dr; cc += blk.dc;
+        }
+      }
     };
 
     const PUSH_LABEL = { B: "推木箱", C: "推雪箱", F: "推暖珀", L: "推提灯", M: "推折光镜", SP: "推射灯" };
@@ -388,31 +562,87 @@
       }
     };
     markCells(curDyn, curLit);
+    markShieldRoles(curDyn, curLight);
 
     let prevPhases = snapshotPhases(curDyn, curLit);
-    let prevSup = hasSuppression(curDyn, curLit);
+    let prevSup = hasTrueSuppression(curDyn, curLit, false);
     let prevLockedGoals = countLockedGoals(staticMap, curDyn, curLit);
+    let prevDist = minGoalDistance(staticMap, curDyn);
+    let bestHProg = prevLockedGoals * 10 - prevDist;
+    let maxProgressDip = 0;
+    let detourPushCount = 0;
+    let rawSleepEvents = []; // { segIdx, entId, onGoal }
+    let remoteWakeWin = false;
 
     const itemFlipCounts = new Map();
-    const pushSeqIds = [];
+    const pushSegments = [];
+    const amberPushAxes = new Map();
     let pushes = 0, phaseFlips = 0, bodyShadowFlips = 0, woodShadowFlips = 0, multiFlipSteps = 0;
+    let amberShadowFlips = 0, ghostPassCount = 0, amberGatePasses = 0;
     let suppressionCount = 0, goalUnseats = 0, swapCount = 0;
     let curWalkStreak = 0, maxWalkStreak = 0;
     let lastStepPushed = true;
 
+    const isLightToolNorm = k => k === "L" || k === "M" || k === "SP";
+
     for (let i = 0; i < path.length; i++) {
       const mv = path[i];
+      const nr = curDyn.player.r + mv.dr;
+      const nc = curDyn.player.c + mv.dc;
+
+      const steppingOnGhostF = curDyn.entities.find(
+        e => e.kind === "F" && e.r === nr && e.c === nc && !isEntitySolid(curDyn, curLit, e)
+      );
+      const steppingOnGhostC = curDyn.entities.find(
+        e => e.kind === "C" && e.r === nr && e.c === nc && !isEntitySolid(curDyn, curLit, e)
+      );
+      const steppingOnGhostV = staticMap.treeWalls.some(w => w.r === nr && w.c === nc && !curLit[nr][nc]);
+
+      const hadDormantOnGoal = staticMap.goals.some(g =>
+        curDyn.entities.some(e => (e.kind === "C" || e.kind === "F") && e.r === g.r && e.c === g.c && !isEntitySolid(curDyn, curLit, e))
+      );
+
       const res = stepState(staticMap, curDyn, curLit, mv.dr, mv.dc, mv.dir);
       if (!res) break;
       lastStepPushed = Boolean(res.pushedKind);
 
+      let walkedThroughAmber = false;
+      if (!res.pushedKind && steppingOnGhostF) {
+        ghostPassCount++;
+        entityUsed.set(steppingOnGhostF.id, true);
+        addRole(steppingOnGhostF.id, "ghost");
+        walkedThroughAmber = true;
+        pushEvent("GHOST_F", "虚化穿身");
+      }
+      if (!res.pushedKind && steppingOnGhostC) {
+        addRole(steppingOnGhostC.id, "ghost");
+      }
+      if (steppingOnGhostV) {
+        amberGatePasses++;
+        if (!res.pushedKind) walkedThroughAmber = true;
+        pushEvent("V_PASS", "影开珀门");
+      }
+
       if (res.pushedKind) {
         pushes++;
         entityUsed.set(res.pushedId, true);
-        if (pushSeqIds[pushSeqIds.length - 1] !== res.pushedId) pushSeqIds.push(res.pushedId);
+        const br = nr + mv.dr, bc = nc + mv.dc;
+        if (staticMap.treeWalls.some(w => w.r === br && w.c === bc && !curLit[br][bc])) {
+          amberGatePasses++;
+          pushEvent("V_PASS", "影开珀门");
+        }
         const normKind = (res.pushedKind === "\\" || res.pushedKind === "/")
           ? "M"
           : (SPOT_DIRS[res.pushedKind] ? "SP" : res.pushedKind);
+        if (!pushSegments.length || pushSegments[pushSegments.length - 1].id !== res.pushedId) {
+          pushSegments.push({ id: res.pushedId, kind: res.pushedKind, normKind, steps: 1 });
+        } else {
+          pushSegments[pushSegments.length - 1].steps++;
+        }
+        if (res.pushedKind === "F") {
+          if (!amberPushAxes.has(res.pushedId)) amberPushAxes.set(res.pushedId, new Set());
+          amberPushAxes.get(res.pushedId).add(mv.dc !== 0 ? "H" : "V");
+        }
         pushEvent(`P:${normKind}`, PUSH_LABEL[normKind] || `推${normKind}`);
       }
 
@@ -421,9 +651,11 @@
       curLit = curLight.lit;
       timeline.push({ dyn: cloneDyn(curDyn), lit: curLit, lightObj: curLight });
       markCells(curDyn, curLit);
+      markShieldRoles(curDyn, curLight);
 
       const nextPhases = snapshotPhases(curDyn, curLit);
       let stepFlips = 0;
+      let otherFlippedByPushed = 0;
       const flippedBoxes = [];
       for (let k = 0; k < nextPhases.length; k++) {
         if (nextPhases[k].solid !== prevPhases[k].solid) {
@@ -433,6 +665,9 @@
           const tg = nextPhases[k].tag;
           const toSolid = nextPhases[k].solid === 1;
           if (tg === "C" || tg === "F") flippedBoxes.push({ r: nextPhases[k].r, c: nextPhases[k].c, tag: tg, toSolid });
+          if (res.pushedId !== null && nextPhases[k].id !== res.pushedId) {
+            otherFlippedByPushed++;
+          }
           if (tg === "I") pushEvent(toSolid ? "I+" : "I-", toSolid ? "冰墙结冰" : "冰墙融水");
           else if (tg === "V") pushEvent(toSolid ? "V+" : "V-", toSolid ? "琥珀凝实" : "琥珀归虚");
           else if (tg === "C") pushEvent(toSolid ? "C+" : "C-", toSolid ? "雪箱凝结" : "雪箱化水");
@@ -440,6 +675,14 @@
         }
       }
       prevPhases = nextPhases;
+
+      if (otherFlippedByPushed > 0 && res.pushedId !== null) {
+        addRole(res.pushedId, "optical");
+        if (res.pushedKind === "F") {
+          amberShadowFlips++;
+          pushEvent("F_SHD", "以珀挡光");
+        }
+      }
 
       if (stepFlips >= 2) {
         multiFlipSteps++;
@@ -472,7 +715,7 @@
         curWalkStreak = 0;
       }
 
-      const curSup = hasSuppression(curDyn, curLit);
+      const curSup = hasTrueSuppression(curDyn, curLit, walkedThroughAmber);
       if (curSup && !prevSup) {
         suppressionCount++;
         pushEvent("SUP", "占格压制");
@@ -482,8 +725,35 @@
       const nowLockedGoals = countLockedGoals(staticMap, curDyn, curLit);
       if (nowLockedGoals < prevLockedGoals) {
         goalUnseats++;
+        if (res.pushedId !== null) addRole(res.pushedId, "unseat");
         pushEvent("UNSEAT", "退槽借位");
       }
+
+      // 进度曲线「先退后进」低谷 & 刻意休眠检测
+      if (res.pushedKind) {
+        if (res.pushedKind === "C" || res.pushedKind === "F") {
+          const movedEnt = curDyn.entities.find(e => e.id === res.pushedId);
+          if (movedEnt && !isEntitySolid(curDyn, curLit, movedEnt)) {
+            const onGoal = staticMap.goals.some(g => g.r === movedEnt.r && g.c === movedEnt.c);
+            rawSleepEvents.push({ segIdx: pushSegments.length - 1, entId: movedEnt.id, onGoal });
+          }
+        }
+        const nowDist = minGoalDistance(staticMap, curDyn);
+        if (nowDist > prevDist || nowLockedGoals < prevLockedGoals) {
+          detourPushCount++;
+        }
+        const curHProg = nowLockedGoals * 10 - nowDist;
+        if (curHProg > bestHProg) bestHProg = curHProg;
+        const dip = bestHProg - curHProg;
+        if (dip > maxProgressDip) maxProgressDip = dip;
+        prevDist = nowDist;
+      }
+
+      if (i === path.length - 1 && hadDormantOnGoal && isWon(staticMap, curDyn, curLit)) {
+        remoteWakeWin = true;
+        pushEvent("R_WAKE", "远程唤醒");
+      }
+
       prevLockedGoals = nowLockedGoals;
     }
 
@@ -492,10 +762,48 @@
 
     staticMap.goals.forEach(g => {
       const e = solidEntityAt(curDyn, curLit, g.r, g.c);
-      if (e) entityUsed.set(e.id, true);
+      if (e) {
+        entityUsed.set(e.id, true);
+        addRole(e.id, "goal");
+      }
     });
 
-    // ★ 严格审计 1（反事实光学剥离）：把折光镜关闭反射变成普通挡光石块，验证原解是否依然成立！
+    // ★ 机械护送审计（识破「推灯/镜1格 → 推珀/雪1格 → 再推灯/镜1格」的刷分水图！）
+    let escortCycles = 0;
+    const escortSegIndices = new Set();
+    for (let i = 0; i < pushSegments.length - 2; i++) {
+      const a = pushSegments[i], b = pushSegments[i + 1], c = pushSegments[i + 2];
+      const isPairAB = (isLightToolNorm(a.normKind) && (b.normKind === "F" || b.normKind === "C")) ||
+                       (isLightToolNorm(b.normKind) && (a.normKind === "F" || a.normKind === "C"));
+      if (isPairAB && a.id === c.id && a.steps <= 2 && b.steps <= 2) {
+        escortCycles++;
+        escortSegIndices.add(i);
+        escortSegIndices.add(i + 1);
+        escortSegIndices.add(i + 2);
+      }
+    }
+    if (escortCycles >= 2) {
+      warnings.push(`存在机械跟随光束挪箱（伴随护送 ×${escortCycles}，套路较单调）`);
+    }
+
+    // 过滤护送段内的伪休眠，只保留真正有战术价值的刻意休眠（如推入暗终点休眠）
+    let intentionalSleepCount = 0;
+    for (let i = 0; i < rawSleepEvents.length; i++) {
+      const ev = rawSleepEvents[i];
+      if (escortCycles >= 2 && !ev.onGoal && escortSegIndices.has(ev.segIdx)) continue;
+      intentionalSleepCount++;
+      addRole(ev.entId, "sleep");
+    }
+
+    let amberHandoffCount = 0;
+    amberPushAxes.forEach(axes => {
+      if (axes.size >= 2 && escortCycles < 2) {
+        amberHandoffCount++;
+        pushEvent("HANDOFF", "跨光接力");
+      }
+    });
+
+    // ★ 严格审计 1（反事实光学剥离）：折光镜必须真正服务于冰/珀相变且不可退化为障碍物
     const reactiveCellsOf = dyn => {
       const pts = [];
       for (let i = 0; i < staticMap.iceWalls.length; i++) pts.push([staticMap.iceWalls[i].r, staticMap.iceWalls[i].c]);
@@ -512,7 +820,6 @@
     initDyn.entities.forEach(e => {
       if (e.kind !== "\\" && e.kind !== "/") return;
 
-      // 1) 反事实重放：关闭该镜折光（退化为普通实心障碍物），检查原最优路线是否仍能走通并通关
       let cfDyn = cloneDyn(initDyn);
       let cfLit = computeLighting(staticMap, cfDyn, false, e.id).lit;
       let cfStillWins = true;
@@ -525,7 +832,6 @@
       }
       if (cfStillWins && !isWon(staticMap, cfDyn, cfLit)) cfStillWins = false;
 
-      // 2) 统计该镜真正改变过“光敏元件(I/V/C/F)”明暗状态的独立折光位点
       const trueSpots = new Set();
       for (let t = 0; t < timeline.length; t++) {
         const st = timeline[t];
@@ -541,21 +847,35 @@
             break;
           }
         }
-        if (affectedReactive) {
-          hitSet.forEach(sp => trueSpots.add(sp));
-        }
+        if (affectedReactive) hitSet.forEach(sp => trueSpots.add(sp));
       }
 
       if (cfStillWins || trueSpots.size === 0) {
         mirrorAsObstacleCount++;
         warnings.push("不优雅：折光镜退化为障碍物（关闭折光后原路线仍可通关，或折光未作用于任何冰/珀元件）");
-      } else if (trueSpots.size >= 2) {
+      } else if (trueSpots.size >= 2 && escortCycles < 2) {
         mirrorDualRefractCount++;
+        addRole(e.id, "refract2");
         pushEvent("M_REUSE", "镜子双位折光");
       }
     });
 
-    // ★ 严格审计 2：毫无意义的闲置道具 & 全程未变相也未压制的装饰性冰/珀墙
+    // ★ 统计「一物多角」实体数（同一物体承担 ≥2 种截然不同的战术角色）
+    let multiRoleCount = 0;
+    if (escortCycles < 2) {
+      entityRoles.forEach(roleSet => {
+        if (roleSet.size >= 2) multiRoleCount++;
+      });
+    }
+
+    // ★ 贪心直觉 AI 踩坑模拟（量化反直觉度）
+    const greedyRes = (steps > 0 && !skipGreedy)
+      ? simulateGreedyPlayer(staticMap, initDyn, Math.min(14, steps + 4))
+      : { status: "won", pushes: 0 };
+    const greedyStatus = greedyRes.status; // "trapped" | "stalled" | "won"
+    const greedyPushes = greedyRes.pushes;
+
+    // ★ 严格审计 2：闲置道具 & 装饰性冰/珀墙
     let unusedItemCount = 0;
     initDyn.entities.forEach(e => {
       if (e.kind === "\\" || e.kind === "/") return;
@@ -580,19 +900,22 @@
 
     const totalReactiveCount = staticMap.iceWalls.length + staticMap.treeWalls.length +
       initDyn.entities.filter(e => e.kind === "C" || e.kind === "F").length;
-    if (totalReactiveCount > 0 && phaseFlips === 0 && suppressionCount === 0) {
+    if (totalReactiveCount > 0 && phaseFlips === 0 && suppressionCount === 0 && ghostPassCount === 0 && amberGatePasses === 0) {
       warnings.push("光影元件全程未发生相变（退化为普通推箱子）");
     }
 
     const idAppearances = new Map();
-    for (let i = 0; i < pushSeqIds.length; i++) {
-      idAppearances.set(pushSeqIds[i], (idAppearances.get(pushSeqIds[i]) || 0) + 1);
+    for (let i = 0; i < pushSegments.length; i++) {
+      if (escortSegIndices.has(i)) continue;
+      const segId = pushSegments[i].id;
+      idAppearances.set(segId, (idAppearances.get(segId) || 0) + 1);
     }
     let interleavedReuses = 0;
     idAppearances.forEach(cnt => { if (cnt >= 2) interleavedReuses += (cnt - 1); });
 
     let pingPongFlips = 0;
     itemFlipCounts.forEach(cnt => { if (cnt >= 2) pingPongFlips++; });
+    const effectivePingPong = escortCycles >= 2 ? 0 : pingPongFlips;
 
     let floorCount = 0, wasteFloors = 0, innerWallCount = 0;
     for (let r = 0; r < staticMap.rows; r++) {
@@ -631,51 +954,55 @@
       warnings.push(`存在 ${redundantWallLayers} 处多余外层死墙`);
     }
 
-    // 1) 巧思与复用（满分 35）：鼓励真折光复用、空手点睛、借物遮阳、交错复用与连锁相变
+    // ---------------------------------------------------------------------
+    // 新四维 100 分量化评价体系：反直觉度(30) + 巧思复用(30) + 思维深度(25) + 空间纯净(15)
+    // ---------------------------------------------------------------------
+    // 1) 反直觉度（满分 30）：贪心 AI 踩坑死锁 / 进度先退后进低谷 / 远程唤醒 / 刻意休眠
+    const greedyPts = greedyStatus === "trapped" ? 15 : (greedyStatus === "stalled" ? 9 : 0);
+    const dipPts = Math.min(9, maxProgressDip * 4 + detourPushCount * 3);
+    const wakePts = (remoteWakeWin ? 6 : 0) + (handsFreeVictory ? 4 : 0) + (intentionalSleepCount > 0 ? 4 : 0);
+    const ahaScore = Math.min(30, Math.round(greedyPts + dipPts + Math.min(10, wakePts)));
+
+    // 2) 巧思复用（满分 30）：一物多角 + 琥珀/冰雪/折光专属技巧（护送刷分清零）
     const emergentTotal = suppressionCount + swapCount + goalUnseats;
+    const amberCleverPts =
+      Math.min(10, ghostPassCount * 8) +
+      Math.min(12, amberShadowFlips * 10) +
+      Math.min(10, amberHandoffCount * 10) +
+      Math.min(8, amberGatePasses * 5);
     const cleverScore = Math.min(
-      35,
+      30,
       Math.round(
-        mirrorDualRefractCount * 14 +
-        (handsFreeVictory ? 10 : 0) +
-        interleavedReuses * 9 +
-        pingPongFlips * 7 +
-        Math.min(12, bodyShadowFlips * 6) +
-        Math.min(10, woodShadowFlips * 6) +
-        Math.min(8, multiFlipSteps * 5) +
-        emergentTotal * 8 +
-        Math.min(6, phaseFlips * 2)
+        Math.min(14, multiRoleCount * 7) +
+        amberCleverPts +
+        mirrorDualRefractCount * 11 +
+        interleavedReuses * 7 +
+        effectivePingPong * 6 +
+        Math.min(8, bodyShadowFlips * 4) +
+        Math.min(8, woodShadowFlips * 5) +
+        Math.min(7, multiFlipSteps * 4) +
+        emergentTotal * 7
       )
     );
 
-    // 2) 空间美感（满分 25）：开放庭院模式下奖励“少内墙 + 高操作密度”，紧凑模式下奖励小空间
-    let compactScore;
-    if (openStyle) {
-      const openPts = innerWallCount === 0 ? 16 : innerWallCount === 1 ? 15 : innerWallCount === 2 ? 12 : innerWallCount === 3 ? 8 : Math.max(0, 7 - (innerWallCount - 3) * 2);
-      const actPts = Math.min(9, Math.round((pushes + bodyShadowFlips) * 0.9));
-      compactScore = Math.min(25, openPts + actPts);
-    } else {
-      const actionDensity = (pushes + bodyShadowFlips) / Math.max(1, floorCount);
-      const sizePts = floorCount <= 16 ? 12 : floorCount <= 22 ? 8 : floorCount <= 28 ? 4 : 0;
-      compactScore = Math.min(25, Math.round(Math.min(13, actionDensity * 22) + sizePts));
-    }
-
-    // 3) 思维深度（满分 25）
+    // 3) 思维深度（满分 25）：搜索分支陷阱密度 + 步数体量
     const trapDensity = steps > 0 ? explored / steps : 1;
     const depthScore = Math.min(
       25,
       Math.round(Math.min(17, Math.log10(Math.max(1, trapDensity)) * 9.5) + Math.min(8, steps * 0.45))
     );
 
-    // 4) 建筑与光学纯净度（满分 15）
+    // 4) 空间纯净（满分 15）：高决策效率、低冗余走步、无厚墙
     const walkPenalty = Math.max(0, maxWalkStreak - (openStyle ? 5 : 4)) * 2;
-    const wallClutterPenalty = openStyle ? Math.max(0, innerWallCount - 2) * 3 : 0;
-    const wastePenalty = openStyle ? 0 : wasteFloors * 2;
-    const purityScore = Math.max(0, 15 - wastePenalty - wallClutterPenalty - redundantWallLayers * 4 - walkPenalty);
+    const wastePenalty = openStyle ? Math.max(0, wasteFloors - 8) : wasteFloors * 2;
+    const clutterPenalty = innerWallCount > 6 ? (innerWallCount - 6) * 2 : 0;
+    const purityScore = Math.max(0, 15 - wastePenalty - clutterPenalty - redundantWallLayers * 4 - walkPenalty);
+    const compactScore = purityScore; // 保持字段向后兼容
 
-    const noFlipPenalty = (totalReactiveCount > 0 && phaseFlips === 0 && suppressionCount === 0) ? 30 : 0;
-    const penalty = mirrorAsObstacleCount * 45 + unusedItemCount * 25 + unusedReactiveWallCount * 20 + noFlipPenalty + (externalWarnings ? externalWarnings.length * 25 : 0);
-    const score = Math.max(0, Math.min(100, cleverScore + compactScore + depthScore + purityScore - penalty));
+    const noFlipPenalty = (totalReactiveCount > 0 && phaseFlips === 0 && suppressionCount === 0 && ghostPassCount === 0 && amberGatePasses === 0) ? 30 : 0;
+    const escortPenalty = escortCycles >= 2 ? Math.min(42, (escortCycles - 1) * 18) : 0;
+    const penalty = mirrorAsObstacleCount * 45 + unusedItemCount * 25 + unusedReactiveWallCount * 20 + noFlipPenalty + escortPenalty + (externalWarnings ? externalWarnings.length * 25 : 0);
+    const score = Math.max(0, Math.min(100, ahaScore + cleverScore + depthScore + purityScore - penalty));
 
     let grade = "C", label = "C 级教学";
     if (score >= 80) { grade = "S"; label = "S 级典藏"; }
@@ -683,21 +1010,27 @@
     else if (score >= 42) { grade = "B"; label = "B 级进阶"; }
 
     const highlights = [];
+    if (greedyStatus === "trapped") highlights.push({ text: `🎯 直觉陷阱`, cls: "gold" });
+    else if (greedyStatus === "stalled") highlights.push({ text: `🧩 破局思考`, cls: "ice" });
+    if (maxProgressDip > 0 || detourPushCount > 0) highlights.push({ text: `📉 先退后进`, cls: "gold" });
+    if (remoteWakeWin) highlights.push({ text: `💤 远程唤醒`, cls: "jade" });
+    else if (intentionalSleepCount > 0) highlights.push({ text: `💤 离光休眠`, cls: "jade" });
+    if (multiRoleCount > 0) highlights.push({ text: `🎭 一物多角 ×${multiRoleCount}`, cls: "gold" });
+    if (ghostPassCount > 0) highlights.push({ text: `👻 虚化穿身 ×${ghostPassCount}`, cls: "gold" });
+    if (amberShadowFlips > 0) highlights.push({ text: `🛡️ 以珀挡光 ×${amberShadowFlips}`, cls: "gold" });
+    if (amberHandoffCount > 0) highlights.push({ text: `🔀 跨光接力`, cls: "jade" });
+    if (amberGatePasses > 0) highlights.push({ text: `🚪 影开珀门`, cls: "gold" });
     if (mirrorDualRefractCount > 0) highlights.push({ text: `🪞 双位折光 ×${mirrorDualRefractCount}`, cls: "gold" });
     if (handsFreeVictory) highlights.push({ text: `✋ 空手点睛`, cls: "jade" });
     if (woodShadowFlips > 0) highlights.push({ text: `☂️ 借物遮阳`, cls: "jade" });
     if (multiFlipSteps > 0) highlights.push({ text: `💥 连锁相变`, cls: "gold" });
     if (interleavedReuses > 0) highlights.push({ text: `🔁 交错复用 ×${interleavedReuses}`, cls: "gold" });
-    if (pingPongFlips > 0) highlights.push({ text: `🌗 来回拉扯 ×${pingPongFlips}`, cls: "ice" });
+    if (effectivePingPong > 0) highlights.push({ text: `🌗 来回拉扯 ×${effectivePingPong}`, cls: "ice" });
     if (bodyShadowFlips > 0) highlights.push({ text: `👤 自身成荫`, cls: "jade" });
     if (swapCount > 0) highlights.push({ text: `✨ 冰珀互换`, cls: "gold" });
     if (goalUnseats > 0) highlights.push({ text: `🔄 退槽反直觉`, cls: "gold" });
     if (suppressionCount > 0) highlights.push({ text: `⚡ 占格压制`, cls: "ice" });
-    if (innerWallCount <= 2 && redundantWallLayers === 0 && cleverScore >= 12) {
-      highlights.push({ text: `🏛️ 疏朗庭院`, cls: "jade" });
-    } else if (!openStyle && wasteFloors === 0 && redundantWallLayers === 0 && floorCount <= 20) {
-      highlights.push({ text: `💎 零废格微缩`, cls: "jade" });
-    }
+    if (escortCycles >= 2) highlights.push({ text: `🐢 机械护送 ×${escortCycles}`, cls: "danger" });
 
     const mechanicSig = mechEvents.length ? mechEvents.join(">") : "INIT";
     const mechanicFlow = mechLabels.length
@@ -705,11 +1038,13 @@
       : "开局即通关";
 
     return {
-      steps, pushes, phaseFlips, interleavedReuses, pingPongFlips, bodyShadowFlips, woodShadowFlips, multiFlipSteps,
+      steps, pushes, phaseFlips, interleavedReuses, pingPongFlips: effectivePingPong, bodyShadowFlips, woodShadowFlips, multiFlipSteps,
+      ghostPassCount, amberShadowFlips, amberHandoffCount, amberGatePasses, escortCycles,
+      greedyStatus, greedyPushes, maxProgressDip, detourPushCount, intentionalSleepCount, remoteWakeWin, multiRoleCount,
       suppressionCount, goalUnseats, swapCount, handsFreeVictory, floorCount, wasteFloors, innerWallCount, redundantWallLayers,
       mirrorAsObstacleCount, mirrorDualRefractCount, unusedItemCount, unusedReactiveWallCount,
       maxWalkStreak, trapDensity: Math.round(trapDensity),
-      cleverScore, compactScore, depthScore, purityScore,
+      ahaScore, cleverScore, compactScore, depthScore, purityScore,
       score, grade, label, highlights, mechanicSig, mechanicFlow, activeCells
     };
   }
@@ -809,6 +1144,7 @@
           const metrics = evaluateElegance(staticMap, dynState, path, visited.size, extWarnings, evalOpts);
           const allWarnings = [...extWarnings];
           if (metrics.mirrorAsObstacleCount > 0) allWarnings.push("折光镜退化为障碍物（关闭折光后仍可通关，或折光未作用于冰/珀元件）");
+          if (metrics.escortCycles >= 2) allWarnings.push(`存在机械跟随光束挪箱（伴随护送 ×${metrics.escortCycles}）`);
           if (metrics.unusedItemCount > 0) allWarnings.push(`存在 ${metrics.unusedItemCount} 个未参与解题的闲置道具`);
           if (metrics.unusedReactiveWallCount > 0) allWarnings.push(`存在 ${metrics.unusedReactiveWallCount} 块装饰性冰/珀墙（全程未变相）`);
           if (metrics.redundantWallLayers > 0) allWarnings.push(`存在 ${metrics.redundantWallLayers} 处外围冗余死墙`);
@@ -840,6 +1176,6 @@
     parseMap, cloneDyn, isEntitySuppressed, isEntitySolid, isTerrainSuppressed,
     solidEntityAt, computeLighting, isCellBlocked, stepState, countLockedGoals, isWon, encodeState,
     solveFromState, getOptimalSteps, checkDeadlock, findNextBestMoveEx, findNextBestMove, evaluateClear,
-    evaluateElegance, solveBFS
+    simulateGreedyPlayer, evaluateElegance, solveBFS
   };
 });
