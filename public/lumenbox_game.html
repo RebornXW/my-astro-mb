@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>光影推箱 · LumenBox</title>
+  <link rel="icon" type="image/svg+xml" href="./lumenbox-logo.svg" />
+  <link rel="icon" type="image/x-icon" sizes="any" href="./lumenbox-logo.ico" />
   <style>
     :root {
       --stage-bg: linear-gradient(155deg, #E6EBF1 0%, #F4EFE6 52%, #EAE3D7 100%);
@@ -1621,7 +1623,7 @@
                 <circle cx="12" cy="12" r="9.2" stroke="#DFA134" stroke-width="1.25" opacity="0.58"/>
                 <path d="M12 3.8 Q12 12 20.2 12 Q12 12 12 20.2 Q12 12 3.8 12 Q12 12 12 3.8 Z" fill="#E8A938"/>
               </svg>
-              已通关 <b id="statCleared">0</b>/<span id="statTotalMain">144</span>
+              已通关 <b id="statCleared">0</b>/<span id="statTotalMain">72</span>
             </span>
             <span>·</span>
             <span class="cover-stat-item">
@@ -1753,7 +1755,7 @@
         </div>
       </div>
 
-      <!-- 方案 C 选关画册弹窗（12 卷十二时辰日晷 + 4×3 玉砖阵） -->
+      <!-- 方案 C 选关画册弹窗（6 卷十二时辰日晷 + 4×3 玉砖阵） -->
       <div class="overlay" id="chaptersOverlay" role="dialog" aria-modal="true">
         <div class="modal-card chapters-modal-card">
           <div class="chap-topbar">
@@ -1777,7 +1779,7 @@
               <span>LUMENBOX</span>
             </div>
             <div style="display:flex;align-items:center;gap:6px;">
-              <div class="chap-total-pill" id="chapTotalPill">✦ <b>0</b>/144</div>
+              <div class="chap-total-pill" id="chapTotalPill">✦ <b>0</b>/72</div>
               <button class="close-btn" id="btnCloseChapters" aria-label="关闭">✕</button>
             </div>
           </div>
@@ -1831,7 +1833,7 @@
       };
 
       /* =====================================================================
-         1. 主题、角色、UI 矢量图标与十二卷章节数据
+         1. 主题、角色、UI 矢量图标与六卷章节数据
          ===================================================================== */
       const THEMES = [
         {
@@ -3315,7 +3317,7 @@
       })();
 
       /* =====================================================================
-         6. 本地存档（12 卷 144 关纯净版）
+         6. 本地存档（6 卷 72 关纯净版）
          ===================================================================== */
       const STORAGE_KEY = "lumenbox_v1_progress";
       const progress = {

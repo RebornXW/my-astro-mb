@@ -442,6 +442,78 @@
     return { status: isQuicklyDeadlocked(staticMap, curDyn) ? "trapped" : "stalled", pushes };
   }
 
+  function hasTrueSuppressionState(staticMap, dyn, lit, justWalkedThroughAmber = false) {
+    for (let i = 0; i < staticMap.iceWalls.length; i++) {
+      const w = staticMap.iceWalls[i];
+      if (!lit[w.r][w.c] && isTerrainSuppressed(dyn, lit, w.r, w.c)) return true;
+    }
+    for (let i = 0; i < staticMap.treeWalls.length; i++) {
+      const w = staticMap.treeWalls[i];
+      if (lit[w.r][w.c]) {
+        const objOnV = dyn.entities.some(e => e.r === w.r && e.c === w.c && ((e.kind !== "C" && e.kind !== "F") || isEntitySolid(dyn, lit, e)));
+        const playerOnV = dyn.player && dyn.player.r === w.r && dyn.player.c === w.c;
+        if (objOnV || (playerOnV && !justWalkedThroughAmber)) return true;
+      }
+    }
+    for (let i = 0; i < dyn.entities.length; i++) {
+      const e = dyn.entities[i];
+      if (e.kind === "C" && !lit[e.r][e.c] && isEntitySuppressed(dyn, e)) return true;
+      if (e.kind === "F" && lit[e.r][e.c]) {
+        const objOnF = dyn.entities.some(o => {
+          if (o.id === e.id || o.r !== e.r || o.c !== e.c) return false;
+          const alwaysSolid = o.kind === "B" || o.kind === "L" || o.kind === "\\" || o.kind === "/" || Boolean(SPOT_DIRS[o.kind]);
+          return alwaysSolid || (o.kind === e.kind && o.id < e.id);
+        });
+        const playerOnF = dyn.player && dyn.player.r === e.r && dyn.player.c === e.c;
+        if (objOnF || (playerOnF && !justWalkedThroughAmber)) return true;
+      }
+    }
+    return false;
+  }
+
+  // 反事实禁压制 BFS：禁止一切「真·占格压制」状态，检验本关是否必须使用占格压制才能通关
+  function solveWithoutSuppression(staticMap, initDyn, maxStates = 22000, maxMs = 90) {
+    const t0 = nowMs();
+    const initLit = computeLighting(staticMap, initDyn, false).lit;
+    if (isWon(staticMap, initDyn, initLit)) return { solvable: true, steps: 0, timedOut: false };
+
+    const visited = new Set([encodeState(initDyn)]);
+    const queue = [{ dyn: initDyn, lit: initLit, depth: 0 }];
+    let head = 0;
+
+    while (head < queue.length && visited.size < maxStates) {
+      if ((head & 63) === 0 && nowMs() - t0 > maxMs) {
+        return { solvable: false, steps: null, timedOut: true };
+      }
+      const cur = queue[head++];
+      for (let d = 0; d < 4; d++) {
+        const mv = DIRS4[d];
+        const nr = cur.dyn.player.r + mv.dr;
+        const nc = cur.dyn.player.c + mv.dc;
+        const steppingOnGhostF = cur.dyn.entities.some(
+          e => e.kind === "F" && e.r === nr && e.c === nc && !isEntitySolid(cur.dyn, cur.lit, e)
+        );
+        const steppingOnGhostV = staticMap.treeWalls.some(w => w.r === nr && w.c === nc && !cur.lit[nr][nc]);
+
+        const res = stepState(staticMap, cur.dyn, cur.lit, mv.dr, mv.dc, mv.dir);
+        if (!res) continue;
+
+        const walkedThroughAmber = !res.pushed && (steppingOnGhostF || steppingOnGhostV);
+        if (hasTrueSuppressionState(staticMap, res.dyn, res.lit, walkedThroughAmber)) continue;
+
+        if (isWon(staticMap, res.dyn, res.lit)) {
+          return { solvable: true, steps: cur.depth + 1, timedOut: false };
+        }
+        const key = encodeState(res.dyn);
+        if (!visited.has(key)) {
+          visited.add(key);
+          queue.push({ dyn: res.dyn, lit: res.lit, depth: cur.depth + 1 });
+        }
+      }
+    }
+    return { solvable: false, steps: null, timedOut: visited.size >= maxStates };
+  }
+
   function evaluateElegance(staticMap, initDyn, path, explored, externalWarnings, evalOpts = {}) {
     const openStyle = Boolean(evalOpts && evalOpts.openStyle);
     const skipGreedy = Boolean(evalOpts && evalOpts.skipGreedy);
@@ -868,6 +940,29 @@
       });
     }
 
+    // ★ 反事实「必用压制」验证：仅当最优解实际触发过占格压制且开启检查时执行
+    let suppressionRequired = false;
+    let noSupSteps = suppressionCount === 0 ? steps : null;
+    let noSupTimedOut = false;
+    if (suppressionCount > 0 && evalOpts && evalOpts.checkRequireSup) {
+      const noSupRes = solveWithoutSuppression(
+        staticMap,
+        initDyn,
+        evalOpts.maxSupStates || 22000,
+        evalOpts.maxSupMs || 90
+      );
+      if (noSupRes.solvable) {
+        suppressionRequired = false;
+        noSupSteps = noSupRes.steps;
+      } else if (noSupRes.timedOut) {
+        suppressionRequired = false;
+        noSupTimedOut = true;
+      } else {
+        suppressionRequired = true;
+        noSupSteps = null;
+      }
+    }
+
     // ★ 贪心直觉 AI 踩坑模拟（量化反直觉度）
     const greedyRes = (steps > 0 && !skipGreedy)
       ? simulateGreedyPlayer(staticMap, initDyn, Math.min(14, steps + 4))
@@ -961,7 +1056,8 @@
     const greedyPts = greedyStatus === "trapped" ? 15 : (greedyStatus === "stalled" ? 9 : 0);
     const dipPts = Math.min(9, maxProgressDip * 4 + detourPushCount * 3);
     const wakePts = (remoteWakeWin ? 6 : 0) + (handsFreeVictory ? 4 : 0) + (intentionalSleepCount > 0 ? 4 : 0);
-    const ahaScore = Math.min(30, Math.round(greedyPts + dipPts + Math.min(10, wakePts)));
+    const supReqPts = suppressionRequired ? 5 : 0;
+    const ahaScore = Math.min(30, Math.round(greedyPts + dipPts + Math.min(10, wakePts) + supReqPts));
 
     // 2) 巧思复用（满分 30）：一物多角 + 琥珀/冰雪/折光专属技巧（护送刷分清零）
     const emergentTotal = suppressionCount + swapCount + goalUnseats;
@@ -1029,7 +1125,8 @@
     if (bodyShadowFlips > 0) highlights.push({ text: `👤 自身成荫`, cls: "jade" });
     if (swapCount > 0) highlights.push({ text: `✨ 冰珀互换`, cls: "gold" });
     if (goalUnseats > 0) highlights.push({ text: `🔄 退槽反直觉`, cls: "gold" });
-    if (suppressionCount > 0) highlights.push({ text: `⚡ 占格压制`, cls: "ice" });
+    if (suppressionRequired) highlights.push({ text: `🔒 必用压制`, cls: "gold" });
+    else if (suppressionCount > 0) highlights.push({ text: noSupSteps !== null ? `⚡ 压制省${Math.max(0, noSupSteps - steps)}步` : `⚡ 占格压制`, cls: "ice" });
     if (escortCycles >= 2) highlights.push({ text: `🐢 机械护送 ×${escortCycles}`, cls: "danger" });
 
     const mechanicSig = mechEvents.length ? mechEvents.join(">") : "INIT";
@@ -1041,7 +1138,7 @@
       steps, pushes, phaseFlips, interleavedReuses, pingPongFlips: effectivePingPong, bodyShadowFlips, woodShadowFlips, multiFlipSteps,
       ghostPassCount, amberShadowFlips, amberHandoffCount, amberGatePasses, escortCycles,
       greedyStatus, greedyPushes, maxProgressDip, detourPushCount, intentionalSleepCount, remoteWakeWin, multiRoleCount,
-      suppressionCount, goalUnseats, swapCount, handsFreeVictory, floorCount, wasteFloors, innerWallCount, redundantWallLayers,
+      suppressionCount, suppressionRequired, noSupSteps, noSupTimedOut, goalUnseats, swapCount, handsFreeVictory, floorCount, wasteFloors, innerWallCount, redundantWallLayers,
       mirrorAsObstacleCount, mirrorDualRefractCount, unusedItemCount, unusedReactiveWallCount,
       maxWalkStreak, trapDensity: Math.round(trapDensity),
       ahaScore, cleverScore, compactScore, depthScore, purityScore,
@@ -1176,6 +1273,6 @@
     parseMap, cloneDyn, isEntitySuppressed, isEntitySolid, isTerrainSuppressed,
     solidEntityAt, computeLighting, isCellBlocked, stepState, countLockedGoals, isWon, encodeState,
     solveFromState, getOptimalSteps, checkDeadlock, findNextBestMoveEx, findNextBestMove, evaluateClear,
-    simulateGreedyPlayer, evaluateElegance, solveBFS
+    simulateGreedyPlayer, solveWithoutSuppression, evaluateElegance, solveBFS
   };
 });

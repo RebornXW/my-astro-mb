@@ -1,5 +1,5 @@
 /**
- * LumenBox Chapters & Levels Data (12 Chapters x 12 Slots = 144 Levels)
+ * LumenBox Chapters & Levels Data (6 Chapters x 12 Slots = 72 Levels)
  * Maintained by lumenbox_editor.html.
  * Compatible with Browser (<script src="./core/levels.js">) and CommonJS / Mini-Programs.
  */
@@ -12,7 +12,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : (typeof window !== "undefined" ? window : this), function () {
   "use strict";
 
-  const CHAPTER_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12];
+  const CHAPTER_ORDER = [1,2,3,4,5,6];
   const SLOTS_PER_CHAPTER = 12;
 
   const CHAPTER_META = {
@@ -36,14 +36,14 @@
           "bgNight": "linear-gradient(142deg, #3D2E1D 0%, #24212E 65%, #1A1F2E 100%)",
           "auraDay": "rgba(255, 204, 112, 0.48)",
           "auraNight": "rgba(244, 182, 72, 0.26)",
-          "rewardName": "青竹斗笠",
-          "rewardSwatch": "linear-gradient(135deg, #5B8E74 0%, #D4B36A 100%)",
+          "rewardName": "影青玉",
+          "rewardSwatch": "linear-gradient(135deg, #D2E8E2 0%, #3F7A73 100%)",
           "rewardReqPlat": 12
       },
       "3": {
           "numStr": "03",
-          "shortName": "交 响",
-          "title": "卷三 · 交响",
+          "shortName": "霜 晴",
+          "title": "卷三 · 霜晴",
           "bgDay": "linear-gradient(138deg, #E3F3FD 0%, #F8F4EC 50%, #FCE5BE 100%)",
           "bgNight": "linear-gradient(138deg, #1E344D 0%, #23283A 52%, #3B2D1E 100%)",
           "auraDay": "rgba(252, 212, 134, 0.44)",
@@ -60,104 +60,32 @@
           "bgNight": "linear-gradient(142deg, #1B3338 0%, #172330 65%, #1E2434 100%)",
           "auraDay": "rgba(124, 208, 194, 0.38)",
           "auraNight": "rgba(96, 196, 184, 0.24)",
-          "rewardName": "八音盒音色",
-          "rewardSwatch": "linear-gradient(135deg, #8EC9D8 0%, #E7D2A2 100%)",
+          "rewardName": "霜晶琉璃",
+          "rewardSwatch": "linear-gradient(135deg, #E8FAFF 0%, #4EAEE2 100%)",
           "rewardReqPlat": 12
       },
       "5": {
           "numStr": "05",
-          "shortName": "单 芒",
-          "title": "卷五 · 单芒",
+          "shortName": "孤 照",
+          "title": "卷五 · 孤照",
           "bgDay": "linear-gradient(142deg, #FFF5E6 0%, #F7DBB7 54%, #EDD3BE 100%)",
           "bgNight": "linear-gradient(142deg, #3D281F 0%, #232234 64%, #1A1E2E 100%)",
           "auraDay": "rgba(250, 184, 112, 0.44)",
           "auraNight": "rgba(240, 158, 86, 0.26)",
-          "rewardName": "雪球精灵",
-          "rewardSwatch": "linear-gradient(135deg, #EEF7FF 0%, #E8A23C 100%)",
-          "rewardReqPlat": 12
-      },
-      "6": {
-          "numStr": "06",
-          "shortName": "回 环",
-          "title": "卷六 · 回环",
-          "bgDay": "linear-gradient(142deg, #FCF0EC 0%, #F0D6DF 54%, #E3DCF0 100%)",
-          "bgNight": "linear-gradient(142deg, #382338 0%, #202238 64%, #192033 100%)",
-          "auraDay": "rgba(236, 168, 192, 0.42)",
-          "auraNight": "rgba(216, 146, 184, 0.24)",
-          "rewardName": "极光银蓝光",
-          "rewardSwatch": "linear-gradient(135deg, #84D4FF 0%, #DCE8FF 100%)",
-          "rewardReqPlat": 12
-      },
-      "7": {
-          "numStr": "07",
-          "shortName": "隔 窗",
-          "title": "卷七 · 隔窗",
-          "bgDay": "linear-gradient(142deg, #ECF3FC 0%, #D4E4F7 54%, #E6EBF5 100%)",
-          "bgNight": "linear-gradient(142deg, #1B2C4A 0%, #151F34 65%, #1E2840 100%)",
-          "auraDay": "rgba(136, 184, 242, 0.42)",
-          "auraNight": "rgba(112, 168, 242, 0.26)",
-          "rewardName": "琉璃雾蓝",
-          "rewardSwatch": "linear-gradient(135deg, #D0E1F0 0%, #6D88A8 100%)",
-          "rewardReqPlat": 12
-      },
-      "8": {
-          "numStr": "08",
-          "shortName": "分 光",
-          "title": "卷八 · 分光",
-          "bgDay": "linear-gradient(142deg, #EFEBF9 0%, #DDDDF6 52%, #F1E4F0 100%)",
-          "bgNight": "linear-gradient(142deg, #27254B 0%, #181B32 65%, #23203B 100%)",
-          "auraDay": "rgba(170, 158, 246, 0.40)",
-          "auraNight": "rgba(154, 142, 240, 0.26)",
           "rewardName": "星夜使者",
           "rewardSwatch": "linear-gradient(135deg, #2E3A58 0%, #F0C050 100%)",
           "rewardReqPlat": 12
       },
-      "9": {
-          "numStr": "09",
+      "6": {
+          "numStr": "06",
           "shortName": "澄 明",
-          "title": "卷九 · 澄明",
-          "bgDay": "linear-gradient(142deg, #E8F4F8 0%, #D2E8F2 54%, #E7F0F5 100%)",
-          "bgNight": "linear-gradient(142deg, #183042 0%, #131E2C 66%, #1B2A38 100%)",
-          "auraDay": "rgba(126, 206, 232, 0.42)",
-          "auraNight": "rgba(96, 192, 224, 0.26)",
-          "rewardName": "古琴泛音",
-          "rewardSwatch": "linear-gradient(135deg, #6EA4BC 0%, #2C3A48 100%)",
-          "rewardReqPlat": 12
-      },
-      "10": {
-          "numStr": "10",
-          "shortName": "日 契",
-          "title": "卷十 · 日契",
-          "bgDay": "linear-gradient(142deg, #EAEAF0 0%, #D9DFF0 52%, #EFE2C8 100%)",
-          "bgNight": "linear-gradient(142deg, #1C253B 0%, #181E2E 56%, #332A1C 100%)",
-          "auraDay": "rgba(232, 194, 126, 0.42)",
-          "auraNight": "rgba(238, 186, 84, 0.25)",
-          "rewardName": "暮色微光",
-          "rewardSwatch": "linear-gradient(135deg, #101520 0%, #E5A435 100%)",
-          "rewardReqPlat": 12
-      },
-      "11": {
-          "numStr": "11",
-          "shortName": "逆 旅",
-          "title": "卷十一 · 逆旅",
-          "bgDay": "linear-gradient(142deg, #F4EDF7 0%, #E4DDF0 50%, #F7E4CF 100%)",
-          "bgNight": "linear-gradient(142deg, #2B2442 0%, #1E2133 56%, #332824 100%)",
-          "auraDay": "rgba(230, 178, 214, 0.40)",
-          "auraNight": "rgba(210, 152, 204, 0.24)",
-          "rewardName": "日冕金箔光",
-          "rewardSwatch": "linear-gradient(135deg, #FFE48A 0%, #D48E22 100%)",
-          "rewardReqPlat": 12
-      },
-      "12": {
-          "numStr": "12",
-          "shortName": "十 二",
-          "title": "卷十二 · 十二",
+          "title": "卷六 · 澄明",
           "bgDay": "linear-gradient(138deg, #EAF6FF 0%, #FAF3E2 48%, #F9DFAC 100%)",
           "bgNight": "linear-gradient(138deg, #21344D 0%, #25283B 50%, #3E301B 100%)",
           "auraDay": "rgba(255, 214, 120, 0.50)",
           "auraNight": "rgba(246, 198, 92, 0.28)",
-          "rewardName": "琉璃旅人",
-          "rewardSwatch": "linear-gradient(135deg, #74CBF4 0%, #F2B23E 100%)",
+          "rewardName": "暮色微光",
+          "rewardSwatch": "linear-gradient(135deg, #101520 0%, #E5A435 100%)",
           "rewardReqPlat": 12
       }
   };
@@ -471,52 +399,487 @@
       ]
     },
     {
-      id: 901, code: "重-1", chapter: 4, slot: 1,
-      hint: "先把提灯左推一格让雪箱凝结、暖珀归虚，把雪箱推过暖珀（触发冰珀雪花互映）送入右槽，再用提灯逐格护送暖珀入左槽。",
-      optimalSteps: 32,
+      id: 25, code: "3-1", chapter: 3, slot: 1,
+      hint: "参考思路：暖珀归虚 → 自身成荫 → 暖珀凝实 → 自身成荫 → … → 空手点睛。",
+      optimalSteps: 8,
+      map: [
+        "######",
+        "S.C.X#",
+        "#....#",
+        "#PF.XS",
+        "######"
+      ]
+    },
+    {
+      id: 26, code: "3-2", chapter: 3, slot: 2,
+      hint: "参考思路：推暖珀 → 暖珀归虚 → 推雪箱 → 暖珀凝实 → … → 空手点睛。",
+      optimalSteps: 17,
+      map: [
+        "###S##",
+        "#.XF.S",
+        "#..C.#",
+        "#..PX#",
+        "######"
+      ]
+    },
+    {
+      id: 27, code: "3-3", chapter: 3, slot: 3,
+      hint: "参考思路：暖珀归虚 → 自身成荫 → 虚化穿身 → 暖珀凝实 → … → 空手点睛。",
+      optimalSteps: 18,
+      map: [
+        "######",
+        "#..XPS",
+        "#.C..#",
+        "#.FX.S",
+        "######"
+      ]
+    },
+    {
+      id: 28, code: "3-4", chapter: 3, slot: 4,
+      hint: "参考思路：推提灯 → 暖珀凝实 → 雪箱凝结 → 连锁相变 → … → 跨光接力。",
+      optimalSteps: 23,
+      map: [
+        "#######",
+        "#.X.X.#",
+        "#.F...#",
+        "#...CL#",
+        "#.P...#",
+        "#######"
+      ]
+    },
+    {
+      id: 29, code: "3-5", chapter: 3, slot: 5,
+      hint: "参考思路：虚化穿身 → 推雪箱 → 雪箱化水 → 推折光镜 → … → 空手点睛。",
+      optimalSteps: 23,
+      map: [
+        "#######",
+        "#..X..#",
+        "#....P#",
+        "#.VF\\L#",
+        "#...CX#",
+        "#######"
+      ]
+    },
+    {
+      id: 30, code: "3-6", chapter: 3, slot: 6,
+      hint: "参考思路：虚化穿身 → 推提灯 → 雪箱凝结 → 暖珀凝实 → … → 跨光接力。",
+      optimalSteps: 24,
+      map: [
+        "#######",
+        "#....##",
+        "#ICL..#",
+        "#P.XF.#",
+        "#..X.##",
+        "#######"
+      ]
+    },
+    {
+      id: 31, code: "3-7", chapter: 3, slot: 7,
+      hint: "参考思路：暖珀归虚 → 自身成荫 → 暖珀凝实 → 自身成荫 → … → 推雪箱。",
+      optimalSteps: 19,
+      map: [
+        "#######",
+        "#..X.P#",
+        "#IXF.L#",
+        "#.C...#",
+        "#.#..V#",
+        "#######"
+      ]
+    },
+    {
+      id: 32, code: "3-8", chapter: 3, slot: 8,
+      hint: "参考思路：推折光镜 → 琥珀归虚 → 影开珀门 → 推折光镜 → … → 镜子双位折光。",
+      optimalSteps: 27,
+      map: [
+        "#####S#",
+        "#P.XX.#",
+        "#.IFC.#",
+        "#../..#",
+        "#.#..V#",
+        "#######"
+      ]
+    },
+    {
+      id: 33, code: "3-9", chapter: 3, slot: 9,
+      hint: "参考思路：推暖珀 → 推提灯 → 暖珀归虚 → 推折光镜 → … → 跨光接力。",
+      optimalSteps: 33,
+      map: [
+        "#######",
+        "#.....#",
+        "#/I.###",
+        "#CL.F.#",
+        "#XX..P#",
+        "#######"
+      ]
+    },
+    {
+      id: 34, code: "3-10", chapter: 3, slot: 10,
+      hint: "参考思路：推提灯 → 冰墙结冰 → 暖珀凝实 → 连锁相变 → … → 镜子双位折光。",
+      optimalSteps: 20,
       map: [
         "########",
-        "#..LP..#",
-        "#.....##",
-        "#X.CF.X#",
-        "#S######"
+        "#..I..X#",
+        "#./C..F#",
+        "#...#PX#",
+        "#..L...#",
+        "########"
+      ]
+    },
+    {
+      id: 35, code: "3-11", chapter: 3, slot: 11,
+      hint: "参考思路：推暖珀 → 暖珀归虚 → 虚化穿身 → 推提灯 → … → 跨光接力。",
+      optimalSteps: 38,
+      map: [
+        "########",
+        "#XC.XI.#",
+        "###.L.\\#",
+        "#..PF..#",
+        "#....###",
+        "########"
+      ]
+    },
+    {
+      id: 36, code: "3-12", chapter: 3, slot: 12,
+      hint: "参考思路：冰墙融水 → 自身成荫 → 虚化穿身 → 推雪箱 → … → 镜子双位折光。",
+      optimalSteps: 38,
+      map: [
+        "########",
+        "#IP..L.#",
+        "##X..X##",
+        "#.CF/V.#",
+        "#...####",
+        "########"
+      ]
+    },
+    {
+      id: 901, code: "重-1", chapter: 4, slot: 1,
+      hint: "参考思路：推木箱 → 雪箱凝结 → 自身成荫 → 推雪箱 → … → 推雪箱。",
+      optimalSteps: 18,
+      map: [
+        "#######",
+        "#.....#",
+        "#XPBCXS",
+        "#.....#",
+        "#######"
       ]
     },
     {
       id: 902, code: "重-2", chapter: 4, slot: 2,
-      hint: "先右推折光镜到第 5 列让暖珀墙归虚，把雪箱推进暖珀格，再把折光镜一路左推到第 3 列（中途暖珀墙会短暂封存雪箱），最后送雪箱入槽。",
+      hint: "参考思路：推雪箱 → 雪箱化水 → 暖珀归虚 → 自身成荫 → … → 远程唤醒。",
       optimalSteps: 15,
       map: [
-        "########",
-        "#S..\\..#",
-        "#P.....#",
-        "#.C.V.X#",
-        "########"
+        "#######",
+        "S.XFX.#",
+        "#..C.P#",
+        "##..#.#",
+        "#######"
       ]
     },
     {
       id: 903, code: "重-3", chapter: 4, slot: 3,
-      hint: "把木箱直接下推压在融化的雪箱上（木匣浅凹呈现雪花嵌印），再把木箱右推挡住太阳冻住雪箱，送雪箱进下槽后把木箱推进右上终点。",
-      optimalSteps: 17,
+      hint: "参考思路：琥珀凝实 → 自身成荫 → 推雪箱 → 雪箱化水 → … → 占格压制。",
+      optimalSteps: 14,
       map: [
-        "########",
-        "#P...#.#",
-        "#...B#X#",
-        "#...C..S",
-        "#..X#..#",
-        "########"
+        "#######",
+        "#XV...S",
+        "#PBCX.#",
+        "#.....#",
+        "#######"
       ]
     },
     {
       id: 904, code: "重-4", chapter: 4, slot: 4,
-      hint: "推提灯到第 4 列融化寒冰墙，把暖珀箱推过冰墙格进入终点（若中途移开提灯，可观察寒冰墙顶面玻璃层内封暖珀方晶的效果）。",
-      optimalSteps: 7,
+      hint: "参考思路：暖珀归虚 → 自身成荫 → 虚化穿身 → 暖珀凝实 → … → 冰墙结冰。",
+      optimalSteps: 18,
+      map: [
+        "#######",
+        "##....#",
+        "#.C..P#",
+        "#XFI.XS",
+        "#######"
+      ]
+    },
+    {
+      id: 41, code: "4-5", chapter: 4, slot: 5,
+      hint: "参考思路：推雪箱 → 雪箱化水 → 琥珀归虚 → 自身成荫 → … → 推雪箱。",
+      optimalSteps: 17,
+      map: [
+        "###S###",
+        "##XX.##",
+        "#.B.C.#",
+        "#..VP.#",
+        "#######"
+      ]
+    },
+    {
+      id: 42, code: "4-6", chapter: 4, slot: 6,
+      hint: "参考思路：冰墙融水 → 暖珀凝实 → 连锁相变 → 自身成荫 → … → 冰墙结冰。",
+      optimalSteps: 18,
+      map: [
+        "#######",
+        "##....#",
+        "#.C...#",
+        "#XFIPXS",
+        "#######"
+      ]
+    },
+    {
+      id: 43, code: "4-7", chapter: 4, slot: 7,
+      hint: "参考思路：琥珀归虚 → 自身成荫 → 影开珀门 → 琥珀凝实 → … → 推雪箱。",
+      optimalSteps: 23,
+      map: [
+        "#######",
+        "#PV...#",
+        "#.C.B.#",
+        "#..X#X#",
+        "##S####"
+      ]
+    },
+    {
+      id: 44, code: "4-8", chapter: 4, slot: 8,
+      hint: "参考思路：暖珀归虚 → 自身成荫 → 虚化穿身 → 暖珀凝实 → … → 远程唤醒。",
+      optimalSteps: 25,
+      map: [
+        "#######",
+        "#.##..#",
+        "#.CV..#",
+        "#.FXIXS",
+        "#...P##",
+        "#######"
+      ]
+    },
+    {
+      id: 45, code: "4-9", chapter: 4, slot: 9,
+      hint: "参考思路：暖珀归虚 → 自身成荫 → 虚化穿身 → 暖珀凝实 → … → 远程唤醒。",
+      optimalSteps: 25,
+      map: [
+        "#######",
+        "#....##",
+        "S.IXFX#",
+        "#..B..#",
+        "#P.####",
+        "#######"
+      ]
+    },
+    {
+      id: 46, code: "4-10", chapter: 4, slot: 10,
+      hint: "参考思路：推雪箱 → 雪箱化水 → 琥珀归虚 → 自身成荫 → … → 远程唤醒。",
+      optimalSteps: 20,
+      map: [
+        "#######",
+        "#..#..#",
+        "#LIXV.#",
+        "#.CF..#",
+        "#.PX###",
+        "#######"
+      ]
+    },
+    {
+      id: 47, code: "4-11", chapter: 4, slot: 11,
+      hint: "参考思路：冰墙结冰 → 自身成荫 → 虚化穿身 → 冰墙融水 → … → 跨光接力。",
+      optimalSteps: 30,
+      map: [
+        "#######",
+        "#.#P..#",
+        "#XI.L.#",
+        "#VCF.##",
+        "##X.###",
+        "#######"
+      ]
+    },
+    {
+      id: 48, code: "4-12", chapter: 4, slot: 12,
+      hint: "参考思路：冰墙结冰 → 自身成荫 → 冰墙融水 → 自身成荫 → … → 镜子双位折光。",
+      optimalSteps: 28,
+      map: [
+        "#S#####",
+        "#.X..##",
+        "#IFV\\.#",
+        "#X.C..#",
+        "#P.#..#",
+        "#######"
+      ]
+    },
+    {
+      id: 49, code: "5-1", chapter: 5, slot: 1,
+      hint: "参考思路：琥珀归虚 → 自身成荫 → 影开珀门 → 琥珀凝实 → … → 推木箱。",
+      optimalSteps: 12,
+      map: [
+        "#######",
+        "#P....#",
+        "#X.V.<#",
+        "#...B.#",
+        "#.C..X#",
+        "#######"
+      ]
+    },
+    {
+      id: 50, code: "5-2", chapter: 5, slot: 2,
+      hint: "参考思路：推雪箱 → 推射灯 → 冰墙融水 → 雪箱化水 → … → 远程唤醒。",
+      optimalSteps: 20,
+      map: [
+        "#######",
+        "#.....#",
+        "#B...<#",
+        "#I.CX.#",
+        "#XP...#",
+        "#######"
+      ]
+    },
+    {
+      id: 51, code: "5-3", chapter: 5, slot: 3,
+      hint: "参考思路：影开珀门 → 推射灯 → 冰墙结冰 → 雪箱凝结 → … → 推雪箱。",
+      optimalSteps: 16,
+      map: [
+        "#######",
+        "#.....#",
+        "#P....#",
+        "#>C.IX#",
+        "#VX.F.#",
+        "#######"
+      ]
+    },
+    {
+      id: 52, code: "5-4", chapter: 5, slot: 4,
+      hint: "参考思路：琥珀归虚 → 自身成荫 → 影开珀门 → 琥珀凝实 → … → 跨光接力。",
+      optimalSteps: 22,
+      map: [
+        "#######",
+        "#....X#",
+        "#..VF.#",
+        "#.B..X#",
+        "#..^P.#",
+        "#######"
+      ]
+    },
+    {
+      id: 53, code: "5-5", chapter: 5, slot: 5,
+      hint: "参考思路：暖珀归虚 → 自身成荫 → 虚化穿身 → 暖珀凝实 → … → 跨光接力。",
+      optimalSteps: 18,
+      map: [
+        "#######",
+        "#P..###",
+        "#>CFX.#",
+        "#..I..#",
+        "#VX.###",
+        "#######"
+      ]
+    },
+    {
+      id: 54, code: "5-6", chapter: 5, slot: 6,
+      hint: "参考思路：推雪箱 → 影开珀门 → 推雪箱 → 影开珀门 → … → 跨光接力。",
+      optimalSteps: 17,
+      map: [
+        "#######",
+        "#.....#",
+        "#P.C..#",
+        "#.>FV.#",
+        "#..X.XS",
+        "#######"
+      ]
+    },
+    {
+      id: 55, code: "5-7", chapter: 5, slot: 7,
+      hint: "参考思路：影开珀门 → 推射灯 → 占格压制 → 推木箱 → … → 远程唤醒。",
+      optimalSteps: 17,
+      map: [
+        "#######",
+        "#..FX.#",
+        "#..B..#",
+        "#P.X..#",
+        "#.^V..#",
+        "#######"
+      ]
+    },
+    {
+      id: 56, code: "5-8", chapter: 5, slot: 8,
+      hint: "参考思路：影开珀门 → 推射灯 → 冰墙结冰 → 雪箱凝结 → … → 推雪箱。",
+      optimalSteps: 17,
+      map: [
+        "#######",
+        "#.....#",
+        "#P....#",
+        "#>C.I.#",
+        "#VX.FX#",
+        "#######"
+      ]
+    },
+    {
+      id: 57, code: "5-9", chapter: 5, slot: 9,
+      hint: "参考思路：影开珀门 → 推暖珀 → 暖珀归虚 → 琥珀凝实 → … → 跨光接力。",
+      optimalSteps: 15,
+      map: [
+        "#######",
+        "#...X.#",
+        "#>CF.V#",
+        "#VX...#",
+        "#....P#",
+        "#######"
+      ]
+    },
+    {
+      id: 58, code: "5-10", chapter: 5, slot: 10,
+      hint: "参考思路：推雪箱 → 雪箱化水 → 推暖珀 → 暖珀归虚 → … → 跨光接力。",
+      optimalSteps: 17,
+      map: [
+        "#######",
+        "#...P.#",
+        "#..CF.S",
+        "#>I..X#",
+        "#....X#",
+        "#######"
+      ]
+    },
+    {
+      id: 59, code: "5-11", chapter: 5, slot: 11,
+      hint: "参考思路：暖珀归虚 → 自身成荫 → 虚化穿身 → 暖珀凝实 → … → 跨光接力。",
+      optimalSteps: 18,
+      map: [
+        "#######",
+        "#P..###",
+        "#>CFX.#",
+        "#..I..#",
+        "#VX.###",
+        "#######"
+      ]
+    },
+    {
+      id: 60, code: "5-12", chapter: 5, slot: 12,
+      hint: "参考思路：琥珀归虚 → 自身成荫 → 琥珀凝实 → 自身成荫 → … → 跨光接力。",
+      optimalSteps: 29,
+      map: [
+        "###S###",
+        "#.P...#",
+        "#X..C.#",
+        "#I..F.#",
+        "#..V^X#",
+        "#######"
+      ]
+    },
+    {
+      id: 61, code: "6-1", chapter: 6, slot: 1,
+      hint: "参考思路：推折光镜 → 占格压制 → 推射灯 → 暖珀凝实 → … → 跨光接力。",
+      optimalSteps: 26,
       map: [
         "########",
-        "#P.L...#",
-        "#......#",
-        "#..FIX.#",
-        "###S#S##"
+        "#.#IX.##",
+        "#.F\\...S",
+        "#.PXC^.#",
+        "#.##...#",
+        "########"
+      ]
+    },
+    {
+      id: 62, code: "6-2", chapter: 6, slot: 2,
+      hint: "参考思路：虚化穿身 → 影开珀门 → 推射灯 → 冰墙融水 → … → 镜子双位折光。",
+      optimalSteps: 47,
+      map: [
+        "########",
+        "#.XV...#",
+        "S^IFC/.#",
+        "#P#X#.##",
+        "#...#..#",
+        "########"
       ]
     }
   ];

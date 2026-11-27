@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>光影推箱 · 关卡工坊</title>
+  <link rel="icon" type="image/svg+xml" href="./lumenbox-logo.svg" />
+  <link rel="icon" type="image/x-icon" sizes="any" href="./lumenbox-logo.ico" />
   <style>
     :root {
       --bg-grad: linear-gradient(155deg, #E6EBF1 0%, #F4EFE6 52%, #EAE3D7 100%);
@@ -942,7 +944,34 @@
       color: #5C6270;
     }
 
-    /* 12x12 关卡库槽位管理样式 */
+    .sup-audit-bar {
+      font-size: 11px;
+      font-weight: 800;
+      border-radius: 8px;
+      padding: 5px 8px;
+      line-height: 1.4;
+      border: 1px solid var(--border);
+    }
+
+    .sup-audit-bar.required {
+      background: #E6F5EE;
+      border-color: rgba(71, 161, 123, 0.52);
+      color: #1F6849;
+    }
+
+    .sup-audit-bar.optional {
+      background: #FCECEB;
+      border-color: rgba(217, 91, 82, 0.45);
+      color: #A6322B;
+    }
+
+    .sup-audit-bar.unknown {
+      background: #F4F2EC;
+      border-color: var(--border);
+      color: var(--ink-soft);
+    }
+
+    /* 6x12 关卡库槽位管理样式 */
     .lib-head-row {
       display: flex;
       align-items: center;
@@ -1062,12 +1091,12 @@
     </header>
 
     <div class="workspace">
-      <!-- 左侧：12卷关卡库、画笔、尺寸工具与模板 -->
+      <!-- 左侧：6卷关卡库、画笔、尺寸工具与模板 -->
       <aside class="side-panel panel-left">
         <section class="card">
           <div class="card-head">
-            <span>🗂️ 12 卷关卡库 (levels.js)</span>
-            <small id="libTotalStat">0 / 144</small>
+            <span>🗂️ 6 卷关卡库 (levels.js)</span>
+            <small id="libTotalStat">0 / 72</small>
           </div>
           <div class="lib-head-row">
             <select class="lib-chap-select" id="libChapSelect"></select>
@@ -1375,52 +1404,52 @@
         const PRESETS = [
           {
             id: "ch1_ice",
-            label: "❄️ 卷一·纯冰",
+            label: "❄️ 卷一·初雪",
             rows: 6, cols: 7, minSteps: 7, maxSteps: 18, arch: "auto",
             counts: { S: 1, L: 0, M: 0, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2 },
             rules: { suppression: "ban" }
           },
           {
-            id: "ch1_lantern",
-            label: "🏮 卷一·提灯",
-            rows: 6, cols: 7, minSteps: 7, maxSteps: 18, arch: "partition",
-            counts: { S: 0, L: 1, M: 0, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2 },
-            rules: { suppression: "ban" }
-          },
-          {
-            id: "mirror_dual",
-            label: "🪞 折光镜",
-            rows: 6, cols: 7, minSteps: 8, maxSteps: 20, arch: "alcove",
-            counts: { S: 1, L: 0, M: 1, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2 },
-            rules: { suppression: "ban" }
-          },
-          {
             id: "ch2_cross_amber",
-            label: "🟧 卷二·双日琥珀",
+            label: "🟧 卷二·琥珀",
             rows: 6, cols: 7, minSteps: 8, maxSteps: 20, arch: "auto",
             counts: { S: 2, L: 0, M: 0, SP: 0, B: 0, C: 0, F: 2, I: 0, V: 0, X: 2 },
             rules: { suppression: "ban", ghost_pass: "require" }
           },
           {
             id: "ch2_amber_gate",
-            label: "🚪 卷二·影开珀门",
+            label: "🚪 卷二·珀门",
             rows: 6, cols: 7, minSteps: 7, maxSteps: 19, arch: "partition",
             counts: { S: 1, L: 0, M: 0, SP: 0, B: 1, C: 0, F: 1, I: 0, V: 1, X: 2 },
             rules: { suppression: "ban", amber_gate: "require" }
           },
           {
             id: "ch3_fusion",
-            label: "✨ 卷三·冰珀交响",
+            label: "☀️ 卷三·霜晴",
             rows: 6, cols: 7, minSteps: 8, maxSteps: 20, arch: "auto",
             counts: { S: 2, L: 0, M: 0, SP: 0, B: 0, C: 1, F: 1, I: 0, V: 0, X: 2 },
             rules: { suppression: "ban" }
           },
           {
-            id: "ch4_suppress",
-            label: "⚡ 卷四·占格压制",
-            rows: 6, cols: 7, minSteps: 8, maxSteps: 20, arch: "auto",
+            id: "ch4_must_sup",
+            label: "🔒 卷四·叠影",
+            rows: 6, cols: 7, minSteps: 8, maxSteps: 22, arch: "auto",
             counts: { S: 1, L: 0, M: 0, SP: 0, B: 1, C: 1, F: 0, I: 1, V: 0, X: 2 },
-            rules: { suppression: "require" }
+            rules: { must_sup: "require" }
+          },
+          {
+            id: "ch5_guzhao",
+            label: "🎯 卷五·孤照",
+            rows: 6, cols: 7, minSteps: 8, maxSteps: 22, arch: "auto",
+            counts: { S: 1, L: 0, M: 0, SP: 1, B: 0, C: 1, F: 1, I: 0, V: 0, X: 2 },
+            rules: {}
+          },
+          {
+            id: "ch6_chengming",
+            label: "✨ 卷六·澄明",
+            rows: 6, cols: 8, minSteps: 10, maxSteps: 26, arch: "auto",
+            counts: { S: 1, L: 0, M: 1, SP: 1, B: 0, C: 1, F: 1, I: 1, V: 0, X: 2 },
+            rules: { greedy_trap: "require" }
           }
         ];
 
@@ -1903,7 +1932,8 @@
             const keepRemoval = testRes.status === "solved"
               && testRes.steps >= curSolve.steps
               && testRes.cheeseWarnings.length <= curSolve.cheeseWarnings.length
-              && rankGreedy(testRes.metrics.greedyStatus) >= rankGreedy(curSolve.metrics.greedyStatus);
+              && rankGreedy(testRes.metrics.greedyStatus) >= rankGreedy(curSolve.metrics.greedyStatus)
+              && (!curSolve.metrics.suppressionRequired || testRes.metrics.suppressionRequired);
 
             if (keepRemoval) {
               curSolve = testRes;
@@ -3464,7 +3494,7 @@
 
       function runSolver() {
         stopDemo();
-        const res = GameEngine.solveBFS(getGridStrings(), 80000, { openStyle: true });
+        const res = GameEngine.solveBFS(getGridStrings(), 80000, { openStyle: true, checkRequireSup: true, maxSupStates: 40000, maxSupMs: 180 });
         app.lastSolve = res;
 
         const box = document.getElementById("solverBox");
@@ -3506,12 +3536,25 @@
             ? ` · 低谷 -${m.maxProgressDip || m.detourPushCount}`
             : "";
 
+          let supAuditHtml = "";
+          if (m.suppressionCount > 0) {
+            if (m.suppressionRequired) {
+              supAuditHtml = `<div class="sup-audit-bar required">🔒 真·必用压制：禁掉占格压制后彻底无解（纯正卷四叠影关！）</div>`;
+            } else if (m.noSupSteps !== null) {
+              const saved = Math.max(0, m.noSupSteps - m.steps);
+              supAuditHtml = `<div class="sup-audit-bar optional">⚠️ 非必用压制：不用压制 ${m.noSupSteps} 步也能过关（压制仅省 ${saved} 步）</div>`;
+            } else if (m.noSupTimedOut) {
+              supAuditHtml = `<div class="sup-audit-bar unknown">⏳ 禁压制校验达到状态上限（大概率强依赖占格压制）</div>`;
+            }
+          }
+
           metrics.innerHTML = `
             <div class="diff-header">
               <span>设计综合分：<b>${m.score} / 100</b></span>
               <span class="grade-pill grade-${m.grade}">${m.label}</span>
             </div>
             <div class="intuition-bar ${gStat}">${gText}${dipSummary}</div>
+            ${supAuditHtml}
             ${renderTagsHtml(m.highlights)}
             <div class="diff-grid">
               <div class="diff-cell"><span>反直觉度</span><b>${m.ahaScore ?? 0} / 30</b></div>
@@ -3603,6 +3646,7 @@
         { id: "greedy_trap", label: "🎯 直觉踩坑", check: m => m.greedyStatus === "trapped" },
         { id: "progress_dip", label: "📉 先退后进", check: m => (m.maxProgressDip || 0) > 0 || (m.detourPushCount || 0) > 0 || (m.intentionalSleepCount || 0) > 0 },
         { id: "multi_role", label: "🎭 一物多角", check: m => (m.multiRoleCount || 0) > 0 },
+        { id: "must_sup", label: "🔒 必用压制", check: m => Boolean(m.suppressionRequired) },
         { id: "suppression", label: "⚡ 占格压制", check: m => m.suppressionCount > 0 },
         { id: "ghost_pass", label: "👻 虚化穿身", check: m => (m.ghostPassCount || 0) > 0 },
         { id: "amber_shadow", label: "🛡️ 以珀挡光", check: m => (m.amberShadowFlips || 0) > 0 },
@@ -3824,6 +3868,8 @@
         if (rules.wood_shadow === "require" && (cts.B || 0) < 1) return "「☂️ 借物遮阳」设为必含，请至少放 1 个木箱";
         if (rules.swap === "require" && ((cts.C || 0) < 1 || (cts.F || 0) < 1)) return "「✨ 冰珀互换」设为必含，需同时放雪箱与暖珀箱";
         if (rules.suppression === "require" && varCnt < 1) return "「⚡ 占格压制」设为必含，需至少放 1 个冰/珀墙或箱";
+        if (rules.must_sup === "require" && varCnt < 1) return "「🔒 必用压制」设为必含，需至少放 1 个冰/珀墙或箱";
+        if (rules.must_sup === "require" && rules.suppression === "ban") return "「🔒 必用压制」与「⚡ 占格压制（禁用）」冲突，请只保留其一";
 
         if (pcgState.sourceMode === "scratch") {
           const innerSpace = (rows - 2) * (cols - 2);
@@ -3856,7 +3902,8 @@
       function startPcg() {
         if (pcgState.running) return;
         const isDraft = pcgState.sourceMode === "draft";
-        const evalOpts = { openStyle: true };
+        const needCheckReqSup = pcgState.cleverRules.must_sup === "require" || pcgState.cleverRules.must_sup === "ban";
+        const evalOpts = { openStyle: true, checkRequireSup: needCheckReqSup, maxSupStates: 14000, maxSupMs: 45 };
 
         const customCols = isDraft ? app.cols : Math.max(5, Math.min(10, Number(document.getElementById("pcgCols").value) || 7));
         const customRows = isDraft ? app.rows : Math.max(5, Math.min(8, Number(document.getElementById("pcgRows").value) || 6));
@@ -3966,7 +4013,17 @@
             (m.amberHandoffCount || 0) * 70 +
             (m.amberGatePasses || 0) * 45;
 
+          let supReqBonus = 0;
+          if (pcgState.cleverRules.must_sup === "require") {
+            if (m.suppressionRequired) supReqBonus = 190;
+            else if (m.suppressionCount > 0) {
+              const savedSteps = m.noSupSteps !== null ? Math.max(0, m.noSupSteps - m.steps) : 2;
+              supReqBonus = 75 + Math.min(85, savedSteps * 14);
+            }
+          }
+
           const ahaBonus =
+            supReqBonus +
             (m.greedyStatus === "trapped" ? 85 : (m.greedyStatus === "stalled" ? 42 : 0)) +
             Math.min(60, ((m.maxProgressDip || 0) + (m.detourPushCount || 0)) * 22) +
             (m.remoteWakeWin ? 55 : ((m.intentionalSleepCount || 0) > 0 ? 30 : 0)) +
@@ -4220,7 +4277,7 @@
 
 
       /* =====================================================================
-         12×12 关卡库管理（直接读取/编辑/导出 core/levels.js）
+         6×12 关卡库管理（直接读取/编辑/导出 core/levels.js）
          ===================================================================== */
       const libState = {
         chapter: 1,
@@ -4275,7 +4332,7 @@
 
         return [
           "/**",
-          " * LumenBox Chapters & Levels Data (12 Chapters x 12 Slots = 144 Levels)",
+          ` * LumenBox Chapters & Levels Data (${DATA.chapterOrder.length} Chapters x ${DATA.slotsPerChapter} Slots = ${DATA.chapterOrder.length * DATA.slotsPerChapter} Levels)`,
           " * Maintained by lumenbox_editor.html.",
           " * Compatible with Browser (<script src=\"./core/levels.js\">) and CommonJS / Mini-Programs.",
           " */",
@@ -4529,9 +4586,10 @@
 
       document.getElementById("btnTrimWalls").addEventListener("click", () => {
         if (app.mode !== "edit") switchMode("edit");
-        const curSolve = GameEngine.solveBFS(getGridStrings(), 50000, { openStyle: true });
+        const trimOpts = { openStyle: true, checkRequireSup: true, maxSupStates: 24000, maxSupMs: 90 };
+        const curSolve = GameEngine.solveBFS(getGridStrings(), 50000, trimOpts);
         if (curSolve.status !== "solved") { showToast("当前地图无解或超时，无法检测多余内墙"); return; }
-        const trimmed = LevelGenerator.trimRedundantWalls(app.grid, curSolve, { openStyle: true });
+        const trimmed = LevelGenerator.trimRedundantWalls(app.grid, curSolve, trimOpts);
         if (trimmed.removedCount === 0) {
           showToast("✨ 当前每一块内墙都是承重墙，没有多余的视觉噪音！");
           return;
