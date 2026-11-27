@@ -30,6 +30,18 @@ function lumenboxPages() {
                 configureServer(server) {
                   server.middlewares.use((req, res, next) => {
                     const pathname = (req.url || '').split('?')[0];
+
+                    // /game/、/editor/ 统一回到不带斜杠的地址，保证 ./core/ 相对路径正确
+                    if (pathname.length > 1 && pathname.endsWith('/')) {
+                      const clean = pathname.replace(/\/+$/, '');
+                      if (LUMENBOX_PAGES[clean]) {
+                        res.statusCode = 301;
+                        res.setHeader('Location', clean);
+                        res.end();
+                        return;
+                      }
+                    }
+
                     const file = LUMENBOX_PAGES[pathname];
                     if (!file) return next();
 
@@ -52,13 +64,24 @@ function lumenboxPages() {
           },
         });
       },
-      // 构建时额外产出 dist/game.html、dist/editor.html，供静态托管直接映射 /game、/editor
+      // 构建时同时产出两种形式，兼容所有静态托管：
+      // 1) dist/game.html        —— 支持 clean URL 的平台直接映射 /game
+      // 2) dist/game/index.html  —— 普通静态服务器（含 GitHub Pages）走目录索引
       'astro:build:done': ({ dir }) => {
         const outDir = fileURLToPath(dir);
         for (const [route, file] of Object.entries(LUMENBOX_PAGES)) {
           const source = path.join(outDir, file);
-          const target = path.join(outDir, `${route.slice(1)}.html`);
-          if (fs.existsSync(source)) fs.copyFileSync(source, target);
+          if (!fs.existsSync(source)) continue;
+
+          const html = fs.readFileSync(source, 'utf8');
+          const name = route.slice(1);
+
+          fs.writeFileSync(path.join(outDir, `${name}.html`), html);
+
+          // 目录形式下页面 URL 是 /game/，./core/ 会变成 /game/core/，必须改成根绝对路径
+          const dirHtml = html.replaceAll('src="./core/', 'src="/core/');
+          fs.mkdirSync(path.join(outDir, name), { recursive: true });
+          fs.writeFileSync(path.join(outDir, name, 'index.html'), dirHtml);
         }
       },
     },
